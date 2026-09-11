@@ -188,7 +188,7 @@ code {
 .mic-button {
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  right: 96px;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -202,6 +202,31 @@ code {
   z-index: 10;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
   backdrop-filter: blur(4px);
+}
+
+.mode-toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: border-color 0.15s, background 0.15s;
+  backdrop-filter: blur(4px);
+}
+
+.mode-toggle:hover {
+  border-color: var(--accent);
 }
 
 .mic-button svg {
