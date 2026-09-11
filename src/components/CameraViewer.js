@@ -172,6 +172,19 @@ function CameraViewer() {
     return () => window.removeEventListener('keydown', onKey);
   }, [selected]);
 
+  // In focused view (manual mode), clicking anywhere on the page that
+  // isn't a tile or a control button returns to the grid.
+  useEffect(() => {
+    if (!selected) return;
+    const onClick = (e) => {
+      if (e.target.closest('.camera-tile')) return;
+      if (e.target.closest('button')) return;
+      transition(() => setSelected(''));
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, [selected]);
+
   // Auto-mode decision loop. Reads motion levels from motionRef, marks
   // any camera above the threshold as "recently active", and shows the
   // set of currently-recently-active cameras. Hysteresis window keeps a
