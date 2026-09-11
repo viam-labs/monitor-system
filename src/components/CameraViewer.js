@@ -52,6 +52,9 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit }) {
 
   useEffect(() => {
     if (videoRef.current && stream) {
+      // Belt-and-suspenders for iOS: explicitly set muted before play,
+      // since autoplay policy allows muted playback without a gesture.
+      videoRef.current.muted = true;
       videoRef.current.srcObject = stream;
       videoRef.current.play().catch(() => {});
     }
@@ -184,6 +187,25 @@ function CameraViewer() {
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
   }, [selected]);
+
+  // iOS Safari sometimes refuses to autoplay <video> with srcObject
+  // even when muted+playsinline+autoplay are all set. On the first
+  // user gesture anywhere on the page, retry play() on every video so
+  // the ones that stalled with a play button get kicked into motion.
+  useEffect(() => {
+    const kick = () => {
+      document.querySelectorAll('video').forEach(v => {
+        v.muted = true;
+        v.play().catch(() => {});
+      });
+    };
+    document.addEventListener('click', kick, { once: true });
+    document.addEventListener('touchstart', kick, { once: true, passive: true });
+    return () => {
+      document.removeEventListener('click', kick);
+      document.removeEventListener('touchstart', kick);
+    };
+  }, []);
 
   // Auto-mode decision loop. Reads motion levels from motionRef, marks
   // any camera above the threshold as "recently active", and shows the
