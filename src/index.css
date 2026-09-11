@@ -5,6 +5,8 @@
   --text-muted: #a89b8f;
   --accent: #f4a261;
   --border: #3a322c;
+  --paw-size: 96px;
+  --paw-offset: 16px;
 }
 
 * {
@@ -49,8 +51,10 @@ code {
   .camera-grid {
     grid-template-columns: repeat(var(--cam-cols, 1), 1fr);
   }
+  /* Padding = paw offset + paw size + 16px slack for rotation. Tiles
+     never overlap the corner paws no matter what --paw-size is set to. */
   .page {
-    padding: 120px;
+    padding: calc(var(--paw-offset) + var(--paw-size) + 16px);
   }
 }
 
@@ -173,18 +177,18 @@ code {
 
 .paw {
   position: fixed;
-  width: 96px;
-  height: 96px;
+  width: var(--paw-size);
+  height: var(--paw-size);
   color: var(--accent);
   opacity: 0.12;
   pointer-events: none;
   z-index: 0;
 }
 
-.paw--tl { top: 16px; left: 16px; transform: rotate(-25deg); }
-.paw--tr { top: 16px; right: 16px; transform: rotate(25deg); }
-.paw--bl { bottom: 16px; left: 16px; transform: rotate(-155deg); }
-.paw--br { bottom: 16px; right: 16px; transform: rotate(155deg); }
+.paw--tl { top: var(--paw-offset); left: var(--paw-offset); transform: rotate(-25deg); }
+.paw--tr { top: var(--paw-offset); right: var(--paw-offset); transform: rotate(25deg); }
+.paw--bl { bottom: var(--paw-offset); left: var(--paw-offset); transform: rotate(-155deg); }
+.paw--br { bottom: var(--paw-offset); right: var(--paw-offset); transform: rotate(155deg); }
 
 .page {
   position: relative;
@@ -208,8 +212,10 @@ code {
   .camera-grid {
     gap: 8px;
   }
-  .paw {
-    width: 64px;
-    height: 64px;
+  /* Smaller paws on mobile — the calc-based desktop padding still uses
+     var(--paw-size), so if you want to reserve paw-clearance on mobile
+     too, shrink the variable here instead of overriding .paw directly. */
+  :root {
+    --paw-size: 64px;
   }
 }
