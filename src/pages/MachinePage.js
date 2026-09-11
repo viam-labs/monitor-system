@@ -48,7 +48,7 @@ function MachinePage() {
         }}
       >
         <h1 style={{ textTransform: 'capitalize' }}>{machineName}</h1>
-        <CameraViewer machineId={host} />
+        <CameraViewer />
       </div>
     </>
   );
