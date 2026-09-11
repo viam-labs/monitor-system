@@ -37,6 +37,11 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit }) {
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
+      // iOS Safari sometimes needs an explicit play() after srcObject is
+      // set even with autoplay+muted+playsinline. Swallow the promise
+      // rejection — worst case a browser blocks and shows its own play
+      // button, which is still better than a frozen frame.
+      videoRef.current.play().catch(() => {});
     }
   }, [stream]);
 
