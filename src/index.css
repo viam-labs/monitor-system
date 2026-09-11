@@ -51,10 +51,11 @@ code {
   .camera-grid {
     grid-template-columns: repeat(var(--cam-cols, 1), 1fr);
   }
-  /* Padding = paw offset + paw size + 16px slack for rotation. Tiles
-     never overlap the corner paws no matter what --paw-size is set to. */
+  /* Padding = paw offset + paw size + 32px slack for the 25deg rotation
+     (rotated corner extends further than the axis-aligned box) plus
+     visual breathing room. Tiles stay clear of the corner paws. */
   .page {
-    padding: calc(var(--paw-offset) + var(--paw-size) + 16px);
+    padding: calc(var(--paw-offset) + var(--paw-size) + 32px);
   }
 }
 
