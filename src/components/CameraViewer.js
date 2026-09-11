@@ -122,27 +122,25 @@ function CameraViewer({ machineId }) {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div>
-      <h3>Camera Feed</h3>
-      <div>
-        <select onChange={(e) => handleCameraSelect(e.target.value)}>
-          <option value="">Select a camera</option>
-          {cameras.map(camera => (
-            <option key={camera.id} value={camera.name}>{camera.name}</option>
-          ))}
-        </select>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+      <select
+        onChange={(e) => handleCameraSelect(e.target.value)}
+        style={{ alignSelf: 'flex-start' }}
+      >
+        <option value="">Select a camera</option>
+        {cameras.map(camera => (
+          <option key={camera.id} value={camera.name}>{camera.name}</option>
+        ))}
+      </select>
       {selectedCamera && (
-        <div style={{ marginTop: '20px' }}>
-          <video
-            ref={videoRef}
-            autoPlay={true}
-            playsInline={true}
-            muted={true}
-            alt="Camera feed"
-            style={{ maxWidth: '100%', border: '1px solid #ccc' }}
-          />
-        </div>
+        <video
+          ref={videoRef}
+          autoPlay={true}
+          playsInline={true}
+          muted={true}
+          alt="Camera feed"
+          style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', background: '#000' }}
+        />
       )}
     </div>
   );
