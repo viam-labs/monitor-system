@@ -39,6 +39,19 @@ const SAMPLE_INTERVAL_MS = 500;
 const DECIDE_INTERVAL_MS = 800;
 const HYSTERESIS_MS = 3500;
 
+// Column spans (out of 6) for each visible tile as a function of how
+// many tiles are visible. Keeps things close to 16:9 on landscape
+// viewports and fills the bottom row on odd counts.
+function spansFor(count) {
+  if (count <= 1) return [6];
+  if (count === 2) return [3, 3];
+  if (count === 3) return [2, 2, 2];
+  if (count === 4) return [3, 3, 3, 3];
+  if (count === 5) return [2, 2, 2, 3, 3];
+  if (count === 6) return [2, 2, 2, 2, 2, 2];
+  return Array(count).fill(2);
+}
+
 function CameraTile({
   name,
   stream,
@@ -46,6 +59,7 @@ function CameraTile({
   onFocus,
   onExit,
   offscreen,
+  gridSpan,
   motionRef,
   motionEnabled,
 }) {
@@ -118,10 +132,17 @@ function CameraTile({
     (clickable ? ' camera-tile--clickable' : '') +
     (offscreen ? ' camera-tile--offscreen' : '');
 
+  const style = offscreen
+    ? undefined
+    : {
+        viewTransitionName: tileTransitionName(name),
+        ...(gridSpan ? { gridColumn: `span ${gridSpan}` } : {}),
+      };
+
   return (
     <div
       className={className}
-      style={offscreen ? undefined : { viewTransitionName: tileTransitionName(name) }}
+      style={style}
       onClick={clickable ? onFocus : undefined}
       onKeyDown={handleKeyDown}
       role={clickable ? 'button' : undefined}
@@ -322,22 +343,34 @@ function CameraViewer() {
     transition(() => setSelected(name));
   };
 
+  // Assign each visible tile a column span (out of 6) so grid layout
+  // uses only the visible-tile count, ignoring off-screen tiles that
+  // are absolute-positioned outside the grid flow.
+  const visibleOrdered = cameras.filter(c => visibleSet.has(c.name));
+  const spans = spansFor(visibleOrdered.length);
+  const spanByName = {};
+  visibleOrdered.forEach((c, i) => { spanByName[c.name] = spans[i]; });
+
   return (
     <>
       <div className="camera-grid">
-        {cameras.map(c => (
-          <CameraTile
-            key={c.id}
-            name={c.name}
-            stream={streams[c.name]}
-            isFocused={selected === c.name}
-            onFocus={multi ? () => handleTileFocus(c.name) : undefined}
-            onExit={() => transition(() => setSelected(''))}
-            offscreen={!visibleSet.has(c.name)}
-            motionRef={motionRef}
-            motionEnabled={mode === 'auto'}
-          />
-        ))}
+        {cameras.map(c => {
+          const offscreen = !visibleSet.has(c.name);
+          return (
+            <CameraTile
+              key={c.id}
+              name={c.name}
+              stream={streams[c.name]}
+              isFocused={selected === c.name}
+              onFocus={multi ? () => handleTileFocus(c.name) : undefined}
+              onExit={() => transition(() => setSelected(''))}
+              offscreen={offscreen}
+              gridSpan={offscreen ? undefined : spanByName[c.name]}
+              motionRef={motionRef}
+              motionEnabled={mode === 'auto'}
+            />
+          );
+        })}
       </div>
       {canAutoFollow && (
         <ModeToggle

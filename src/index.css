@@ -42,29 +42,15 @@ code {
   min-height: 0;
 }
 
-/* Desktop uses a 6-column grid so tiles can span cleanly for common
-   tiles-per-row counts (1, 2, 3, 6). Default is 3 tiles per row (each
-   spanning 2 of 6), then :has() rules give specific tile counts smarter
-   layouts — e.g. 4 cameras become 2x2, 5 cameras become 3-on-top /
-   2-wider-on-bottom instead of leaving a gap. */
+/* Desktop uses a 6-column grid; each visible tile sets its own
+   grid-column span via inline style based on how many other tiles are
+   currently visible. Doing this from JS instead of :has() rules keeps
+   layout correct when some tiles are absolutely-positioned off-screen
+   (for always-on motion sampling) — CSS :has() would otherwise count
+   the off-screen ones toward "nth-child" and pick the wrong layout. */
 @media (min-width: 900px) {
   .camera-grid {
     grid-template-columns: repeat(6, 1fr);
-  }
-  .camera-grid > * {
-    grid-column: span 2;
-  }
-  .camera-grid:has(> :first-child:last-child) > * {
-    grid-column: 1 / -1;
-  }
-  .camera-grid:has(> :nth-child(2):last-child) > * {
-    grid-column: span 3;
-  }
-  .camera-grid:has(> :nth-child(4):last-child) > * {
-    grid-column: span 3;
-  }
-  .camera-grid:has(> :nth-child(5):last-child) > :nth-child(n+4) {
-    grid-column: span 3;
   }
 }
 
