@@ -41,7 +41,20 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit }) {
     >
       <video ref={videoRef} autoPlay playsInline muted />
       <div className="camera-label">
-        {stream && <span className="live-indicator" aria-label="Live" />}
+        {stream && (
+          <svg
+            className="live-indicator"
+            viewBox="0 0 100 100"
+            fill="currentColor"
+            aria-label="Live"
+          >
+            <ellipse cx="25" cy="35" rx="9" ry="12" />
+            <ellipse cx="42" cy="22" rx="9" ry="12" />
+            <ellipse cx="58" cy="22" rx="9" ry="12" />
+            <ellipse cx="75" cy="35" rx="9" ry="12" />
+            <path d="M50 45 Q 25 50 30 80 Q 40 95 50 95 Q 60 95 70 80 Q 75 50 50 45 Z" />
+          </svg>
+        )}
         {name}
       </div>
       {isFocused && (

@@ -107,11 +107,9 @@ code {
 
 .live-indicator {
   display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
   animation: pulse 2s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -119,11 +117,11 @@ code {
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
-    box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+    filter: drop-shadow(0 0 3px rgba(244, 162, 97, 0.5));
   }
   50% {
     opacity: 0.5;
-    box-shadow: 0 0 12px rgba(74, 222, 128, 0.9);
+    filter: drop-shadow(0 0 6px rgba(244, 162, 97, 0.8));
   }
 }
 
