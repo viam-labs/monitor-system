@@ -4,6 +4,7 @@ import { createRobotClient, StreamClient } from '@viamrobotics/sdk';
 import Cookies from 'js-cookie';
 import MicButton from './MicButton';
 import ModeToggle from './ModeToggle';
+import MotionSampler from './MotionSampler';
 
 async function createClient() {
   const cookieKey = window.location.pathname.split('/')[2];
@@ -34,17 +35,18 @@ function tileTransitionName(name) {
 }
 
 // Fraction of downsampled pixels that must change frame-to-frame to
-// count as motion. 1% of a 160x90 frame ~= 144 changed pixels.
-const MOTION_THRESHOLD = 0.01;
-// Sample cadence and auto-mode decision cadence.
-const SAMPLE_INTERVAL_MS = 500;
+// count as motion. 3% of a 160x90 frame ~= 432 changed pixels — high
+// enough that sensor noise and lighting flicker don't trip it.
+const MOTION_THRESHOLD = 0.03;
+// Auto-mode decision cadence. (Motion sampling cadence lives in
+// MotionSampler.)
 const DECIDE_INTERVAL_MS = 800;
 // Once a camera crosses the motion threshold it stays in the auto-mode
 // visible set for at least this long, even if it goes still — avoids
 // flicker when a dog freezes for a moment.
 const HYSTERESIS_MS = 3500;
 
-function CameraTile({ name, stream, isFocused, onFocus, onExit, motionRef, motionEnabled }) {
+function CameraTile({ name, stream, isFocused, onFocus, onExit }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -53,52 +55,6 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit, motionRef, motio
       videoRef.current.play().catch(() => {});
     }
   }, [stream]);
-
-  // Motion detection: sample a downscaled canvas from the video and
-  // diff pixel-by-pixel against the previous frame. Writes an
-  // exponential-moving-average motion level into motionRef so
-  // CameraViewer's decision loop can read it.
-  useEffect(() => {
-    if (!motionEnabled) return;
-    const motion = motionRef.current;
-    const canvas = document.createElement('canvas');
-    canvas.width = 160;
-    canvas.height = 90;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    let prev = null;
-
-    const sample = () => {
-      const video = videoRef.current;
-      if (!video || video.videoWidth === 0) return;
-      try {
-        ctx.drawImage(video, 0, 0, 160, 90);
-        const cur = ctx.getImageData(0, 0, 160, 90);
-        if (prev) {
-          let diff = 0;
-          const data = cur.data;
-          const pdata = prev.data;
-          for (let i = 0; i < data.length; i += 4) {
-            const c = data[i] + data[i + 1] + data[i + 2];
-            const p = pdata[i] + pdata[i + 1] + pdata[i + 2];
-            if (Math.abs(c - p) > 75) diff++;
-          }
-          const level = diff / (canvas.width * canvas.height);
-          const previous = motion[name] || 0;
-          motion[name] = previous * 0.6 + level * 0.4;
-        }
-        prev = cur;
-      } catch (_) {
-        // Canvas can throw on cross-origin taint or a not-yet-ready
-        // video; ignore and try again next tick.
-      }
-    };
-
-    const id = setInterval(sample, SAMPLE_INTERVAL_MS);
-    return () => {
-      clearInterval(id);
-      delete motion[name];
-    };
-  }, [motionEnabled, name, motionRef]);
 
   const clickable = Boolean(onFocus);
   const handleKeyDown = clickable
@@ -302,11 +258,19 @@ function CameraViewer() {
             isFocused={selected === c.name}
             onFocus={multi ? () => handleTileFocus(c.name) : undefined}
             onExit={() => transition(() => setSelected(''))}
-            motionRef={motionRef}
-            motionEnabled={mode === 'auto'}
           />
         ))}
       </div>
+      {mode === 'auto' && cameras.map(c => (
+        streams[c.name] ? (
+          <MotionSampler
+            key={`sampler-${c.id}`}
+            name={c.name}
+            stream={streams[c.name]}
+            motionRef={motionRef}
+          />
+        ) : null
+      ))}
       {canAutoFollow && (
         <ModeToggle
           mode={mode}
