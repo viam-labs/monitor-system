@@ -35,10 +35,10 @@ function tileTransitionName(name) {
 }
 
 // Fraction of downsampled pixels that must change frame-to-frame to
-// count as motion. 1.5% of a 160x90 frame ~= 216 changed pixels.
-// Balancing point: catches a small/distant dog moving without tripping
-// on sensor noise.
-const MOTION_THRESHOLD = 0.015;
+// count as motion. 0.8% of a 160x90 frame ~= 115 changed pixels.
+// Sensitive enough to catch small/distant movement; per-pixel diff of
+// 100 in MotionSampler still gates out sensor noise.
+const MOTION_THRESHOLD = 0.008;
 // Auto-mode decision cadence. (Motion sampling cadence lives in
 // MotionSampler.)
 const DECIDE_INTERVAL_MS = 800;
@@ -207,6 +207,15 @@ function CameraViewer() {
       const active = cameras
         .map(c => c.name)
         .filter(n => now - (lastActive[n] || 0) < HYSTERESIS_MS);
+
+      // Debug: prints current motion levels + active set so you can see
+      // in DevTools whether samplers are receiving frames and whether
+      // the threshold is right. Remove once tuned.
+      const snapshot = {};
+      for (const c of cameras) {
+        snapshot[c.name] = Number((levels[c.name] || 0).toFixed(4));
+      }
+      console.log('[motion]', snapshot, 'active:', active, 'threshold:', MOTION_THRESHOLD);
 
       const current = autoVisibleRef.current;
       const same =
