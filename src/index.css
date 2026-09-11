@@ -66,11 +66,12 @@ code {
   .camera-grid:has(> :nth-child(5):last-child) > :nth-child(n+4) {
     grid-column: span 3;
   }
-  /* Padding = paw offset + paw size + 32px slack for the 25deg rotation
-     (rotated corner extends further than the axis-aligned box) plus
-     visual breathing room. Tiles stay clear of the corner paws. */
+  /* Padding = paw offset + paw size + 64px slack. The 25deg rotation
+     swings the paw's SVG corner about paw-size*(sqrt(2)-1)/2 = ~20px
+     past the axis-aligned bounds; the remaining ~44px is breathing
+     room so the paws read as decorative rather than cramped. */
   .page {
-    padding: calc(var(--paw-offset) + var(--paw-size) + 32px);
+    padding: calc(var(--paw-offset) + var(--paw-size) + 64px);
   }
 }
 
