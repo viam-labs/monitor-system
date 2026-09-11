@@ -32,6 +32,7 @@ h1 {
   letter-spacing: -0.02em;
   color: var(--text);
   margin: 0 0 24px;
+  text-align: center;
 }
 
 code {
@@ -100,6 +101,30 @@ code {
   text-transform: capitalize;
   z-index: 1;
   backdrop-filter: blur(4px);
+}
+
+.live-indicator {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+  animation: pulse 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.9);
+  }
 }
 
 .paw {

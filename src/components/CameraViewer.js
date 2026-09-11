@@ -23,6 +23,7 @@ function CameraTile({ name, stream }) {
     <div className="camera-tile">
       <video ref={videoRef} autoPlay playsInline muted />
       <div className="camera-label">{name}</div>
+      {stream && <div className="live-indicator" aria-label="Live" />}
     </div>
   );
 }
