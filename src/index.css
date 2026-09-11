@@ -51,10 +51,15 @@ code {
 
 /* On desktop, use an explicit column count from --cam-cols so 4 cameras
    become 2x2 instead of a single row of thin strips. Mobile keeps the
-   auto-fit fallback (single column on portrait phones). */
+   auto-fit fallback (single column on portrait phones). Also reserve
+   vertical space at the bottom so the corner paw prints stay visible
+   instead of being covered by tiles. */
 @media (min-width: 900px) {
   .camera-grid {
     grid-template-columns: repeat(var(--cam-cols, 1), 1fr);
+  }
+  .page {
+    padding-bottom: 120px;
   }
 }
 
