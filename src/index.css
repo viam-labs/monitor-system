@@ -80,7 +80,7 @@ code {
 
 .camera-label {
   position: absolute;
-  top: 8px;
+  bottom: 8px;
   left: 8px;
   display: flex;
   align-items: center;
