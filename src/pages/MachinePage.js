@@ -19,11 +19,11 @@ function Paw({ className }) {
       fill="currentColor"
       aria-hidden="true"
     >
-      <ellipse cx="25" cy="35" rx="9" ry="12" />
-      <ellipse cx="42" cy="22" rx="9" ry="12" />
-      <ellipse cx="58" cy="22" rx="9" ry="12" />
-      <ellipse cx="75" cy="35" rx="9" ry="12" />
-      <path d="M50 45 Q 25 50 30 80 Q 40 95 50 95 Q 60 95 70 80 Q 75 50 50 45 Z" />
+      <circle cx="25" cy="38" r="9" />
+      <circle cx="42" cy="22" r="9" />
+      <circle cx="58" cy="22" r="9" />
+      <circle cx="75" cy="38" r="9" />
+      <path d="M50 52 C 28 52, 22 68, 28 84 C 33 93, 42 96, 50 96 C 58 96, 67 93, 72 84 C 78 68, 72 52, 50 52 Z" />
     </svg>
   );
 }
