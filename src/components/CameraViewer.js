@@ -35,9 +35,10 @@ function tileTransitionName(name) {
 }
 
 // Fraction of downsampled pixels that must change frame-to-frame to
-// count as motion. 3% of a 160x90 frame ~= 432 changed pixels — high
-// enough that sensor noise and lighting flicker don't trip it.
-const MOTION_THRESHOLD = 0.03;
+// count as motion. 1.5% of a 160x90 frame ~= 216 changed pixels.
+// Balancing point: catches a small/distant dog moving without tripping
+// on sensor noise.
+const MOTION_THRESHOLD = 0.015;
 // Auto-mode decision cadence. (Motion sampling cadence lives in
 // MotionSampler.)
 const DECIDE_INTERVAL_MS = 800;
