@@ -33,8 +33,7 @@ function MachinePage() {
   const machineName = machineNameFromHost(host);
 
   useEffect(() => {
-    const title = machineName.charAt(0).toUpperCase() + machineName.slice(1);
-    document.title = `${title} — monitor-system`;
+    document.title = machineName.charAt(0).toUpperCase() + machineName.slice(1);
   }, [machineName]);
 
   return (
