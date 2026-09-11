@@ -50,7 +50,7 @@ code {
     grid-template-columns: repeat(var(--cam-cols, 1), 1fr);
   }
   .page {
-    padding-bottom: 120px;
+    padding: 120px;
   }
 }
 
