@@ -68,7 +68,7 @@ code {
 .camera-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  grid-auto-rows: 1fr;
+  grid-auto-rows: minmax(0, 1fr);
   gap: 16px;
   flex: 1;
   min-height: 0;
