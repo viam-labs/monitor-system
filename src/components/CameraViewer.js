@@ -115,14 +115,18 @@ function CameraViewer() {
         );
         if (audio) setAudioName(audio.name);
 
+        // Sequential rather than Promise.all: StreamClient shares one
+        // WebRTC peer connection, and concurrent negotiations can return
+        // tracks out of order, so a tile ends up bound to the wrong
+        // stream. Trades ~1-2s slower startup for correct labeling.
         const streamClient = new StreamClient(c);
-        await Promise.all(cams.map(async cam => {
+        for (const cam of cams) {
           try {
             startedStreams[cam.name] = await streamClient.getStream(cam.name);
           } catch (e) {
             console.error(`Failed to start stream for ${cam.name}:`, e);
           }
-        }));
+        }
         setStreams({ ...startedStreams });
       } catch (e) {
         setError(e.message);
