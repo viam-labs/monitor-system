@@ -12,20 +12,50 @@ async function createClient() {
   });
 }
 
-function CameraTile({ name, stream }) {
+function CameraTile({ name, stream, isFocused, onFocus, onExit }) {
   const videoRef = useRef(null);
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
+
+  const clickable = Boolean(onFocus);
+  const handleKeyDown = clickable
+    ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onFocus();
+        }
+      }
+    : undefined;
+
   return (
-    <div className="camera-tile">
+    <div
+      className={`camera-tile${clickable ? ' camera-tile--clickable' : ''}`}
+      onClick={clickable ? onFocus : undefined}
+      onKeyDown={handleKeyDown}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      aria-label={clickable ? `Focus ${name}` : undefined}
+    >
       <video ref={videoRef} autoPlay playsInline muted />
       <div className="camera-label">
         {stream && <span className="live-indicator" aria-label="Live" />}
         {name}
       </div>
+      {isFocused && (
+        <button
+          type="button"
+          className="back-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onExit();
+          }}
+        >
+          ← Back
+        </button>
+      )}
     </div>
   );
 }
@@ -71,31 +101,34 @@ function CameraViewer() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setSelected('');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected]);
+
   if (loading) return <div>Loading cameras…</div>;
   if (error) return <div>Error: {error}</div>;
   if (cameras.length === 0) return <div>No cameras found on this machine.</div>;
 
   const visible = selected ? cameras.filter(c => c.name === selected) : cameras;
+  const multi = cameras.length > 1;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0 }}>
-      {cameras.length > 1 && (
-        <select
-          className="camera-select"
-          value={selected}
-          onChange={e => setSelected(e.target.value)}
-        >
-          <option value="">All cameras</option>
-          {cameras.map(c => (
-            <option key={c.id} value={c.name}>{c.name}</option>
-          ))}
-        </select>
-      )}
-      <div className="camera-grid">
-        {visible.map(c => (
-          <CameraTile key={c.id} name={c.name} stream={streams[c.name]} />
-        ))}
-      </div>
+    <div className="camera-grid">
+      {visible.map(c => (
+        <CameraTile
+          key={c.id}
+          name={c.name}
+          stream={streams[c.name]}
+          isFocused={selected === c.name}
+          onFocus={multi ? () => setSelected(c.name) : undefined}
+          onExit={() => setSelected('')}
+        />
+      ))}
     </div>
   );
 }

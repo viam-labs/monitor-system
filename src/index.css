@@ -40,31 +40,6 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-.camera-select {
-  appearance: none;
-  -webkit-appearance: none;
-  background-color: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 40px 10px 14px;
-  font-size: 1rem;
-  font-family: inherit;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23f4a261'><path d='M5 8l5 5 5-5z'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  transition: border-color 0.15s;
-  align-self: flex-start;
-}
-
-.camera-select:hover,
-.camera-select:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-
 .camera-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -81,6 +56,17 @@ code {
   overflow: hidden;
   border: 1px solid var(--border);
   min-height: 0;
+  transition: border-color 0.15s;
+}
+
+.camera-tile--clickable {
+  cursor: pointer;
+}
+
+.camera-tile--clickable:hover,
+.camera-tile--clickable:focus-visible {
+  border-color: var(--accent);
+  outline: none;
 }
 
 .camera-tile video {
@@ -130,6 +116,30 @@ code {
     opacity: 0.5;
     box-shadow: 0 0 12px rgba(74, 222, 128, 0.9);
   }
+}
+
+.back-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.back-button:hover,
+.back-button:focus-visible {
+  border-color: var(--accent);
+  outline: none;
 }
 
 .paw {
