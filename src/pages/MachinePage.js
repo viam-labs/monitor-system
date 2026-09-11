@@ -43,7 +43,6 @@ function MachinePage() {
       <Paw className="paw--bl" />
       <Paw className="paw--br" />
       <div className="page">
-        <h1 style={{ textTransform: 'capitalize' }}>{machineName}</h1>
         <CameraViewer />
       </div>
     </>

@@ -27,15 +27,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1 {
-  font-size: clamp(1.75rem, 5vw, 3rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text);
-  margin: 0 0 24px;
-  text-align: center;
-}
-
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
@@ -213,9 +204,6 @@ code {
 @media (max-width: 900px), (max-height: 600px) {
   .page {
     padding: 8px;
-  }
-  .page h1 {
-    display: none;
   }
   .camera-grid {
     gap: 8px;
