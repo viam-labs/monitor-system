@@ -14,10 +14,33 @@ export default function MotionSampler({ name, stream, motionRef }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (videoRef.current && stream) {
+    if (!videoRef.current || !stream) return;
+    // WebRTC frames delivered to a MediaStreamTrack seem to only reach
+    // one <video> element at a time — the visible tile got frames, the
+    // sampler bound to the same stream got only the initial keyframe
+    // and then getImageData saw the same frame forever. Cloning the
+    // track gives the sampler its own independent frame delivery.
+    const videoTrack = stream.getVideoTracks()[0];
+    if (!videoTrack) {
       videoRef.current.srcObject = stream;
       videoRef.current.play().catch(() => {});
+      return;
     }
+    let clonedTrack;
+    try {
+      clonedTrack = videoTrack.clone();
+    } catch (_) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(() => {});
+      return;
+    }
+    const clonedStream = new MediaStream([clonedTrack]);
+    videoRef.current.srcObject = clonedStream;
+    videoRef.current.muted = true;
+    videoRef.current.play().catch(() => {});
+    return () => {
+      clonedTrack.stop();
+    };
   }, [stream]);
 
   useEffect(() => {
