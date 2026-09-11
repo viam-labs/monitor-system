@@ -49,6 +49,15 @@ code {
   min-height: 0;
 }
 
+/* On desktop, use an explicit column count from --cam-cols so 4 cameras
+   become 2x2 instead of a single row of thin strips. Mobile keeps the
+   auto-fit fallback (single column on portrait phones). */
+@media (min-width: 900px) {
+  .camera-grid {
+    grid-template-columns: repeat(var(--cam-cols, 1), 1fr);
+  }
+}
+
 .camera-tile {
   position: relative;
   background: #000;
