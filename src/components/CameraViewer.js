@@ -1,6 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { createRobotClient, StreamClient } from '@viamrobotics/sdk';
 import Cookies from 'js-cookie';
+
+// Wraps a state update in the View Transitions API when available, so
+// tile focus/unfocus animates via CSS morphing instead of snapping.
+// Falls back to a plain update on browsers without the API.
+function transition(update) {
+  if (typeof document.startViewTransition === 'function') {
+    document.startViewTransition(() => flushSync(update));
+  } else {
+    update();
+  }
+}
+
+// View-transition-name must be a CSS ident; strip anything that isn't
+// alphanumeric or underscore so remote-prefixed names like "pi1:cam"
+// still work.
+function tileTransitionName(name) {
+  return `cam-${name.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+}
 
 async function createClient() {
   const cookieKey = window.location.pathname.split('/')[2];
@@ -33,6 +52,7 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit }) {
   return (
     <div
       className={`camera-tile${clickable ? ' camera-tile--clickable' : ''}`}
+      style={{ viewTransitionName: tileTransitionName(name) }}
       onClick={clickable ? onFocus : undefined}
       onKeyDown={handleKeyDown}
       role={clickable ? 'button' : undefined}
@@ -118,7 +138,7 @@ function CameraViewer() {
   useEffect(() => {
     if (!selected) return;
     const onKey = (e) => {
-      if (e.key === 'Escape') setSelected('');
+      if (e.key === 'Escape') transition(() => setSelected(''));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -145,8 +165,8 @@ function CameraViewer() {
           name={c.name}
           stream={streams[c.name]}
           isFocused={selected === c.name}
-          onFocus={multi ? () => setSelected(c.name) : undefined}
-          onExit={() => setSelected('')}
+          onFocus={multi ? () => transition(() => setSelected(c.name)) : undefined}
+          onExit={() => transition(() => setSelected(''))}
         />
       ))}
     </div>
