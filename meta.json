@@ -1,0 +1,15 @@
+{
+    "module_id": "viam-labs:monitor-system",
+    "visibility": "public",
+    "url": "https://github.com/viam-labs/monitor-system",
+    "description": "Monitor cameras across a Viam machine and its remotes.",
+    "models": [],
+    "entrypoint": "",
+    "applications": [
+      {
+        "name": "monitor-system",
+        "type": "single_machine",
+        "entrypoint": "build/index.html"
+      }
+    ]
+}
