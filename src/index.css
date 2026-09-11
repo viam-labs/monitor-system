@@ -290,8 +290,20 @@ code {
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: 0;
+  padding: 16px;
   box-sizing: border-box;
+}
+
+/* Off-screen tile: kept in the DOM so its <video> keeps decoding for
+   motion detection, but positioned outside the viewport so it doesn't
+   affect layout and doesn't participate in the grid. */
+.camera-tile--offscreen {
+  position: absolute !important;
+  left: -9999px;
+  top: -9999px;
+  width: 160px;
+  height: 90px;
+  pointer-events: none;
 }
 
 /* Tight chrome on small viewports — hide the machine-name title and

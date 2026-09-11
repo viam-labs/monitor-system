@@ -4,7 +4,6 @@ import { createRobotClient, StreamClient } from '@viamrobotics/sdk';
 import Cookies from 'js-cookie';
 import MicButton from './MicButton';
 import ModeToggle from './ModeToggle';
-import MotionSampler from './MotionSampler';
 
 async function createClient() {
   const cookieKey = window.location.pathname.split('/')[2];
@@ -18,7 +17,6 @@ async function createClient() {
 
 // Wraps a state update in the View Transitions API when available, so
 // tile focus/unfocus animates via CSS morphing instead of snapping.
-// Falls back to a plain update on browsers without the API.
 function transition(update) {
   if (typeof document.startViewTransition === 'function') {
     document.startViewTransition(() => flushSync(update));
@@ -34,33 +32,78 @@ function tileTransitionName(name) {
   return `cam-${name.replace(/[^a-zA-Z0-9_]/g, '_')}`;
 }
 
-// Fraction of downsampled pixels that must change frame-to-frame to
-// count as motion. 1.8% of a 160x90 frame ~= 260 changed pixels.
-// Middle ground: 0.03 was too strict (only one camera lit up), 0.008
-// was too loose (all cameras stayed active).
+// Motion detection tuning.
 const MOTION_THRESHOLD = 0.018;
-// Auto-mode decision cadence. (Motion sampling cadence lives in
-// MotionSampler.)
+const PIXEL_DIFF_THRESHOLD = 100;
+const SAMPLE_INTERVAL_MS = 500;
 const DECIDE_INTERVAL_MS = 800;
-// Once a camera crosses the motion threshold it stays in the auto-mode
-// visible set for at least this long, even if it goes still — avoids
-// flicker when a dog freezes for a moment.
 const HYSTERESIS_MS = 3500;
 
-function CameraTile({ name, stream, isFocused, onFocus, onExit }) {
+function CameraTile({
+  name,
+  stream,
+  isFocused,
+  onFocus,
+  onExit,
+  offscreen,
+  motionRef,
+  motionEnabled,
+}) {
   const videoRef = useRef(null);
 
   useEffect(() => {
     if (videoRef.current && stream) {
-      // Belt-and-suspenders for iOS: explicitly set muted before play,
-      // since autoplay policy allows muted playback without a gesture.
       videoRef.current.muted = true;
       videoRef.current.srcObject = stream;
       videoRef.current.play().catch(() => {});
     }
   }, [stream]);
 
-  const clickable = Boolean(onFocus);
+  // Motion detection runs from the tile's own <video> element, which
+  // stays mounted across visible/off-screen toggles so decoding never
+  // pauses. Only active in auto mode.
+  useEffect(() => {
+    if (!motionEnabled) return;
+    const motion = motionRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = 160;
+    canvas.height = 90;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let prev = null;
+
+    const sample = () => {
+      const video = videoRef.current;
+      if (!video || video.videoWidth === 0) return;
+      try {
+        ctx.drawImage(video, 0, 0, 160, 90);
+        const cur = ctx.getImageData(0, 0, 160, 90);
+        if (prev) {
+          let diff = 0;
+          const data = cur.data;
+          const pdata = prev.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const c = data[i] + data[i + 1] + data[i + 2];
+            const p = pdata[i] + pdata[i + 1] + pdata[i + 2];
+            if (Math.abs(c - p) > PIXEL_DIFF_THRESHOLD) diff++;
+          }
+          const level = diff / (canvas.width * canvas.height);
+          const previous = motion[name] || 0;
+          motion[name] = previous * 0.6 + level * 0.4;
+        }
+        prev = cur;
+      } catch (_) {
+        // Canvas taint or video not ready; ignore.
+      }
+    };
+
+    const id = setInterval(sample, SAMPLE_INTERVAL_MS);
+    return () => {
+      clearInterval(id);
+      delete motion[name];
+    };
+  }, [motionEnabled, name, motionRef]);
+
+  const clickable = Boolean(onFocus) && !offscreen;
   const handleKeyDown = clickable
     ? (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -70,22 +113,30 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit }) {
       }
     : undefined;
 
+  const className =
+    'camera-tile' +
+    (clickable ? ' camera-tile--clickable' : '') +
+    (offscreen ? ' camera-tile--offscreen' : '');
+
   return (
     <div
-      className={`camera-tile${clickable ? ' camera-tile--clickable' : ''}`}
-      style={{ viewTransitionName: tileTransitionName(name) }}
+      className={className}
+      style={offscreen ? undefined : { viewTransitionName: tileTransitionName(name) }}
       onClick={clickable ? onFocus : undefined}
       onKeyDown={handleKeyDown}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? `Focus ${name}` : undefined}
+      aria-hidden={offscreen || undefined}
     >
       <video ref={videoRef} autoPlay playsInline muted />
-      <div className="camera-label">
-        {stream && <span className="live-indicator" aria-label="Live" />}
-        {name}
-      </div>
-      {isFocused && (
+      {!offscreen && (
+        <div className="camera-label">
+          {stream && <span className="live-indicator" aria-label="Live" />}
+          {name}
+        </div>
+      )}
+      {!offscreen && isFocused && (
         <button
           type="button"
           className="back-button"
@@ -132,17 +183,11 @@ function CameraViewer() {
           .sort((a, b) => a.name.localeCompare(b.name));
         setCameras(cams);
 
-        // The API is registered as rdk:component:audio_in (short form);
-        // older or JS-conventional subtypes may still return audio_input.
         const audio = resources.find(
           r => r.subtype === 'audio_in' || r.subtype === 'audio_input'
         );
         if (audio) setAudioName(audio.name);
 
-        // Sequential rather than Promise.all: StreamClient shares one
-        // WebRTC peer connection, and concurrent negotiations can return
-        // tracks out of order, so a tile ends up bound to the wrong
-        // stream. Trades ~1-2s slower startup for correct labeling.
         const streamClient = new StreamClient(c);
         for (const cam of cams) {
           try {
@@ -207,11 +252,7 @@ function CameraViewer() {
     };
   }, []);
 
-  // Auto-mode decision loop. Reads motion levels from motionRef, marks
-  // any camera above the threshold as "recently active", and shows the
-  // set of currently-recently-active cameras. Hysteresis window keeps a
-  // camera in the visible set for HYSTERESIS_MS after its motion drops,
-  // so a brief pause doesn't yank it off screen.
+  // Auto-mode decision loop.
   useEffect(() => {
     if (mode !== 'auto') return;
 
@@ -230,9 +271,7 @@ function CameraViewer() {
         .map(c => c.name)
         .filter(n => now - (lastActive[n] || 0) < HYSTERESIS_MS);
 
-      // Debug: prints current motion levels + active set so you can see
-      // in DevTools whether samplers are receiving frames and whether
-      // the threshold is right. Remove once tuned.
+      // Debug log until threshold is dialed in.
       const snapshot = {};
       for (const c of cameras) {
         snapshot[c.name] = Number((levels[c.name] || 0).toFixed(4));
@@ -251,8 +290,6 @@ function CameraViewer() {
     return () => clearInterval(id);
   }, [mode, cameras]);
 
-  // Reset motion state when mode toggles so we don't carry stale
-  // levels between modes.
   useEffect(() => {
     motionRef.current = {};
     lastActiveRef.current = {};
@@ -269,24 +306,17 @@ function CameraViewer() {
   if (error) return <div>Error: {error}</div>;
   if (cameras.length === 0) return <div>No cameras found on this machine.</div>;
 
-  // Manual mode: user-focused tile fills the view, otherwise full grid.
-  // Auto mode: show only cameras with recent motion; if none have any,
-  // fall back to full grid (which resumes sampling on all cameras).
-  let visible;
+  let visibleNames;
   if (mode === 'auto') {
-    visible =
-      autoVisible.length > 0
-        ? cameras.filter(c => autoVisible.includes(c.name))
-        : cameras;
+    visibleNames = autoVisible.length > 0 ? autoVisible : cameras.map(c => c.name);
   } else {
-    visible = selected ? cameras.filter(c => c.name === selected) : cameras;
+    visibleNames = selected ? [selected] : cameras.map(c => c.name);
   }
+  const visibleSet = new Set(visibleNames);
 
   const multi = cameras.length > 1;
   const canAutoFollow = cameras.length > 1;
 
-  // In auto mode, clicking a tile drops back to manual mode focused on
-  // that tile — natural override.
   const handleTileFocus = (name) => {
     if (mode === 'auto') setMode('manual');
     transition(() => setSelected(name));
@@ -295,7 +325,7 @@ function CameraViewer() {
   return (
     <>
       <div className="camera-grid">
-        {visible.map(c => (
+        {cameras.map(c => (
           <CameraTile
             key={c.id}
             name={c.name}
@@ -303,19 +333,12 @@ function CameraViewer() {
             isFocused={selected === c.name}
             onFocus={multi ? () => handleTileFocus(c.name) : undefined}
             onExit={() => transition(() => setSelected(''))}
+            offscreen={!visibleSet.has(c.name)}
+            motionRef={motionRef}
+            motionEnabled={mode === 'auto'}
           />
         ))}
       </div>
-      {mode === 'auto' && cameras.map(c => (
-        streams[c.name] ? (
-          <MotionSampler
-            key={`sampler-${c.id}`}
-            name={c.name}
-            stream={streams[c.name]}
-            motionRef={motionRef}
-          />
-        ) : null
-      ))}
       {canAutoFollow && (
         <ModeToggle
           mode={mode}
