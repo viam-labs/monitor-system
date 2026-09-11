@@ -36,12 +36,13 @@ function tileTransitionName(name) {
 // Fraction of downsampled pixels that must change frame-to-frame to
 // count as motion. 1% of a 160x90 frame ~= 144 changed pixels.
 const MOTION_THRESHOLD = 0.01;
-// Sample cadence and auto-focus decision cadence.
+// Sample cadence and auto-mode decision cadence.
 const SAMPLE_INTERVAL_MS = 500;
 const DECIDE_INTERVAL_MS = 800;
-// Min time a tile stays focused before we consider unfocusing on
-// stillness — avoids flicker when a dog freezes for a moment.
-const MIN_FOCUS_MS = 2500;
+// Once a camera crosses the motion threshold it stays in the auto-mode
+// visible set for at least this long, even if it goes still — avoids
+// flicker when a dog freezes for a moment.
+const HYSTERESIS_MS = 3500;
 
 function CameraTile({ name, stream, isFocused, onFocus, onExit, motionRef, motionEnabled }) {
   const videoRef = useRef(null);
@@ -149,8 +150,14 @@ function CameraViewer() {
   const [client, setClient] = useState(null);
   const [audioName, setAudioName] = useState('');
   const [mode, setMode] = useState('manual');
+  const [autoVisible, setAutoVisible] = useState([]);
   const motionRef = useRef({});
-  const focusedSinceRef = useRef(0);
+  const lastActiveRef = useRef({});
+  const autoVisibleRef = useRef([]);
+
+  useEffect(() => {
+    autoVisibleRef.current = autoVisible;
+  }, [autoVisible]);
 
   useEffect(() => {
     const startedStreams = {};
@@ -208,45 +215,47 @@ function CameraViewer() {
     return () => window.removeEventListener('keydown', onKey);
   }, [selected]);
 
-  // Auto-mode decision loop. Reads motion levels from motionRef and
-  // either focuses the noisiest tile (when in grid) or returns to grid
-  // when the focused tile has gone still.
+  // Auto-mode decision loop. Reads motion levels from motionRef, marks
+  // any camera above the threshold as "recently active", and shows the
+  // set of currently-recently-active cameras. Hysteresis window keeps a
+  // camera in the visible set for HYSTERESIS_MS after its motion drops,
+  // so a brief pause doesn't yank it off screen.
   useEffect(() => {
     if (mode !== 'auto') return;
 
     const id = setInterval(() => {
       const levels = motionRef.current;
+      const lastActive = lastActiveRef.current;
+      const now = Date.now();
 
-      if (selected) {
-        if (Date.now() - focusedSinceRef.current < MIN_FOCUS_MS) return;
-        const currentMotion = levels[selected] || 0;
-        if (currentMotion < MOTION_THRESHOLD * 0.5) {
-          transition(() => setSelected(''));
+      for (const name of Object.keys(levels)) {
+        if (levels[name] > MOTION_THRESHOLD) {
+          lastActive[name] = now;
         }
-      } else {
-        let bestName = null;
-        let bestLevel = 0;
-        for (const name of Object.keys(levels)) {
-          if (levels[name] > bestLevel) {
-            bestName = name;
-            bestLevel = levels[name];
-          }
-        }
-        if (bestName && bestLevel > MOTION_THRESHOLD) {
-          focusedSinceRef.current = Date.now();
-          transition(() => setSelected(bestName));
-        }
+      }
+
+      const active = cameras
+        .map(c => c.name)
+        .filter(n => now - (lastActive[n] || 0) < HYSTERESIS_MS);
+
+      const current = autoVisibleRef.current;
+      const same =
+        current.length === active.length &&
+        current.every(n => active.includes(n));
+      if (!same) {
+        transition(() => setAutoVisible(active));
       }
     }, DECIDE_INTERVAL_MS);
 
     return () => clearInterval(id);
-  }, [mode, selected]);
+  }, [mode, cameras]);
 
   // Reset motion state when mode toggles so we don't carry stale
   // levels between modes.
   useEffect(() => {
     motionRef.current = {};
-    focusedSinceRef.current = 0;
+    lastActiveRef.current = {};
+    setAutoVisible([]);
   }, [mode]);
 
   if (loading) return (
@@ -259,7 +268,19 @@ function CameraViewer() {
   if (error) return <div>Error: {error}</div>;
   if (cameras.length === 0) return <div>No cameras found on this machine.</div>;
 
-  const visible = selected ? cameras.filter(c => c.name === selected) : cameras;
+  // Manual mode: user-focused tile fills the view, otherwise full grid.
+  // Auto mode: show only cameras with recent motion; if none have any,
+  // fall back to full grid (which resumes sampling on all cameras).
+  let visible;
+  if (mode === 'auto') {
+    visible =
+      autoVisible.length > 0
+        ? cameras.filter(c => autoVisible.includes(c.name))
+        : cameras;
+  } else {
+    visible = selected ? cameras.filter(c => c.name === selected) : cameras;
+  }
+
   const multi = cameras.length > 1;
   const canAutoFollow = cameras.length > 1;
 
@@ -267,7 +288,6 @@ function CameraViewer() {
   // that tile — natural override.
   const handleTileFocus = (name) => {
     if (mode === 'auto') setMode('manual');
-    focusedSinceRef.current = Date.now();
     transition(() => setSelected(name));
   };
 
