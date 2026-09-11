@@ -1,37 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { createViamClient } from '@viamrobotics/sdk';
-import Cookies from 'js-cookie';
+import React from 'react';
 import CameraViewer from '../components/CameraViewer';
 
+// Hostnames look like <machine-name>-main.<org-shortcode>.viam.cloud.
+// Machine name is the slug before "-main.". Falls back to the raw host
+// if the format doesn't match.
+function machineNameFromHost(host) {
+  const match = host.match(/^(.+)-main\..+\.viam\.cloud$/);
+  return match ? match[1] : host;
+}
+
 function MachinePage() {
-  const machineId = window.location.pathname.split('/')[2];
-  const [machineName, setMachineName] = useState('');
-
-  useEffect(() => {
-    async function fetchName() {
-      try {
-        const cookie = Cookies.get(machineId);
-        if (!cookie) throw new Error('No auth cookie for machine');
-        const { apiKey: { id: apiKeyId, key: apiKeySecret } } = JSON.parse(cookie);
-
-        const viamClient = await createViamClient({
-          serviceHost: 'https://app.viam.com',
-          credentials: {
-            type: 'api-key',
-            authEntity: apiKeyId,
-            payload: apiKeySecret,
-          },
-        });
-
-        const robot = await viamClient.appClient.getRobot(machineId);
-        setMachineName(robot?.name || machineId);
-      } catch (e) {
-        console.error('Failed to fetch machine name:', e);
-        setMachineName(machineId);
-      }
-    }
-    fetchName();
-  }, [machineId]);
+  const host = window.location.pathname.split('/')[2];
+  const machineName = machineNameFromHost(host);
 
   return (
     <div
@@ -43,9 +23,8 @@ function MachinePage() {
         boxSizing: 'border-box',
       }}
     >
-      {/* nbsp reserves height so the page doesn't jump when the name loads */}
-      <h1 style={{ margin: '0 0 16px' }}>{machineName || ' '}</h1>
-      <CameraViewer machineId={machineId} />
+      <h1 style={{ margin: '0 0 16px', textTransform: 'capitalize' }}>{machineName}</h1>
+      <CameraViewer machineId={host} />
     </div>
   );
 }
