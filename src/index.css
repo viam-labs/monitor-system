@@ -280,16 +280,21 @@ code {
   box-sizing: border-box;
 }
 
-/* Off-screen tile: kept in the DOM so its <video> keeps decoding for
-   motion detection, but positioned outside the viewport so it doesn't
-   affect layout and doesn't participate in the grid. */
+/* "Off-screen" tile: kept in the viewport as an 8x8 near-transparent
+   pixel so the browser considers it visible and keeps decoding frames
+   (browsers pause video decoding for elements far outside the viewport
+   or with display: none). Position: fixed at the top-right corner
+   underneath the mic + mode buttons so it doesn't clutter anything. */
 .camera-tile--offscreen {
-  position: absolute !important;
-  left: -9999px;
-  top: -9999px;
-  width: 160px;
-  height: 90px;
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  overflow: hidden;
   pointer-events: none;
+  opacity: 0.01;
+  z-index: 0;
 }
 
 /* Tight chrome on small viewports — hide the machine-name title and
