@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import CameraViewer from '../components/CameraViewer';
 
 // Two hostname shapes seen in the wild:
@@ -31,6 +31,11 @@ function Paw({ className }) {
 function MachinePage() {
   const host = window.location.pathname.split('/')[2];
   const machineName = machineNameFromHost(host);
+
+  useEffect(() => {
+    const title = machineName.charAt(0).toUpperCase() + machineName.slice(1);
+    document.title = `${title} — monitor-system`;
+  }, [machineName]);
 
   return (
     <>
