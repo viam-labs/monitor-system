@@ -111,7 +111,13 @@ function CameraViewer() {
     return () => window.removeEventListener('keydown', onKey);
   }, [selected]);
 
-  if (loading) return <div>Loading cameras…</div>;
+  if (loading) return (
+    <div className="paw-loader" aria-label="Loading cameras">
+      <span>🐾</span>
+      <span>🐾</span>
+      <span>🐾</span>
+    </div>
+  );
   if (error) return <div>Error: {error}</div>;
   if (cameras.length === 0) return <div>No cameras found on this machine.</div>;
 
