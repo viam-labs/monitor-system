@@ -94,6 +94,9 @@ code {
   position: absolute;
   top: 8px;
   left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: rgba(0, 0, 0, 0.6);
   color: var(--text);
   padding: 4px 10px;
@@ -106,16 +109,14 @@ code {
 }
 
 .live-indicator {
-  position: absolute;
-  top: 14px;
-  right: 14px;
+  display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #4ade80;
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
   animation: pulse 2s ease-in-out infinite;
-  z-index: 1;
+  flex-shrink: 0;
 }
 
 @keyframes pulse {
