@@ -75,7 +75,8 @@ function CameraViewer() {
         const resources = await client.resourceNames();
         const cams = resources
           .filter(r => r.subtype === 'camera')
-          .map(r => ({ id: r.name, name: r.name }));
+          .map(r => ({ id: r.name, name: r.name }))
+          .sort((a, b) => a.name.localeCompare(b.name));
         setCameras(cams);
 
         const streamClient = new StreamClient(client);
