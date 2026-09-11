@@ -78,7 +78,7 @@ function CameraViewer() {
   const visible = selected ? cameras.filter(c => c.name === selected) : cameras;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0 }}>
       {cameras.length > 1 && (
         <select
           className="camera-select"
