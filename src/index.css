@@ -167,3 +167,23 @@ code {
   padding: clamp(16px, 3vw, 32px);
   box-sizing: border-box;
 }
+
+/* Tight chrome on small viewports — hide the machine-name title and
+   shrink padding + gap so the grid gets more of the screen. Either a
+   narrow width (portrait phone) or short height (landscape phone)
+   triggers this. */
+@media (max-width: 640px), (max-height: 500px) {
+  .page {
+    padding: 8px;
+  }
+  .page h1 {
+    display: none;
+  }
+  .camera-grid {
+    gap: 8px;
+  }
+  .paw {
+    width: 64px;
+    height: 64px;
+  }
+}
