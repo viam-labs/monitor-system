@@ -1,9 +1,13 @@
 import React from 'react';
 import CameraViewer from '../components/CameraViewer';
 
+// Two hostname shapes seen in the wild:
+//   <name>-main.<org>.viam.cloud   (machine + main-part slug)
+//   <name>.<org>.viam.cloud        (short form)
+// Take the leading label, then trim an optional -main suffix.
 function machineNameFromHost(host) {
-  const match = host.match(/^(.+)-main\..+\.viam\.cloud$/);
-  return match ? match[1] : host;
+  const first = host.split('.')[0];
+  return first.replace(/-main$/, '');
 }
 
 function Paw({ className }) {

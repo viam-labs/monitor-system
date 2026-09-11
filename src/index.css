@@ -77,7 +77,7 @@ code {
   width: 96px;
   height: 96px;
   color: var(--accent);
-  opacity: 0.06;
+  opacity: 0.12;
   pointer-events: none;
   z-index: 0;
 }
