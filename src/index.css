@@ -12,8 +12,9 @@
 }
 
 html, body, #root {
-  min-height: 100%;
+  height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 
 body {
@@ -67,9 +68,10 @@ code {
 .camera-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-auto-rows: 1fr;
   gap: 16px;
   flex: 1;
-  align-content: start;
+  min-height: 0;
 }
 
 .camera-tile {
@@ -78,7 +80,7 @@ code {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border);
-  aspect-ratio: 16 / 9;
+  min-height: 0;
 }
 
 .camera-tile video {
@@ -145,4 +147,10 @@ code {
 .page {
   position: relative;
   z-index: 1;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 3vw, 32px);
+  box-sizing: border-box;
 }
