@@ -116,7 +116,11 @@ function CameraViewer() {
           .sort((a, b) => a.name.localeCompare(b.name));
         setCameras(cams);
 
-        const audio = resources.find(r => r.subtype === 'audio_input');
+        // The API is registered as rdk:component:audio_in (short form);
+        // older or JS-conventional subtypes may still return audio_input.
+        const audio = resources.find(
+          r => r.subtype === 'audio_in' || r.subtype === 'audio_input'
+        );
         if (audio) setAudioName(audio.name);
 
         const streamClient = new StreamClient(c);
