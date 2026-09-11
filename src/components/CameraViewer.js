@@ -136,10 +136,9 @@ function CameraViewer() {
 
   const visible = selected ? cameras.filter(c => c.name === selected) : cameras;
   const multi = cameras.length > 1;
-  const columns = pickColumns(visible.length);
 
   return (
-    <div className="camera-grid" style={{ '--cam-cols': columns }}>
+    <div className="camera-grid">
       {visible.map(c => (
         <CameraTile
           key={c.id}
@@ -152,15 +151,6 @@ function CameraViewer() {
       ))}
     </div>
   );
-}
-
-// Pick a column count that keeps tiles close to 16:9 on a landscape
-// viewport: 4 cams should be 2x2, not a single row of 4.
-function pickColumns(n) {
-  if (n <= 1) return 1;
-  if (n <= 4) return 2;
-  if (n <= 9) return 3;
-  return 4;
 }
 
 export default CameraViewer;

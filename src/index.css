@@ -42,14 +42,29 @@ code {
   min-height: 0;
 }
 
-/* On desktop, use an explicit column count from --cam-cols so 4 cameras
-   become 2x2 instead of a single row of thin strips. Mobile keeps the
-   auto-fit fallback (single column on portrait phones). Also reserve
-   vertical space at the bottom so the corner paw prints stay visible
-   instead of being covered by tiles. */
+/* Desktop uses a 6-column grid so tiles can span cleanly for common
+   tiles-per-row counts (1, 2, 3, 6). Default is 3 tiles per row (each
+   spanning 2 of 6), then :has() rules give specific tile counts smarter
+   layouts — e.g. 4 cameras become 2x2, 5 cameras become 3-on-top /
+   2-wider-on-bottom instead of leaving a gap. */
 @media (min-width: 900px) {
   .camera-grid {
-    grid-template-columns: repeat(var(--cam-cols, 1), 1fr);
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .camera-grid > * {
+    grid-column: span 2;
+  }
+  .camera-grid:has(> :first-child:last-child) > * {
+    grid-column: 1 / -1;
+  }
+  .camera-grid:has(> :nth-child(2):last-child) > * {
+    grid-column: span 3;
+  }
+  .camera-grid:has(> :nth-child(4):last-child) > * {
+    grid-column: span 3;
+  }
+  .camera-grid:has(> :nth-child(5):last-child) > :nth-child(n+4) {
+    grid-column: span 3;
   }
   /* Padding = paw offset + paw size + 32px slack for the 25deg rotation
      (rotated corner extends further than the axis-aligned box) plus
