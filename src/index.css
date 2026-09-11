@@ -1,5 +1,24 @@
-body {
+:root {
+  --bg: #1a1614;
+  --surface: #2a2320;
+  --text: #f5efe6;
+  --text-muted: #a89b8f;
+  --accent: #f4a261;
+  --border: #3a322c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  min-height: 100%;
   margin: 0;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -7,7 +26,68 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+h1 {
+  font-size: clamp(1.75rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0 0 24px;
+}
+
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+.camera-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 40px 10px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23f4a261'><path d='M5 8l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: border-color 0.15s;
+  align-self: flex-start;
+}
+
+.camera-select:hover,
+.camera-select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.camera-video {
+  width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  background: #000;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.paw {
+  position: fixed;
+  width: 96px;
+  height: 96px;
+  color: var(--accent);
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.paw--tl { top: 16px; left: 16px; transform: rotate(-25deg); }
+.paw--tr { top: 16px; right: 16px; transform: rotate(25deg); }
+.paw--bl { bottom: 16px; left: 16px; transform: rotate(-155deg); }
+.paw--br { bottom: 16px; right: 16px; transform: rotate(155deg); }
+
+.page {
+  position: relative;
+  z-index: 1;
 }

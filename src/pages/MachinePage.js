@@ -1,12 +1,27 @@
 import React from 'react';
 import CameraViewer from '../components/CameraViewer';
 
-// Hostnames look like <machine-name>-main.<org-shortcode>.viam.cloud.
-// Machine name is the slug before "-main.". Falls back to the raw host
-// if the format doesn't match.
 function machineNameFromHost(host) {
   const match = host.match(/^(.+)-main\..+\.viam\.cloud$/);
   return match ? match[1] : host;
+}
+
+function Paw({ className }) {
+  return (
+    <svg
+      className={`paw ${className}`}
+      viewBox="0 0 100 100"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <ellipse cx="25" cy="35" rx="9" ry="12" />
+      <ellipse cx="42" cy="22" rx="9" ry="12" />
+      <ellipse cx="58" cy="22" rx="9" ry="12" />
+      <ellipse cx="75" cy="35" rx="9" ry="12" />
+      <path d="M50 45 Q 25 50 30 80 Q 40 95 50 95 Q 60 95 70 80 Q 75 50 50 45 Z" />
+    </svg>
+  );
 }
 
 function MachinePage() {
@@ -14,18 +29,24 @@ function MachinePage() {
   const machineName = machineNameFromHost(host);
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 'clamp(12px, 3vw, 24px)',
-        boxSizing: 'border-box',
-      }}
-    >
-      <h1 style={{ margin: '0 0 16px', textTransform: 'capitalize' }}>{machineName}</h1>
-      <CameraViewer machineId={host} />
-    </div>
+    <>
+      <Paw className="paw--tl" />
+      <Paw className="paw--tr" />
+      <Paw className="paw--bl" />
+      <Paw className="paw--br" />
+      <div
+        className="page"
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 'clamp(16px, 3vw, 32px)',
+        }}
+      >
+        <h1 style={{ textTransform: 'capitalize' }}>{machineName}</h1>
+        <CameraViewer machineId={host} />
+      </div>
+    </>
   );
 }
 

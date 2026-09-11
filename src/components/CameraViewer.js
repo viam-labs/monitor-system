@@ -124,8 +124,8 @@ function CameraViewer({ machineId }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
       <select
+        className="camera-select"
         onChange={(e) => handleCameraSelect(e.target.value)}
-        style={{ alignSelf: 'flex-start' }}
       >
         <option value="">Select a camera</option>
         {cameras.map(camera => (
@@ -135,11 +135,11 @@ function CameraViewer({ machineId }) {
       {selectedCamera && (
         <video
           ref={videoRef}
+          className="camera-video"
           autoPlay={true}
           playsInline={true}
           muted={true}
           alt="Camera feed"
-          style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', background: '#000' }}
         />
       )}
     </div>
