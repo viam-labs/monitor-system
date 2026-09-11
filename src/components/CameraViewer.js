@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { createRobotClient, StreamClient } from '@viamrobotics/sdk';
 import Cookies from 'js-cookie';
+import MicButton from './MicButton';
 
 // Wraps a state update in the View Transitions API when available, so
 // tile focus/unfocus animates via CSS morphing instead of snapping.
@@ -99,25 +100,31 @@ function CameraViewer() {
   const [selected, setSelected] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [client, setClient] = useState(null);
+  const [audioName, setAudioName] = useState('');
 
   useEffect(() => {
     const startedStreams = {};
     async function init() {
       try {
-        const client = await createClient();
-        const resources = await client.resourceNames();
+        const c = await createClient();
+        setClient(c);
+        const resources = await c.resourceNames();
         const cams = resources
           .filter(r => r.subtype === 'camera')
           .map(r => ({ id: r.name, name: r.name }))
           .sort((a, b) => a.name.localeCompare(b.name));
         setCameras(cams);
 
-        const streamClient = new StreamClient(client);
-        await Promise.all(cams.map(async c => {
+        const audio = resources.find(r => r.subtype === 'audio_input');
+        if (audio) setAudioName(audio.name);
+
+        const streamClient = new StreamClient(c);
+        await Promise.all(cams.map(async cam => {
           try {
-            startedStreams[c.name] = await streamClient.getStream(c.name);
+            startedStreams[cam.name] = await streamClient.getStream(cam.name);
           } catch (e) {
-            console.error(`Failed to start stream for ${c.name}:`, e);
+            console.error(`Failed to start stream for ${cam.name}:`, e);
           }
         }));
         setStreams({ ...startedStreams });
@@ -158,18 +165,21 @@ function CameraViewer() {
   const multi = cameras.length > 1;
 
   return (
-    <div className="camera-grid">
-      {visible.map(c => (
-        <CameraTile
-          key={c.id}
-          name={c.name}
-          stream={streams[c.name]}
-          isFocused={selected === c.name}
-          onFocus={multi ? () => transition(() => setSelected(c.name)) : undefined}
-          onExit={() => transition(() => setSelected(''))}
-        />
-      ))}
-    </div>
+    <>
+      <div className="camera-grid">
+        {visible.map(c => (
+          <CameraTile
+            key={c.id}
+            name={c.name}
+            stream={streams[c.name]}
+            isFocused={selected === c.name}
+            onFocus={multi ? () => transition(() => setSelected(c.name)) : undefined}
+            onExit={() => transition(() => setSelected(''))}
+          />
+        ))}
+      </div>
+      {audioName && client && <MicButton client={client} audioName={audioName} />}
+    </>
   );
 }
 
