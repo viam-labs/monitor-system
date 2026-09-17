@@ -215,9 +215,6 @@ export default function FeederPage() {
   } = feeder;
 
   const target = status?.target_meal_cups ?? null;
-  const [cupsOverride, setCupsOverride] = useState(null);
-  const cups = cupsOverride ?? target ?? 0.25;
-  const [slow, setSlow] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   const [vacationOpen, setVacationOpen] = useState(false);
@@ -546,7 +543,7 @@ export default function FeederPage() {
                   <div className="delay-row__buttons">
                     <button
                       type="button"
-                      className="feeder-secondary-button"
+                      className="move-button"
                       onClick={() => moveNext('earlier')}
                       disabled={mutating || moveTotalHours <= 0 || !canMoveEarlier}
                       title={
@@ -559,11 +556,11 @@ export default function FeederPage() {
                     </button>
                     <button
                       type="button"
-                      className="feeder-primary-button feeder-primary-button--sm"
+                      className="move-button"
                       onClick={() => moveNext('later')}
                       disabled={mutating || moveTotalHours <= 0 || !canMoveLater}
                     >
-                      Delay →
+                      Later →
                     </button>
                   </div>
                 </div>
@@ -593,37 +590,6 @@ export default function FeederPage() {
         )}
       </section>
 
-      <section className="feeder-card feeder-card--controls">
-        <div className="feeder-card__header">
-          <h2 className="feeder-card__title">Give a treat</h2>
-        </div>
-        <label className="feeder-controls__amount">
-          <span className="feeder-controls__amount-label">Amount</span>
-          <CupsSelect
-            value={cups}
-            onChange={setCupsOverride}
-            disabled={feeding}
-            ariaLabel="Treat amount"
-          />
-        </label>
-        <label className="feeder-controls__slow">
-          <input
-            type="checkbox"
-            checked={slow}
-            onChange={e => setSlow(e.target.checked)}
-            disabled={feeding}
-          />
-          Slow feed
-        </label>
-        <button
-          type="button"
-          className="feeder-secondary-button feeder-secondary-button--full"
-          onClick={() => feeder.feed(cups, slow)}
-          disabled={feeding}
-        >
-          {feeding ? 'Feeding…' : `Give ${labelForCups(cups)}`}
-        </button>
-      </section>
     </div>
   );
 }

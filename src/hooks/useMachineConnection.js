@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { createRobotClient, StreamClient } from '@viamrobotics/sdk';
+import {
+  createRobotClient,
+  GenericComponentClient,
+  SensorClient,
+  StreamClient,
+} from '@viamrobotics/sdk';
 import Cookies from 'js-cookie';
 
 async function createClient() {
@@ -12,15 +17,60 @@ async function createClient() {
   });
 }
 
-// Establishes the machine connection once at MachinePage mount, so it
-// survives navigation between pages. Streams are populated per-camera
-// as each getStream() resolves.
-// Component names we look for when detecting feature-page targets.
-// Users wiring differently-named components need to rename these or
-// we make them configurable.
-const FEEDER_RESOURCE_NAME = 'feeder';
-const AC_BOT_RESOURCE_NAME = 'ac_bot';
-const ROOM_METER_RESOURCE_NAME = 'room_meter';
+// The JS SDK's resourceNames() and getMachineStatus() return name +
+// subtype but NOT model, so we can't filter by model. Detect by
+// capability instead:
+//  - Generic components: probe do_command({command:"status"}) and match
+//    on response shape (feeder returns food_state, thermostat returns
+//    above_temp_c / bot_position).
+//  - Sensors: getReadings() and match on temperature_c (SwitchBot
+//    meter shape).
+//  - Switches: no probe distinguishes them, so we take the first one.
+//    If a user later has a second switch, we'll need a config hint.
+async function detectFeaturePages(c, resources) {
+  const detected = {
+    feederName: null,
+    thermostatName: null,
+    acBotName: null,
+    roomMeterName: null,
+  };
+
+  const generics = resources.filter(r => r.subtype === 'generic');
+  const sensors = resources.filter(r => r.subtype === 'sensor');
+  const switches = resources.filter(r => r.subtype === 'switch');
+
+  await Promise.all(generics.map(async r => {
+    try {
+      const status = await new GenericComponentClient(c, r.name).doCommand({ command: 'status' });
+      if (status && typeof status === 'object') {
+        if ('food_state' in status || 'food_low_status' in status) {
+          detected.feederName = r.name;
+        } else if ('above_temp_c' in status || 'bot_position' in status) {
+          detected.thermostatName = r.name;
+        }
+      }
+    } catch {
+      // Generic without a status command — not one of ours.
+    }
+  }));
+
+  await Promise.all(sensors.map(async r => {
+    try {
+      const readings = await new SensorClient(c, r.name).getReadings();
+      if (readings && typeof readings === 'object' && 'temperature_c' in readings) {
+        detected.roomMeterName = r.name;
+      }
+    } catch {
+      // Sensor unreachable or non-temperature — skip.
+    }
+  }));
+
+  if (switches.length > 0) {
+    detected.acBotName = switches[0].name;
+  }
+
+  return detected;
+}
 
 export function useMachineConnection() {
   const [client, setClient] = useState(null);
@@ -28,6 +78,7 @@ export function useMachineConnection() {
   const [streams, setStreams] = useState({});
   const [audioName, setAudioName] = useState('');
   const [feederName, setFeederName] = useState(null);
+  const [thermostatName, setThermostatName] = useState(null);
   const [acBotName, setAcBotName] = useState(null);
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,11 +93,9 @@ export function useMachineConnection() {
         const c = await createClient();
         if (cancelled) return;
         // Wait for the first RPC to succeed before exposing the client
-        // to consumers. On slower networks (mobile especially), the
-        // WebRTC data channel isn't ready the instant createRobotClient
-        // returns, so eager consumers hit "not connected" on their
-        // first do_command. resourceNames is what we need anyway;
-        // using it as the readiness probe is free.
+        // to consumers. On slower networks the WebRTC data channel
+        // isn't ready the instant createRobotClient returns; using
+        // resourceNames as the readiness probe is free.
         const resources = await c.resourceNames();
         if (cancelled) return;
         setClient(c);
@@ -62,20 +111,15 @@ export function useMachineConnection() {
         );
         if (audio) setAudioName(audio.name);
 
-        const feeder = resources.find(
-          r => r.subtype === 'generic' && r.name === FEEDER_RESOURCE_NAME
-        );
-        if (feeder) setFeederName(feeder.name);
-
-        const acBot = resources.find(
-          r => r.subtype === 'switch' && r.name === AC_BOT_RESOURCE_NAME
-        );
-        if (acBot) setAcBotName(acBot.name);
-
-        const roomMeter = resources.find(
-          r => r.subtype === 'sensor' && r.name === ROOM_METER_RESOURCE_NAME
-        );
-        if (roomMeter) setRoomMeterName(roomMeter.name);
+        // Feature-page detection runs alongside stream startup so a
+        // slow probe doesn't block the cameras page from painting.
+        detectFeaturePages(c, resources).then(d => {
+          if (cancelled) return;
+          setFeederName(d.feederName);
+          setThermostatName(d.thermostatName);
+          setAcBotName(d.acBotName);
+          setRoomMeterName(d.roomMeterName);
+        });
 
         setLoading(false);
 
@@ -117,6 +161,7 @@ export function useMachineConnection() {
     streams,
     audioName,
     feederName,
+    thermostatName,
     acBotName,
     roomMeterName,
     loading,
