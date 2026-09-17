@@ -366,19 +366,9 @@ code {
   max-width: 520px;
   width: 100%;
   margin: 0 auto;
-  padding-top: 4px;
+  padding-top: 60px;
   overflow-y: auto;
   min-height: 0;
-}
-
-.feeder-page__title {
-  margin: 0 0 4px;
-  font-size: 1.5rem;
-  font-weight: 500;
-  text-transform: capitalize;
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .feeder-card {
@@ -407,21 +397,31 @@ code {
   letter-spacing: 0.06em;
 }
 
-.feeder-row {
+.feeder-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 20px;
+}
+
+.feeder-stat {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
 }
 
-.feeder-row__label {
+.feeder-stat__label {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
 }
 
-.feeder-row__value {
+.feeder-stat__value {
   font-variant-numeric: tabular-nums;
   font-weight: 500;
+  font-size: 1.15rem;
 }
 
 .feeder-status__pill {
@@ -609,15 +609,12 @@ code {
 @media (max-width: 900px), (max-height: 600px) {
   .feeder-page {
     gap: 12px;
-    padding-top: 0;
+    padding-top: 68px;
   }
   .feeder-card {
     padding: 14px;
     gap: 10px;
     border-radius: 12px;
-  }
-  .feeder-page__title {
-    font-size: 1.25rem;
   }
   .feeder-primary-button {
     padding: 14px;
