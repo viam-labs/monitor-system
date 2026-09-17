@@ -275,7 +275,7 @@ export default function FeederPage() {
 
   const lastFedTs = extractLastFedTimestamp(lastFeeding, lastFedAt);
   const lastFedLine = lastFedTs
-    ? `Last fed at ${formatTime(lastFedTs)} · ${formatRelative(Date.now() - lastFedTs)}`
+    ? `Last fed at ${formatTime(lastFedTs)}`
     : null;
 
   const feedNowCaption = nextScheduled
