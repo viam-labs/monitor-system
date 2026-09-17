@@ -15,10 +15,12 @@ async function createClient() {
 // Establishes the machine connection once at MachinePage mount, so it
 // survives navigation between pages. Streams are populated per-camera
 // as each getStream() resolves.
-// Name we look for when detecting the PetSafe generic component. Users
-// wiring a differently-named feeder will need to rename this or make it
-// configurable.
+// Component names we look for when detecting feature-page targets.
+// Users wiring differently-named components need to rename these or
+// we make them configurable.
 const FEEDER_RESOURCE_NAME = 'feeder';
+const AC_BOT_RESOURCE_NAME = 'ac_bot';
+const ROOM_METER_RESOURCE_NAME = 'room_meter';
 
 export function useMachineConnection() {
   const [client, setClient] = useState(null);
@@ -26,6 +28,8 @@ export function useMachineConnection() {
   const [streams, setStreams] = useState({});
   const [audioName, setAudioName] = useState('');
   const [feederName, setFeederName] = useState(null);
+  const [acBotName, setAcBotName] = useState(null);
+  const [roomMeterName, setRoomMeterName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -63,6 +67,16 @@ export function useMachineConnection() {
         );
         if (feeder) setFeederName(feeder.name);
 
+        const acBot = resources.find(
+          r => r.subtype === 'switch' && r.name === AC_BOT_RESOURCE_NAME
+        );
+        if (acBot) setAcBotName(acBot.name);
+
+        const roomMeter = resources.find(
+          r => r.subtype === 'sensor' && r.name === ROOM_METER_RESOURCE_NAME
+        );
+        if (roomMeter) setRoomMeterName(roomMeter.name);
+
         setLoading(false);
 
         const streamClient = new StreamClient(c);
@@ -97,5 +111,15 @@ export function useMachineConnection() {
     };
   }, []);
 
-  return { client, cameras, streams, audioName, feederName, loading, error };
+  return {
+    client,
+    cameras,
+    streams,
+    audioName,
+    feederName,
+    acBotName,
+    roomMeterName,
+    loading,
+    error,
+  };
 }

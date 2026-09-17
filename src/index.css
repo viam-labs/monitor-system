@@ -351,6 +351,104 @@ code {
   justify-content: center;
   gap: 8px;
   color: var(--text-muted);
+  padding: 24px;
+  text-align: center;
+}
+
+.stub-page code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.thermostat-readings {
+  align-items: center;
+  padding: 24px 16px;
+}
+
+.thermostat-temp {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--text);
+}
+
+.thermostat-temp__value {
+  font-size: 3.5rem;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.thermostat-temp__unit {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+}
+
+.thermostat-secondary {
+  display: flex;
+  gap: 16px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.thermostat-state {
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+
+.thermostat-state--on {
+  background: rgba(74, 222, 128, 0.15);
+  color: #86efac;
+}
+
+.thermostat-state--off {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+
+.thermostat-controls {
+  display: flex;
+  justify-content: center;
+}
+
+.thermostat-power {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+  min-width: 200px;
+}
+
+.thermostat-power:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.thermostat-power--on {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.thermostat-power--on:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.thermostat-power:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .stub-page h1 {

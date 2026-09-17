@@ -1,25 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GenericComponentClient } from '@viamrobotics/sdk';
-
-// Retry reads on "not connected" errors — the underlying WebRTC data
-// channel sometimes isn't fully ready on the first RPC after a fresh
-// page load, especially on mobile. Only used for reads; mutations
-// don't retry to avoid a double-feed / double-delete on ambiguous
-// failures.
-async function callWithRetry(fn, { retries = 2, delayMs = 800 } = {}) {
-  let lastError;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await fn();
-    } catch (e) {
-      lastError = e;
-      const msg = (e?.message || String(e)).toLowerCase();
-      if (!msg.includes('not connected') || attempt === retries) throw e;
-      await new Promise(r => setTimeout(r, delayMs));
-    }
-  }
-  throw lastError;
-}
+import { callWithRetry } from './callWithRetry';
 
 // Talks to the viam:petsafe:smart-feed module's Generic component via
 // do_command. The module caches PetSafe reads for 5 minutes on its
