@@ -1,7 +1,14 @@
 import React, { useEffect } from 'react';
-import { Outlet, useParams } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useMachineConnection } from '../hooks/useMachineConnection';
+
+// Viam Applications serves the app at /machine/<host>/; HashRouter
+// keeps all client-side routes in the fragment, so the machine host
+// stays in the pathname and can be read directly.
+function getMachineIdFromPath() {
+  return window.location.pathname.split('/')[2] || '';
+}
 
 // Two hostname shapes seen in the wild:
 //   <name>-main.<org>.viam.cloud   (machine + main-part slug)
@@ -31,7 +38,7 @@ function Paw({ className }) {
 }
 
 function MachinePage() {
-  const { machineId } = useParams();
+  const machineId = getMachineIdFromPath();
   const machineName = machineNameFromHost(machineId);
   const connection = useMachineConnection();
 
@@ -45,7 +52,7 @@ function MachinePage() {
       <Paw className="paw--tr" />
       <Paw className="paw--bl" />
       <Paw className="paw--br" />
-      <HamburgerMenu machineId={machineId} showFeeder={!!connection.feederName} />
+      <HamburgerMenu showFeeder={!!connection.feederName} />
       <div className="page">
         <Outlet context={connection} />
       </div>
