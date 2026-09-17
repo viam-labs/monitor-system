@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
 import HamburgerMenu from '../components/HamburgerMenu';
+import { useMachineConnection } from '../hooks/useMachineConnection';
 
 // Two hostname shapes seen in the wild:
 //   <name>-main.<org>.viam.cloud   (machine + main-part slug)
@@ -32,6 +33,7 @@ function Paw({ className }) {
 function MachinePage() {
   const { machineId } = useParams();
   const machineName = machineNameFromHost(machineId);
+  const connection = useMachineConnection();
 
   useEffect(() => {
     document.title = machineName.charAt(0).toUpperCase() + machineName.slice(1);
@@ -45,7 +47,7 @@ function MachinePage() {
       <Paw className="paw--br" />
       <HamburgerMenu machineId={machineId} />
       <div className="page">
-        <Outlet />
+        <Outlet context={connection} />
       </div>
     </>
   );
