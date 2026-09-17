@@ -61,32 +61,30 @@ export default function FeederPage() {
     ? `feeder-status__pill feeder-status__pill--${status.food_state}`
     : 'feeder-status__pill';
 
+  const scheduleEmpty = !schedules || schedules.length === 0;
+
   return (
     <div className="feeder-page">
-      <h1 className="feeder-page__title">
-        <span aria-hidden="true">🦴</span> {status?.name || 'Feeder'}
-      </h1>
-
       <section className="feeder-card">
         {loading && !status && <p className="feeder-status__loading">Loading…</p>}
         {status && (
-          <>
-            <div className="feeder-row">
-              <span className="feeder-row__label">Food</span>
+          <div className="feeder-stats">
+            <div className="feeder-stat">
+              <span className="feeder-stat__label">Food</span>
               <span className={foodStateClass}>{status.food_state}</span>
             </div>
             {target != null && (
-              <div className="feeder-row">
-                <span className="feeder-row__label">Target meal</span>
-                <span className="feeder-row__value">{formatCups(target)}</span>
+              <div className="feeder-stat">
+                <span className="feeder-stat__label">Target meal</span>
+                <span className="feeder-stat__value">{formatCups(target)}</span>
               </div>
             )}
-            {status.cached && (
-              <p className="feeder-meta">
-                Cached — refreshes at most once per 5 min.
-              </p>
-            )}
-          </>
+          </div>
+        )}
+        {status?.cached && (
+          <p className="feeder-meta">
+            Cached — refreshes at most once per 5 min.
+          </p>
         )}
         {error && <p className="feeder-error">{error}</p>}
         <button
@@ -109,7 +107,7 @@ export default function FeederPage() {
               (schedulePaused ? ' feeder-secondary-button--active' : '')
             }
             onClick={() => feeder.pauseSchedule(!schedulePaused)}
-            disabled={pausing || !schedules}
+            disabled={pausing || scheduleEmpty}
           >
             {schedulePaused ? 'Resume' : 'Pause'}
           </button>
