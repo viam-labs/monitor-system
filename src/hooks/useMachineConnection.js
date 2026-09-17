@@ -37,10 +37,15 @@ export function useMachineConnection() {
       try {
         const c = await createClient();
         if (cancelled) return;
-        setClient(c);
-
+        // Wait for the first RPC to succeed before exposing the client
+        // to consumers. On slower networks (mobile especially), the
+        // WebRTC data channel isn't ready the instant createRobotClient
+        // returns, so eager consumers hit "not connected" on their
+        // first do_command. resourceNames is what we need anyway;
+        // using it as the readiness probe is free.
         const resources = await c.resourceNames();
         if (cancelled) return;
+        setClient(c);
 
         const cams = resources
           .filter(r => r.subtype === 'camera')
