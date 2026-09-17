@@ -1148,16 +1148,21 @@ code {
 
 @media (max-width: 900px), (max-height: 600px) {
   .feeder-page {
-    gap: 10px;
+    gap: 14px;
     padding-top: 80px;
+    padding-bottom: 16px;
   }
   .feeder-card {
-    padding: 12px;
-    gap: 8px;
+    padding: 16px;
+    gap: 12px;
     border-radius: 12px;
   }
   .feeder-card__title {
     font-size: 0.9rem;
+  }
+  .feeder-card__header {
+    flex-wrap: wrap;
+    row-gap: 8px;
   }
   .feeder-hero__button {
     padding: 14px;
@@ -1176,6 +1181,35 @@ code {
     padding: 6px 10px;
   }
   .quick-actions {
-    padding: 10px;
+    padding: 12px;
+    gap: 12px;
+  }
+  .thermostat-readings {
+    padding: 20px 16px;
+  }
+  .thermostat-temp__value {
+    font-size: 2.8rem;
+  }
+  .thermostat-temp__unit {
+    font-size: 1.25rem;
+  }
+  .thermostat-buttons {
+    gap: 12px;
+  }
+  .automation-form {
+    padding: 14px;
+    gap: 12px;
+  }
+  .automation-form__footer {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+}
+
+/* Single-column form rows at narrower widths so the number and time
+   inputs get a full row each instead of squeezing into two columns. */
+@media (max-width: 480px) {
+  .automation-form__row {
+    grid-template-columns: 1fr;
   }
 }
