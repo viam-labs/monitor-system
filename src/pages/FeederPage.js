@@ -79,21 +79,6 @@ function formatVacationUntil(iso) {
   }
 }
 
-function formatRelative(msAgo) {
-  if (msAgo == null || Number.isNaN(msAgo)) return '';
-  // Future timestamps mean something's wrong upstream (clock skew,
-  // wrong tz assumption). Don't confidently print "in 2 hours".
-  if (msAgo < -60000) return '';
-  const sec = Math.max(0, Math.floor(msAgo / 1000));
-  if (sec < 60) return 'just now';
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min} min ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} hr ago`;
-  const day = Math.floor(hr / 24);
-  return `${day} day${day === 1 ? '' : 's'} ago`;
-}
-
 // PetSafe returns timestamps without a timezone marker but the values
 // are UTC. Date.parse of a naive string is browser-dependent (some
 // parse as UTC, some as local), so force UTC here to avoid displaying
