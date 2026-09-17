@@ -178,7 +178,7 @@ export default function FeederPage() {
             onClick={feeder.refresh}
             disabled={loading || feeding || mutating}
             aria-label="Refresh"
-            title="Refresh"
+            title="Refresh. Server caches for 5 minutes — rapid clicks return the cached value, they don't hammer PetSafe."
           >
             ↻
           </button>
