@@ -370,7 +370,13 @@ export default function FeederPage() {
               }
               onClick={() => feeder.pauseSchedule(!schedulePaused)}
               disabled={pausing || scheduleEmpty || !!pauseUntilLocal}
-              title={pauseUntilLocal ? 'Vacation pause is active.' : undefined}
+              title={
+                pauseUntilLocal
+                  ? 'Vacation pause is active — use Resume in the banner above.'
+                  : scheduleEmpty
+                    ? 'Nothing to pause — add a scheduled feeding first.'
+                    : undefined
+              }
             >
               {schedulePaused ? 'Resume' : 'Pause'}
             </button>
