@@ -453,6 +453,92 @@ code {
   cursor: not-allowed;
 }
 
+.automation-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.automation-toggle input {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+}
+
+.automation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.automation-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.automation-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.automation-form__label {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.automation-form input[type="number"],
+.automation-form input[type="time"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color-scheme: dark;
+  width: 100%;
+}
+
+.automation-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.automation-form__input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.automation-form__input-with-unit input {
+  flex: 1;
+}
+
+.automation-form__input-with-unit span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.automation-form__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .stub-page h1 {
   margin: 0;
   color: var(--text);
