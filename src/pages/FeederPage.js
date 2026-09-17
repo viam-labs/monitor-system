@@ -295,14 +295,16 @@ export default function FeederPage() {
   const nowMs = Date.now();
   const canMoveEarlier = !!shiftedEarlier && shiftedEarlier.getTime() > nowMs;
   const canMoveLater = !!shiftedLater;
-  const movePreview = (() => {
-    if (!nextScheduled) return 'No upcoming feedings to move.';
-    if (moveTotalHours <= 0) return 'Enter an amount above.';
+  const movePreviewLines = (() => {
+    if (!nextScheduled) return ['No upcoming feedings to move.'];
+    if (moveTotalHours <= 0) return ['Enter an amount above.'];
     const origLabel = formatScheduleTime(nextScheduled.time);
+    const laterLine = `Later: ${origLabel} → ${formatTime(shiftedLater.getTime())}.`;
     if (canMoveEarlier) {
-      return `Earlier: ${origLabel} → ${formatTime(shiftedEarlier.getTime())}. Later: ${origLabel} → ${formatTime(shiftedLater.getTime())}.`;
+      const earlierLine = `Earlier: ${origLabel} → ${formatTime(shiftedEarlier.getTime())}.`;
+      return [earlierLine, laterLine];
     }
-    return `Later: ${origLabel} → ${formatTime(shiftedLater.getTime())}. (Earlier would land in the past.)`;
+    return [laterLine, '(Earlier would land in the past.)'];
   })();
 
   const handleAdd = async (t, c) => {
@@ -383,20 +385,6 @@ export default function FeederPage() {
           {skippedCount} pending skip{skippedCount === 1 ? '' : 's'} — will restore automatically after each original time passes.
         </div>
       )}
-
-      <section className="feeder-card feeder-card--hero">
-        <button
-          type="button"
-          className="feeder-hero__button"
-          onClick={handleFeedNow}
-          disabled={feeding || mutating || !canFeedNow}
-        >
-          <span aria-hidden="true" className="feeder-hero__emoji">🐶</span>
-          <span>{mutating || feeding ? 'Feeding…' : 'Feed Now'}</span>
-        </button>
-        <p className="feeder-hero__caption">{feedNowCaption}</p>
-        {lastFedLine && <p className="feeder-hero__last-fed">{lastFedLine}</p>}
-      </section>
 
       <section className="feeder-card">
         <div className="feeder-card__header">
@@ -564,7 +552,11 @@ export default function FeederPage() {
                     </button>
                   </div>
                 </div>
-                <p className="feeder-meta">{movePreview}</p>
+                <div className="move-preview">
+                  {movePreviewLines.map((line, i) => (
+                    <p key={i} className="feeder-meta">{line}</p>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -590,6 +582,19 @@ export default function FeederPage() {
         )}
       </section>
 
+      <section className="feeder-card feeder-card--hero">
+        <button
+          type="button"
+          className="feeder-hero__button"
+          onClick={handleFeedNow}
+          disabled={feeding || mutating || !canFeedNow}
+        >
+          <span aria-hidden="true" className="feeder-hero__emoji">🐶</span>
+          <span>{mutating || feeding ? 'Feeding…' : 'Feed Now'}</span>
+        </button>
+        <p className="feeder-hero__caption">{feedNowCaption}</p>
+        {lastFedLine && <p className="feeder-hero__last-fed">{lastFedLine}</p>}
+      </section>
     </div>
   );
 }

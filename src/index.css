@@ -775,6 +775,12 @@ code {
   cursor: not-allowed;
 }
 
+.move-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .vacation-form {
   display: flex;
   flex-direction: column;
