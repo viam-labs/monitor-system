@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SensorClient, SwitchClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
+import { usePolling } from './usePolling';
+import { handleRpcError } from '../lib/connectionHealth';
 
 // Reads the room meter and controls the A/C bot. All state (current
 // position, last set time, direction) lives server-side on the Pi —
@@ -54,7 +56,8 @@ export function useThermostat(client, botName, meterName) {
         applyState(state);
         setReadings(read || null);
       } catch (e) {
-        if (!cancelled) setError(e.message || String(e));
+        if (cancelled) return;
+        if (!handleRpcError(e)) setError(e.message || String(e));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -78,11 +81,13 @@ export function useThermostat(client, botName, meterName) {
       applyState(state);
       setReadings(read || null);
     } catch (e) {
-      setError(e.message || String(e));
+      if (!handleRpcError(e)) setError(e.message || String(e));
     } finally {
       setLoading(false);
     }
   }, [bot, meter, applyState]);
+
+  usePolling(refresh, { enabled: !!(bot && meter) });
 
   const setAcOn = useCallback(
     async (on) => {
@@ -104,7 +109,7 @@ export function useThermostat(client, botName, meterName) {
         }
       } catch (e) {
         setPosition(previous);
-        setError(e.message || String(e));
+        if (!handleRpcError(e)) setError(e.message || String(e));
       } finally {
         setBusy(false);
       }

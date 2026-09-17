@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GenericComponentClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
+import { usePolling } from './usePolling';
+import { handleRpcError } from '../lib/connectionHealth';
 
 // Talks to a viam:switchbot:curtain generic component's do_command.
 // Position is 0-100 where 0 = fully open, 100 = fully closed
@@ -34,7 +36,7 @@ export function useCurtain(client, curtainName) {
       const s = await callWithRetry(() => curtain.doCommand({ command: 'status' }));
       applyStatus(s);
     } catch (e) {
-      setError(e.message || String(e));
+      if (!handleRpcError(e)) setError(e.message || String(e));
     } finally {
       setLoading(false);
     }
@@ -49,6 +51,8 @@ export function useCurtain(client, curtainName) {
     refresh();
   }, [curtain, refresh]);
 
+  usePolling(refresh, { enabled: !!curtain });
+
   const runCommand = useCallback(
     async (command) => {
       if (!curtain) return;
@@ -58,7 +62,7 @@ export function useCurtain(client, curtainName) {
         await curtain.doCommand(command);
         await refresh();
       } catch (e) {
-        setError(e.message || String(e));
+        if (!handleRpcError(e)) setError(e.message || String(e));
         throw e;
       } finally {
         setBusy(false);

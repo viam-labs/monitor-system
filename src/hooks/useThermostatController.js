@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GenericComponentClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
+import { usePolling } from './usePolling';
+import { handleRpcError } from '../lib/connectionHealth';
 
 // Talks to a viam:switchbot:thermostat generic component's do_command
 // surface. Separate from useThermostat (which drives the Bot + Meter
@@ -23,7 +25,7 @@ export function useThermostatController(client, thermostatName) {
       const s = await callWithRetry(() => controller.doCommand({ command: 'status' }));
       setStatus(s || null);
     } catch (e) {
-      setError(e.message || String(e));
+      if (!handleRpcError(e)) setError(e.message || String(e));
     } finally {
       setLoading(false);
     }
@@ -37,6 +39,8 @@ export function useThermostatController(client, thermostatName) {
     setLoading(true);
     refresh();
   }, [controller, refresh]);
+
+  usePolling(refresh, { enabled: !!controller });
 
   const runMutation = useCallback(
     async (command, optimisticPatch) => {
@@ -52,7 +56,7 @@ export function useThermostatController(client, thermostatName) {
         await refresh();
       } catch (e) {
         if (optimisticPatch) setStatus(previous);
-        setError(e.message || String(e));
+        if (!handleRpcError(e)) setError(e.message || String(e));
         throw e;
       } finally {
         setBusy(false);
