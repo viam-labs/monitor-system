@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import CameraViewer from '../components/CameraViewer';
+import { Outlet, useParams } from 'react-router-dom';
+import HamburgerMenu from '../components/HamburgerMenu';
 
 // Two hostname shapes seen in the wild:
 //   <name>-main.<org>.viam.cloud   (machine + main-part slug)
@@ -29,8 +30,8 @@ function Paw({ className }) {
 }
 
 function MachinePage() {
-  const host = window.location.pathname.split('/')[2];
-  const machineName = machineNameFromHost(host);
+  const { machineId } = useParams();
+  const machineName = machineNameFromHost(machineId);
 
   useEffect(() => {
     document.title = machineName.charAt(0).toUpperCase() + machineName.slice(1);
@@ -42,8 +43,9 @@ function MachinePage() {
       <Paw className="paw--tr" />
       <Paw className="paw--bl" />
       <Paw className="paw--br" />
+      <HamburgerMenu machineId={machineId} />
       <div className="page">
-        <CameraViewer />
+        <Outlet />
       </div>
     </>
   );
