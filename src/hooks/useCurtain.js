@@ -1,0 +1,90 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { GenericComponentClient } from '@viamrobotics/sdk';
+import { callWithRetry } from './callWithRetry';
+
+// Talks to a viam:switchbot:curtain generic component's do_command.
+// Position is 0-100 where 0 = fully open, 100 = fully closed
+// (matches SwitchBot's slidePosition semantics).
+export function useCurtain(client, curtainName) {
+  const curtain = useMemo(
+    () => (client && curtainName ? new GenericComponentClient(client, curtainName) : null),
+    [client, curtainName]
+  );
+
+  const [position, setPosition] = useState(null);
+  const [battery, setBattery] = useState(null);
+  const [moving, setMoving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const applyStatus = useCallback((status) => {
+    if (!status || typeof status !== 'object') return;
+    if (typeof status.slide_position === 'number') setPosition(status.slide_position);
+    if (typeof status.battery === 'number') setBattery(status.battery);
+    if (typeof status.moving === 'boolean') setMoving(status.moving);
+  }, []);
+
+  const refresh = useCallback(async () => {
+    if (!curtain) return;
+    setError(null);
+    try {
+      const s = await callWithRetry(() => curtain.doCommand({ command: 'status' }));
+      applyStatus(s);
+    } catch (e) {
+      setError(e.message || String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [curtain, applyStatus]);
+
+  useEffect(() => {
+    if (!curtain) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    refresh();
+  }, [curtain, refresh]);
+
+  const runCommand = useCallback(
+    async (command) => {
+      if (!curtain) return;
+      setBusy(true);
+      setError(null);
+      try {
+        await curtain.doCommand(command);
+        // SwitchBot takes a moment to update slidePosition after a move;
+        // one refresh here just confirms battery/moving state.
+        await refresh();
+      } catch (e) {
+        setError(e.message || String(e));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [curtain, refresh]
+  );
+
+  const open = useCallback(() => runCommand({ command: 'open' }), [runCommand]);
+  const close = useCallback(() => runCommand({ command: 'close' }), [runCommand]);
+  const pause = useCallback(() => runCommand({ command: 'pause' }), [runCommand]);
+  const setSlidePosition = useCallback(
+    (p) => runCommand({ command: 'set_position', position: Math.max(0, Math.min(100, Math.round(p))) }),
+    [runCommand]
+  );
+
+  return {
+    position,
+    battery,
+    moving,
+    loading,
+    error,
+    busy,
+    refresh,
+    open,
+    close,
+    pause,
+    setSlidePosition,
+  };
+}
