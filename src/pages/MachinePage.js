@@ -45,7 +45,7 @@ function MachinePage() {
       <Paw className="paw--tr" />
       <Paw className="paw--bl" />
       <Paw className="paw--br" />
-      <HamburgerMenu machineId={machineId} />
+      <HamburgerMenu machineId={machineId} showFeeder={!!connection.feederName} />
       <div className="page">
         <Outlet context={connection} />
       </div>
