@@ -744,9 +744,35 @@ code {
 }
 
 .delay-row__buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  justify-content: flex-end;
+}
+
+/* Earlier / Later are symmetric temporary shifts — equal visual
+   weight. Muted surface (not the accent) since neither is destructive,
+   with a subtle background so both read on the dark card. */
+.move-button {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.move-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.move-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .vacation-form {
