@@ -43,7 +43,7 @@ export function useThermostatController(client, thermostatName) {
       if (!controller) return;
       const previous = status;
       if (optimisticPatch) {
-        setStatus(prev => (prev ? { ...prev, ...optimisticPatch } : prev));
+        setStatus(prev => (prev ? { ...prev, ...optimisticPatch(prev) } : prev));
       }
       setBusy(true);
       setError(null);
@@ -61,23 +61,56 @@ export function useThermostatController(client, thermostatName) {
     [controller, refresh, status]
   );
 
-  const setEnabled = useCallback(
-    (enabled) =>
-      runMutation({ command: 'set_enabled', enabled: !!enabled }, { enabled: !!enabled }),
+  const addAutomation = useCallback(
+    (automation) => runMutation({ command: 'add_automation', automation }),
     [runMutation]
   );
 
-  const setThresholds = useCallback(
-    (on_c, off_c) =>
-      runMutation({ command: 'set_thresholds', on_c, off_c }),
+  const updateAutomation = useCallback(
+    (automation) => runMutation({ command: 'update_automation', automation }),
     [runMutation]
   );
 
-  const setActiveHours = useCallback(
-    (start, end) =>
-      runMutation({ command: 'set_active_hours', start, end }),
+  const deleteAutomation = useCallback(
+    (id) => runMutation({ command: 'delete_automation', id }),
     [runMutation]
   );
 
-  return { status, loading, error, busy, refresh, setEnabled, setThresholds, setActiveHours };
+  const setAutomationEnabled = useCallback(
+    (id, enabled) =>
+      runMutation(
+        { command: 'set_automation_enabled', id, enabled },
+        (prev) => ({
+          automations: (prev.automations || []).map(a =>
+            a.id === id ? { ...a, enabled } : a
+          ),
+        })
+      ),
+    [runMutation]
+  );
+
+  const reorderAutomations = useCallback(
+    (ids) =>
+      runMutation(
+        { command: 'reorder_automations', ids },
+        (prev) => {
+          const by = new Map((prev.automations || []).map(a => [a.id, a]));
+          return { automations: ids.map(id => by.get(id)).filter(Boolean) };
+        }
+      ),
+    [runMutation]
+  );
+
+  return {
+    status,
+    loading,
+    error,
+    busy,
+    refresh,
+    addAutomation,
+    updateAutomation,
+    deleteAutomation,
+    setAutomationEnabled,
+    reorderAutomations,
+  };
 }
