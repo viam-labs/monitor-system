@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GenericComponentClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
+import { usePolling } from './usePolling';
+import { handleRpcError } from '../lib/connectionHealth';
 
 // Talks to the viam:petsafe:smart-feed module's Generic component via
 // do_command. The module caches PetSafe reads for 5 minutes on its
@@ -41,7 +43,7 @@ export function useFeeder(client, feederName) {
       setSchedules(scheduleResult.schedules || []);
       setLastFeeding(lastFeedingResult.last_feeding || null);
     } catch (e) {
-      setError(e.message || String(e));
+      if (!handleRpcError(e)) setError(e.message || String(e));
     } finally {
       setLoading(false);
     }
@@ -56,6 +58,8 @@ export function useFeeder(client, feederName) {
     refresh();
   }, [feederClient, refresh]);
 
+  usePolling(refresh, { enabled: !!feederClient });
+
   const feed = useCallback(
     async (cups, slow) => {
       if (!feederClient) return;
@@ -65,7 +69,7 @@ export function useFeeder(client, feederName) {
         await feederClient.doCommand({ command: 'feed', cups, slow });
         setLastFedAt(Date.now());
       } catch (e) {
-        setError(e.message || String(e));
+        if (!handleRpcError(e)) setError(e.message || String(e));
       } finally {
         setFeeding(false);
       }
@@ -84,7 +88,7 @@ export function useFeeder(client, feederName) {
         await feederClient.doCommand({ command: 'pause_schedule', paused });
       } catch (e) {
         setSchedulePaused(previous);
-        setError(e.message || String(e));
+        if (!handleRpcError(e)) setError(e.message || String(e));
       } finally {
         setPausing(false);
       }
@@ -101,7 +105,7 @@ export function useFeeder(client, feederName) {
         await feederClient.doCommand(command);
         await refresh();
       } catch (e) {
-        setError(e.message || String(e));
+        if (!handleRpcError(e)) setError(e.message || String(e));
         throw e;
       } finally {
         setMutating(false);
