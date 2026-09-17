@@ -280,6 +280,43 @@ code {
   z-index: 20;
 }
 
+.connection-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(244, 63, 94, 0.92);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.connection-banner__text {
+  flex: 0 1 auto;
+}
+
+.connection-banner__reconnect {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.connection-banner__reconnect:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
 .nav-menu__button {
   width: 44px;
   height: 44px;

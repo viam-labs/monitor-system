@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useMachineConnection } from '../hooks/useMachineConnection';
+import { subscribeConnectionHealth } from '../lib/connectionHealth';
 
 const PAGE_TITLES = {
   '/': 'Home',
@@ -31,10 +32,13 @@ function Paw({ className }) {
 function MachinePage() {
   const connection = useMachineConnection();
   const location = useLocation();
+  const [connectionLost, setConnectionLost] = useState(false);
 
   useEffect(() => {
     document.title = PAGE_TITLES[location.pathname] || 'Home';
   }, [location.pathname]);
+
+  useEffect(() => subscribeConnectionHealth(setConnectionLost), []);
 
   return (
     <>
@@ -46,6 +50,20 @@ function MachinePage() {
         showThermostat={!!(connection.acBotName && connection.roomMeterName)}
         showCurtain={!!connection.curtainName}
       />
+      {connectionLost && (
+        <div className="connection-banner" role="alert">
+          <span className="connection-banner__text">
+            Disconnected from your Viam machine.
+          </span>
+          <button
+            type="button"
+            className="connection-banner__reconnect"
+            onClick={() => window.location.reload()}
+          >
+            Reconnect
+          </button>
+        </div>
+      )}
       <div className="page">
         <Outlet context={connection} />
       </div>
