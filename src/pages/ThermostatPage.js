@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useThermostat } from '../hooks/useThermostat';
 import { useThermostatController } from '../hooks/useThermostatController';
 import Toggle from '../components/Toggle';
+import TimeSelect from '../components/TimeSelect';
 
 function celsiusToF(c) {
   if (c == null || Number.isNaN(c)) return null;
@@ -56,6 +57,17 @@ function pickHumidity(readings) {
   }
   return null;
 }
+
+function pickBattery(readings) {
+  if (!readings) return null;
+  for (const key of ['battery_pct', 'battery', 'batteryLevel']) {
+    const v = readings[key];
+    if (typeof v === 'number' && !Number.isNaN(v)) return v;
+  }
+  return null;
+}
+
+const LOW_BATTERY_THRESHOLD = 20;
 
 function AutomationCard({
   automation,
@@ -197,20 +209,22 @@ function AutomationCard({
           <div className="automation-form__row">
             <label className="automation-form__field">
               <span className="automation-form__label">From</span>
-              <input
-                type="time"
+              <TimeSelect
                 value={startInput}
-                onChange={e => setStartInput(e.target.value)}
+                onChange={setStartInput}
                 disabled={busy}
+                allowBlank
+                blankLabel="Always"
               />
             </label>
             <label className="automation-form__field">
               <span className="automation-form__label">Until</span>
-              <input
-                type="time"
+              <TimeSelect
                 value={endInput}
-                onChange={e => setEndInput(e.target.value)}
+                onChange={setEndInput}
                 disabled={busy}
+                allowBlank
+                blankLabel="Always"
               />
             </label>
           </div>
@@ -335,20 +349,22 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
       <div className="automation-form__row">
         <label className="automation-form__field">
           <span className="automation-form__label">Active from</span>
-          <input
-            type="time"
+          <TimeSelect
             value={startInput}
-            onChange={e => setStartInput(e.target.value)}
+            onChange={setStartInput}
             disabled={busy}
+            allowBlank
+            blankLabel="Always"
           />
         </label>
         <label className="automation-form__field">
           <span className="automation-form__label">Until</span>
-          <input
-            type="time"
+          <TimeSelect
             value={endInput}
-            onChange={e => setEndInput(e.target.value)}
+            onChange={setEndInput}
             disabled={busy}
+            allowBlank
+            blankLabel="Always"
           />
         </label>
       </div>
@@ -404,6 +420,8 @@ export default function ThermostatPage() {
   const tempC = pickTemperature(readings);
   const tempF = celsiusToF(tempC);
   const humidity = pickHumidity(readings);
+  const battery = pickBattery(readings);
+  const batteryLow = battery != null && battery <= LOW_BATTERY_THRESHOLD;
   const on = position === 1;
   const combinedError = error || ctrl.error;
 
@@ -473,11 +491,25 @@ export default function ThermostatPage() {
           </span>
           <span className="thermostat-temp__unit">°F</span>
         </div>
-        {humidity != null && (
+        {(humidity != null || battery != null) && (
           <div className="thermostat-secondary">
-            <span className="thermostat-secondary__item">
-              {Math.round(humidity)}% humidity
-            </span>
+            {humidity != null && (
+              <span className="thermostat-secondary__item">
+                {Math.round(humidity)}% humidity
+              </span>
+            )}
+            {battery != null && (
+              <span
+                className={
+                  'thermostat-secondary__item battery-pill' +
+                  (batteryLow ? ' battery-pill--low' : '')
+                }
+                title={batteryLow ? 'Meter battery is low — charge soon.' : undefined}
+              >
+                {batteryLow && <span aria-hidden="true">⚠</span>}
+                {Math.round(battery)}% battery
+              </span>
+            )}
           </div>
         )}
       </section>

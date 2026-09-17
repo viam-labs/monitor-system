@@ -14,6 +14,7 @@ export function useCurtain(client, curtainName) {
   const [position, setPosition] = useState(null);
   const [battery, setBattery] = useState(null);
   const [moving, setMoving] = useState(false);
+  const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -23,6 +24,7 @@ export function useCurtain(client, curtainName) {
     if (typeof status.slide_position === 'number') setPosition(status.slide_position);
     if (typeof status.battery === 'number') setBattery(status.battery);
     if (typeof status.moving === 'boolean') setMoving(status.moving);
+    if (Array.isArray(status.schedules)) setSchedules(status.schedules);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -54,11 +56,10 @@ export function useCurtain(client, curtainName) {
       setError(null);
       try {
         await curtain.doCommand(command);
-        // SwitchBot takes a moment to update slidePosition after a move;
-        // one refresh here just confirms battery/moving state.
         await refresh();
       } catch (e) {
         setError(e.message || String(e));
+        throw e;
       } finally {
         setBusy(false);
       }
@@ -74,10 +75,32 @@ export function useCurtain(client, curtainName) {
     [runCommand]
   );
 
+  const addSchedule = useCallback(
+    (schedule) => runCommand({ command: 'add_schedule', schedule }),
+    [runCommand]
+  );
+  const updateSchedule = useCallback(
+    (schedule) => runCommand({ command: 'update_schedule', schedule }),
+    [runCommand]
+  );
+  const deleteSchedule = useCallback(
+    (id) => runCommand({ command: 'delete_schedule', id }),
+    [runCommand]
+  );
+  const setScheduleEnabled = useCallback(
+    (id, enabled) => runCommand({ command: 'set_schedule_enabled', id, enabled }),
+    [runCommand]
+  );
+  const reorderSchedules = useCallback(
+    (ids) => runCommand({ command: 'reorder_schedules', ids }),
+    [runCommand]
+  );
+
   return {
     position,
     battery,
     moving,
+    schedules,
     loading,
     error,
     busy,
@@ -86,5 +109,10 @@ export function useCurtain(client, curtainName) {
     close,
     pause,
     setSlidePosition,
+    addSchedule,
+    updateSchedule,
+    deleteSchedule,
+    setScheduleEnabled,
+    reorderSchedules,
   };
 }
