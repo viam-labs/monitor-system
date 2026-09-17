@@ -214,7 +214,7 @@ export default function ThermostatPage() {
   const { client, acBotName, roomMeterName, thermostatName, loading: connectionLoading } = useOutletContext();
   const t = useThermostat(client, acBotName, roomMeterName);
   const ctrl = useThermostatController(client, thermostatName);
-  const { position, readings, loading, error, busy, lastActionAt } = t;
+  const { position, readings, loading, error, busy, lastSetAt, lastSetPosition } = t;
 
   if (connectionLoading) {
     return (
@@ -319,9 +319,10 @@ export default function ThermostatPage() {
           </button>
         </div>
 
-        {lastActionAt && (
+        {lastSetAt && (
           <p className="feeder-meta feeder-meta--centered">
-            Last set at {formatTime(lastActionAt)} from this device.
+            Last set {lastSetPosition === 1 ? 'ON' : lastSetPosition === 0 ? 'OFF' : ''}
+            {' '}at {formatTime(lastSetAt)}.
           </p>
         )}
         <p className="feeder-meta feeder-meta--centered">

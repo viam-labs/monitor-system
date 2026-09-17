@@ -2,40 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SensorClient, SwitchClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 
-// Reads the room meter and controls the A/C bot. Position 1 = the last
-// command we sent was turnOn; 0 = turnOff. This is the *commanded*
-// state — the Bot only knows what it last pressed, not whether the
-// A/C is actually running.
-//
-// SwitchBot bots in "Press mode" don't hold a persistent position:
-// get_position may report a stale or default value regardless of what
-// the user last commanded. Persist our commanded state locally so a
-// refresh shows the right thing.
-function storageKey(botName) {
-  return botName ? `thermostat:${botName}:position` : null;
-}
-
-function readStoredPosition(key) {
-  if (!key) return null;
-  try {
-    const v = localStorage.getItem(key);
-    if (v === '0') return 0;
-    if (v === '1') return 1;
-  } catch {
-    // Storage unavailable (Safari private, etc.) — fall through.
-  }
-  return null;
-}
-
-function writeStoredPosition(key, pos) {
-  if (!key) return;
-  try {
-    localStorage.setItem(key, String(pos));
-  } catch {
-    // Ignore quota / disabled storage errors.
-  }
-}
-
+// Reads the room meter and controls the A/C bot. All state (current
+// position, last set time, direction) lives server-side on the Pi —
+// the Bot component persists it via its `state` do_command. The
+// frontend just displays whatever the server returns, so multiple
+// devices stay in sync.
 export function useThermostat(client, botName, meterName) {
   const bot = useMemo(
     () => (client && botName ? new SwitchClient(client, botName) : null),
@@ -46,13 +17,22 @@ export function useThermostat(client, botName, meterName) {
     [client, meterName]
   );
 
-  const key = storageKey(botName);
-  const [position, setPosition] = useState(() => readStoredPosition(key));
+  const [position, setPosition] = useState(null);
+  const [lastSetAt, setLastSetAt] = useState(null);
+  const [lastSetPosition, setLastSetPosition] = useState(null);
   const [readings, setReadings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [lastActionAt, setLastActionAt] = useState(null);
+
+  const applyState = useCallback((state) => {
+    if (!state || typeof state !== 'object') return;
+    if (state.position === 0 || state.position === 1) setPosition(state.position);
+    if (state.last_set_at) setLastSetAt(state.last_set_at);
+    if (state.last_set_position === 0 || state.last_set_position === 1) {
+      setLastSetPosition(state.last_set_position);
+    }
+  }, []);
 
   useEffect(() => {
     if (!bot || !meter) {
@@ -60,28 +40,19 @@ export function useThermostat(client, botName, meterName) {
       return;
     }
     setLoading(true);
-    // Only seed position from the Bot's API on very first load (when
-    // localStorage is empty). After that, treat local storage + our
-    // own set_position calls as ground truth so a refresh doesn't
-    // clobber the commanded state with a bogus 0 from a Press-mode
-    // Bot that doesn't actually track state.
-    const shouldSeedPosition = readStoredPosition(key) == null;
     let cancelled = false;
 
     (async () => {
       try {
-        const tasks = [meter.getReadings()];
-        if (shouldSeedPosition) tasks.push(bot.getPosition());
-        const results = await callWithRetry(() => Promise.all(tasks));
+        const [state, read] = await callWithRetry(() =>
+          Promise.all([
+            bot.doCommand({ command: 'state' }),
+            meter.getReadings(),
+          ])
+        );
         if (cancelled) return;
-        setReadings(results[0] || null);
-        if (shouldSeedPosition && results[1] != null) {
-          const pos = Number(results[1]);
-          if (pos === 0 || pos === 1) {
-            setPosition(pos);
-            writeStoredPosition(key, pos);
-          }
-        }
+        applyState(state);
+        setReadings(read || null);
       } catch (e) {
         if (!cancelled) setError(e.message || String(e));
       } finally {
@@ -92,20 +63,26 @@ export function useThermostat(client, botName, meterName) {
     return () => {
       cancelled = true;
     };
-  }, [bot, meter, key]);
+  }, [bot, meter, applyState]);
 
   const refresh = useCallback(async () => {
-    if (!meter) return;
+    if (!bot || !meter) return;
     setError(null);
     try {
-      const read = await callWithRetry(() => meter.getReadings());
+      const [state, read] = await callWithRetry(() =>
+        Promise.all([
+          bot.doCommand({ command: 'state' }),
+          meter.getReadings(),
+        ])
+      );
+      applyState(state);
       setReadings(read || null);
     } catch (e) {
       setError(e.message || String(e));
     } finally {
       setLoading(false);
     }
-  }, [meter]);
+  }, [bot, meter, applyState]);
 
   const setAcOn = useCallback(
     async (on) => {
@@ -117,8 +94,14 @@ export function useThermostat(client, botName, meterName) {
       setError(null);
       try {
         await bot.setPosition(target);
-        writeStoredPosition(key, target);
-        setLastActionAt(Date.now());
+        // Server now has fresh state — pull it back so lastSetAt is
+        // authoritative.
+        try {
+          const state = await bot.doCommand({ command: 'state' });
+          applyState(state);
+        } catch {
+          // Non-fatal — position is already optimistically set.
+        }
       } catch (e) {
         setPosition(previous);
         setError(e.message || String(e));
@@ -126,8 +109,18 @@ export function useThermostat(client, botName, meterName) {
         setBusy(false);
       }
     },
-    [bot, position, key]
+    [bot, position, applyState]
   );
 
-  return { position, readings, loading, error, busy, lastActionAt, refresh, setAcOn };
+  return {
+    position,
+    lastSetAt,
+    lastSetPosition,
+    readings,
+    loading,
+    error,
+    busy,
+    refresh,
+    setAcOn,
+  };
 }
