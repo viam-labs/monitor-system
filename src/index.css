@@ -43,11 +43,9 @@ code {
 }
 
 /* Desktop uses a 6-column grid; each visible tile sets its own
-   grid-column span via inline style based on how many other tiles are
-   currently visible. Doing this from JS instead of :has() rules keeps
-   layout correct when some tiles are absolutely-positioned off-screen
-   (for always-on motion sampling) — CSS :has() would otherwise count
-   the off-screen ones toward "nth-child" and pick the wrong layout. */
+   grid-column span via inline style based on the visible-tile count.
+   JS-driven spans let us pick asymmetric layouts (e.g. 2/2/2/3/3 for
+   five tiles) that would be awkward with pure CSS. */
 @media (min-width: 900px) {
   .camera-grid {
     grid-template-columns: repeat(6, 1fr);
@@ -183,31 +181,6 @@ code {
   backdrop-filter: blur(4px);
 }
 
-.mode-toggle {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  font-size: 26px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  transition: border-color 0.15s, background 0.15s;
-  backdrop-filter: blur(4px);
-}
-
-.mode-toggle:hover {
-  border-color: var(--accent);
-}
-
 .mic-button svg {
   width: 24px;
   height: 24px;
@@ -280,23 +253,6 @@ code {
   box-sizing: border-box;
 }
 
-/* "Off-screen" tile: kept in the viewport as an 8x8 near-transparent
-   pixel so the browser considers it visible and keeps decoding frames
-   (browsers pause video decoding for elements far outside the viewport
-   or with display: none). Position: fixed at the top-right corner
-   underneath the mic + mode buttons so it doesn't clutter anything. */
-.camera-tile--offscreen {
-  position: fixed !important;
-  top: 0;
-  left: 0;
-  width: 8px;
-  height: 8px;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 0.01;
-  z-index: 0;
-}
-
 /* Tight chrome on small viewports — hide the machine-name title and
    shrink padding + gap so the grid gets more of the screen. Broad
    breakpoints so all phones and small tablets are covered in every
@@ -314,4 +270,90 @@ code {
   :root {
     --paw-size: 64px;
   }
+}
+
+.nav-menu {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 20;
+}
+
+.nav-menu__button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  transition: border-color 0.15s, background 0.15s;
+  backdrop-filter: blur(4px);
+}
+
+.nav-menu__button span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.nav-menu__button:hover,
+.nav-menu__button--open {
+  border-color: var(--accent);
+}
+
+.nav-menu__list {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.nav-menu__link {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.nav-menu__link:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-menu__link--active {
+  color: var(--accent);
+}
+
+.stub-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.stub-page h1 {
+  margin: 0;
+  color: var(--text);
+  font-weight: 500;
 }
