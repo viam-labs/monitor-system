@@ -203,6 +203,7 @@ export default function FeederPage() {
   const [editingId, setEditingId] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   const [vacationOpen, setVacationOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
   const [delayHours, setDelayHours] = useState(0);
   const [delayMinutes, setDelayMinutes] = useState(30);
 
@@ -320,6 +321,7 @@ export default function FeederPage() {
       await feeder.delayNext(hours);
       setDelayHours(0);
       setDelayMinutes(30);
+      setMoveOpen(false);
     } catch { /* surfaced */ }
   };
   const handleVacation = async (until) => {
@@ -489,59 +491,82 @@ export default function FeederPage() {
                 >
                   Skip next feeding
                 </button>
-                <div className="delay-row">
-                  <span className="delay-row__label">Move next by</span>
-                  <div className="delay-row__inputs">
-                    <input
-                      type="number"
-                      min="0"
-                      max="23"
-                      value={delayHours}
-                      onChange={e => setDelayHours(Math.max(0, Math.min(23, Number(e.target.value) || 0)))}
-                      aria-label="Hours"
-                      disabled={mutating}
-                    />
-                    <span className="delay-row__unit">hr</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={delayMinutes}
-                      onChange={e => setDelayMinutes(Math.max(0, Math.min(59, Number(e.target.value) || 0)))}
-                      aria-label="Minutes"
-                      disabled={mutating}
-                    />
-                    <span className="delay-row__unit">min</span>
+                {!moveOpen ? (
+                  <button
+                    type="button"
+                    className="feeder-secondary-button"
+                    onClick={() => setMoveOpen(true)}
+                    disabled={mutating || !nextScheduled}
+                  >
+                    Move next by…
+                  </button>
+                ) : (
+                  <div className="delay-row">
+                    <div className="delay-row__header">
+                      <span className="delay-row__label">Move next by</span>
+                      <button
+                        type="button"
+                        className="feeder-icon-button"
+                        onClick={() => setMoveOpen(false)}
+                        aria-label="Cancel"
+                        title="Cancel"
+                        disabled={mutating}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="delay-row__inputs">
+                      <input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={delayHours}
+                        onChange={e => setDelayHours(Math.max(0, Math.min(23, Number(e.target.value) || 0)))}
+                        aria-label="Hours"
+                        disabled={mutating}
+                      />
+                      <span className="delay-row__unit">hr</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={delayMinutes}
+                        onChange={e => setDelayMinutes(Math.max(0, Math.min(59, Number(e.target.value) || 0)))}
+                        aria-label="Minutes"
+                        disabled={mutating}
+                      />
+                      <span className="delay-row__unit">min</span>
+                    </div>
+                    <div className="delay-row__buttons">
+                      <button
+                        type="button"
+                        className="move-button"
+                        onClick={() => moveNext('earlier')}
+                        disabled={mutating || moveTotalHours <= 0 || !canMoveEarlier}
+                        title={
+                          !canMoveEarlier && nextScheduled && moveTotalHours > 0
+                            ? 'Moving earlier by that much would land in the past.'
+                            : undefined
+                        }
+                      >
+                        ← Earlier
+                      </button>
+                      <button
+                        type="button"
+                        className="move-button"
+                        onClick={() => moveNext('later')}
+                        disabled={mutating || moveTotalHours <= 0 || !canMoveLater}
+                      >
+                        Later →
+                      </button>
+                    </div>
+                    <div className="move-preview">
+                      {movePreviewLines.map((line, i) => (
+                        <p key={i} className="feeder-meta">{line}</p>
+                      ))}
+                    </div>
                   </div>
-                  <div className="delay-row__buttons">
-                    <button
-                      type="button"
-                      className="move-button"
-                      onClick={() => moveNext('earlier')}
-                      disabled={mutating || moveTotalHours <= 0 || !canMoveEarlier}
-                      title={
-                        !canMoveEarlier && nextScheduled && moveTotalHours > 0
-                          ? 'Moving earlier by that much would land in the past.'
-                          : undefined
-                      }
-                    >
-                      ← Earlier
-                    </button>
-                    <button
-                      type="button"
-                      className="move-button"
-                      onClick={() => moveNext('later')}
-                      disabled={mutating || moveTotalHours <= 0 || !canMoveLater}
-                    >
-                      Later →
-                    </button>
-                  </div>
-                </div>
-                <div className="move-preview">
-                  {movePreviewLines.map((line, i) => (
-                    <p key={i} className="feeder-meta">{line}</p>
-                  ))}
-                </div>
+                )}
               </div>
             )}
 
