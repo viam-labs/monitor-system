@@ -86,6 +86,11 @@ export function useMachineConnection() {
   const [acBotName, setAcBotName] = useState(null);
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Feature-page probes run after `loading` flips false so the cameras
+  // page paints quickly, but that meant a page like /curtain would see
+  // curtainName === null before the probe resolved and flash the "not
+  // configured" stub. Consumers gate on this flag until we know.
+  const [detectingFeatures, setDetectingFeatures] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -124,6 +129,10 @@ export function useMachineConnection() {
           setCurtainName(d.curtainName);
           setAcBotName(d.acBotName);
           setRoomMeterName(d.roomMeterName);
+          setDetectingFeatures(false);
+        }).catch(() => {
+          if (cancelled) return;
+          setDetectingFeatures(false);
         });
 
         setLoading(false);
@@ -171,6 +180,7 @@ export function useMachineConnection() {
     acBotName,
     roomMeterName,
     loading,
+    detectingFeatures,
     error,
   };
 }
