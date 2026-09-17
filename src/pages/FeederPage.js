@@ -184,7 +184,7 @@ function VacationForm({ saving, onSubmit, onCancel }) {
 }
 
 export default function FeederPage() {
-  const { client, feederName, loading: connectionLoading } = useOutletContext();
+  const { client, feederName, loading: connectionLoading, detectingFeatures } = useOutletContext();
   const feeder = useFeeder(client, feederName);
   const {
     status,
@@ -231,7 +231,7 @@ export default function FeederPage() {
     return best;
   }, [schedules]);
 
-  if (connectionLoading) {
+  if (connectionLoading || detectingFeatures) {
     return (
       <div className="paw-loader" aria-label="Connecting">
         <span>🐾</span>
