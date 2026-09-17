@@ -164,8 +164,8 @@ code {
 
 .mic-button {
   position: fixed;
-  top: 24px;
-  left: 24px;
+  bottom: 24px;
+  right: 24px;
   width: 56px;
   height: 56px;
   border-radius: 50%;
