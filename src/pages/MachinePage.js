@@ -6,6 +6,7 @@ import { useMachineConnection } from '../hooks/useMachineConnection';
 const PAGE_TITLES = {
   '/': 'Home',
   '/feeder': 'Feeder',
+  '/thermostat': 'Thermostat',
 };
 
 function Paw({ className }) {
@@ -39,7 +40,10 @@ function MachinePage() {
       <Paw className="paw--tl" />
       <Paw className="paw--bl" />
       <Paw className="paw--br" />
-      <HamburgerMenu showFeeder={!!connection.feederName} />
+      <HamburgerMenu
+        showFeeder={!!connection.feederName}
+        showThermostat={!!(connection.acBotName && connection.roomMeterName)}
+      />
       <div className="page">
         <Outlet context={connection} />
       </div>
