@@ -141,6 +141,26 @@ export function useFeeder(client, feederName) {
     [runMutation]
   );
 
+  const feedNow = useCallback(
+    () => runMutation({ command: 'feed_now' }),
+    [runMutation]
+  );
+
+  const delayNext = useCallback(
+    (hours) => runMutation({ command: 'delay_next', hours }),
+    [runMutation]
+  );
+
+  const skipNext = useCallback(
+    () => runMutation({ command: 'skip_next' }),
+    [runMutation]
+  );
+
+  const pauseUntil = useCallback(
+    (until) => runMutation({ command: 'pause_until', until }),
+    [runMutation]
+  );
+
   return {
     status,
     schedules,
@@ -157,5 +177,9 @@ export function useFeeder(client, feederName) {
     addSchedule,
     modifySchedule,
     deleteSchedule,
+    feedNow,
+    delayNext,
+    skipNext,
+    pauseUntil,
   };
 }
