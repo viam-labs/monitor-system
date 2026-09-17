@@ -54,27 +54,19 @@ export default function CurtainPage() {
 
   return (
     <div className="feeder-page">
-      <div className="feeder-topbar">
-        <span className="feeder-meta">
-          {loading && position == null ? 'Loading…' : ''}
-        </span>
-        <div className="feeder-topbar__actions">
-          <button
-            type="button"
-            className="feeder-icon-button"
-            onClick={c.refresh}
-            disabled={loading || busy}
-            aria-label="Refresh"
-            title="Refresh"
-          >
-            ↻
-          </button>
-        </div>
-      </div>
-
       {error && <p className="feeder-error feeder-error--banner">{error}</p>}
 
       <section className="feeder-card thermostat-readings">
+        <button
+          type="button"
+          className="feeder-icon-button thermostat-readings__refresh"
+          onClick={c.refresh}
+          disabled={loading || busy}
+          aria-label="Refresh"
+          title="Refresh"
+        >
+          ↻
+        </button>
         <div className="thermostat-temp">
           <span className="thermostat-temp__value">
             {openPercent != null ? openPercent : '—'}
