@@ -717,6 +717,7 @@ code {
 .delay-row__inputs {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   flex-wrap: wrap;
 }
@@ -780,7 +781,8 @@ code {
 .move-preview {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 8px;
+  padding-top: 4px;
 }
 
 .vacation-form {
@@ -829,14 +831,14 @@ code {
 }
 
 .feeder-secondary-button {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
-  color: var(--text-muted);
-  padding: 6px 14px;
+  color: var(--text);
+  padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 500;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
   align-self: flex-start;
@@ -844,7 +846,7 @@ code {
 
 .feeder-secondary-button:hover:not(:disabled) {
   border-color: var(--accent);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .feeder-secondary-button--active {

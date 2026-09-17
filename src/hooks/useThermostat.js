@@ -6,6 +6,36 @@ import { callWithRetry } from './callWithRetry';
 // command we sent was turnOn; 0 = turnOff. This is the *commanded*
 // state — the Bot only knows what it last pressed, not whether the
 // A/C is actually running.
+//
+// SwitchBot bots in "Press mode" don't hold a persistent position:
+// get_position may report a stale or default value regardless of what
+// the user last commanded. Persist our commanded state locally so a
+// refresh shows the right thing.
+function storageKey(botName) {
+  return botName ? `thermostat:${botName}:position` : null;
+}
+
+function readStoredPosition(key) {
+  if (!key) return null;
+  try {
+    const v = localStorage.getItem(key);
+    if (v === '0') return 0;
+    if (v === '1') return 1;
+  } catch {
+    // Storage unavailable (Safari private, etc.) — fall through.
+  }
+  return null;
+}
+
+function writeStoredPosition(key, pos) {
+  if (!key) return;
+  try {
+    localStorage.setItem(key, String(pos));
+  } catch {
+    // Ignore quota / disabled storage errors.
+  }
+}
+
 export function useThermostat(client, botName, meterName) {
   const bot = useMemo(
     () => (client && botName ? new SwitchClient(client, botName) : null),
@@ -16,28 +46,13 @@ export function useThermostat(client, botName, meterName) {
     [client, meterName]
   );
 
-  const [position, setPosition] = useState(null);
+  const key = storageKey(botName);
+  const [position, setPosition] = useState(() => readStoredPosition(key));
   const [readings, setReadings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [lastActionAt, setLastActionAt] = useState(null);
-
-  const refresh = useCallback(async () => {
-    if (!bot || !meter) return;
-    setError(null);
-    try {
-      const [pos, read] = await callWithRetry(() =>
-        Promise.all([bot.getPosition(), meter.getReadings()])
-      );
-      setPosition(Number(pos));
-      setReadings(read || null);
-    } catch (e) {
-      setError(e.message || String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [bot, meter]);
 
   useEffect(() => {
     if (!bot || !meter) {
@@ -45,8 +60,52 @@ export function useThermostat(client, botName, meterName) {
       return;
     }
     setLoading(true);
-    refresh();
-  }, [bot, meter, refresh]);
+    // Only seed position from the Bot's API on very first load (when
+    // localStorage is empty). After that, treat local storage + our
+    // own set_position calls as ground truth so a refresh doesn't
+    // clobber the commanded state with a bogus 0 from a Press-mode
+    // Bot that doesn't actually track state.
+    const shouldSeedPosition = readStoredPosition(key) == null;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const tasks = [meter.getReadings()];
+        if (shouldSeedPosition) tasks.push(bot.getPosition());
+        const results = await callWithRetry(() => Promise.all(tasks));
+        if (cancelled) return;
+        setReadings(results[0] || null);
+        if (shouldSeedPosition && results[1] != null) {
+          const pos = Number(results[1]);
+          if (pos === 0 || pos === 1) {
+            setPosition(pos);
+            writeStoredPosition(key, pos);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) setError(e.message || String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bot, meter, key]);
+
+  const refresh = useCallback(async () => {
+    if (!meter) return;
+    setError(null);
+    try {
+      const read = await callWithRetry(() => meter.getReadings());
+      setReadings(read || null);
+    } catch (e) {
+      setError(e.message || String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [meter]);
 
   const setAcOn = useCallback(
     async (on) => {
@@ -58,6 +117,7 @@ export function useThermostat(client, botName, meterName) {
       setError(null);
       try {
         await bot.setPosition(target);
+        writeStoredPosition(key, target);
         setLastActionAt(Date.now());
       } catch (e) {
         setPosition(previous);
@@ -66,7 +126,7 @@ export function useThermostat(client, botName, meterName) {
         setBusy(false);
       }
     },
-    [bot, position]
+    [bot, position, key]
   );
 
   return { position, readings, loading, error, busy, lastActionAt, refresh, setAcOn };

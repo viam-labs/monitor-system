@@ -68,7 +68,7 @@ export default function ThermostatPage() {
     <div className="feeder-page">
       <div className="feeder-topbar">
         <span className="feeder-meta">
-          {loading && !readings ? 'Loading…' : 'Room meter'}
+          {loading && !readings ? 'Loading…' : ''}
         </span>
         <div className="feeder-topbar__actions">
           <button
