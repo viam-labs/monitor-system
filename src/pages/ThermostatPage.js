@@ -392,13 +392,13 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
 }
 
 export default function ThermostatPage() {
-  const { client, acBotName, roomMeterName, thermostatName, loading: connectionLoading } = useOutletContext();
+  const { client, acBotName, roomMeterName, thermostatName, loading: connectionLoading, detectingFeatures } = useOutletContext();
   const t = useThermostat(client, acBotName, roomMeterName);
   const ctrl = useThermostatController(client, thermostatName);
   const { position, readings, loading, error, busy, lastSetAt, lastSetPosition } = t;
   const [addOpen, setAddOpen] = useState(false);
 
-  if (connectionLoading) {
+  if (connectionLoading || detectingFeatures) {
     return (
       <div className="paw-loader" aria-label="Connecting">
         <span>🐾</span>

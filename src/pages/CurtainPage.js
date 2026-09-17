@@ -252,7 +252,12 @@ function ScheduleCard({ schedule, isFirst, isLast, busy, onToggle, onSave, onDel
 }
 
 export default function CurtainPage() {
-  const { client, curtainName, loading: connectionLoading } = useOutletContext();
+  const {
+    client,
+    curtainName,
+    loading: connectionLoading,
+    detectingFeatures,
+  } = useOutletContext();
   const c = useCurtain(client, curtainName);
   const { position, battery, moving, schedules, loading, error, busy } = c;
   const [addOpen, setAddOpen] = useState(false);
@@ -265,7 +270,7 @@ export default function CurtainPage() {
     if (openPercent != null) setSliderValue(openPercent);
   }, [openPercent]);
 
-  if (connectionLoading) {
+  if (connectionLoading || detectingFeatures) {
     return (
       <div className="paw-loader" aria-label="Connecting">
         <span>🐾</span>
