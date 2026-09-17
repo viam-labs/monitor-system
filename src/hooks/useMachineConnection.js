@@ -31,6 +31,7 @@ async function detectFeaturePages(c, resources) {
   const detected = {
     feederName: null,
     thermostatName: null,
+    curtainName: null,
     acBotName: null,
     roomMeterName: null,
   };
@@ -45,8 +46,10 @@ async function detectFeaturePages(c, resources) {
       if (status && typeof status === 'object') {
         if ('food_state' in status || 'food_low_status' in status) {
           detected.feederName = r.name;
-        } else if ('above_temp_c' in status || 'bot_position' in status) {
+        } else if ('on_temp_c' in status || 'off_temp_c' in status || 'bot_position' in status) {
           detected.thermostatName = r.name;
+        } else if ('slide_position' in status) {
+          detected.curtainName = r.name;
         }
       }
     } catch {
@@ -79,6 +82,7 @@ export function useMachineConnection() {
   const [audioName, setAudioName] = useState('');
   const [feederName, setFeederName] = useState(null);
   const [thermostatName, setThermostatName] = useState(null);
+  const [curtainName, setCurtainName] = useState(null);
   const [acBotName, setAcBotName] = useState(null);
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -117,6 +121,7 @@ export function useMachineConnection() {
           if (cancelled) return;
           setFeederName(d.feederName);
           setThermostatName(d.thermostatName);
+          setCurtainName(d.curtainName);
           setAcBotName(d.acBotName);
           setRoomMeterName(d.roomMeterName);
         });
@@ -162,6 +167,7 @@ export function useMachineConnection() {
     audioName,
     feederName,
     thermostatName,
+    curtainName,
     acBotName,
     roomMeterName,
     loading,

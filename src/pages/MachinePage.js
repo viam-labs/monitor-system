@@ -7,6 +7,7 @@ const PAGE_TITLES = {
   '/': 'Home',
   '/feeder': 'Feeder',
   '/thermostat': 'Thermostat',
+  '/curtain': 'Curtain',
 };
 
 function Paw({ className }) {
@@ -43,6 +44,7 @@ function MachinePage() {
       <HamburgerMenu
         showFeeder={!!connection.feederName}
         showThermostat={!!(connection.acBotName && connection.roomMeterName)}
+        showCurtain={!!connection.curtainName}
       />
       <div className="page">
         <Outlet context={connection} />

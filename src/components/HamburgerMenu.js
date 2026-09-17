@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 
-export default function HamburgerMenu({ showFeeder, showThermostat }) {
+export default function HamburgerMenu({ showFeeder, showThermostat, showCurtain }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -71,6 +71,19 @@ export default function HamburgerMenu({ showFeeder, showThermostat }) {
                 }
               >
                 Thermostat
+              </NavLink>
+            </li>
+          )}
+          {showCurtain && (
+            <li>
+              <NavLink
+                to="/curtain"
+                onClick={close}
+                className={({ isActive }) =>
+                  `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
+                }
+              >
+                Curtain
               </NavLink>
             </li>
           )}
