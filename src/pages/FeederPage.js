@@ -2,15 +2,63 @@ import React, { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useFeeder } from '../hooks/useFeeder';
 
-const CUP_OPTIONS = [
-  { value: 0.125, label: '⅛' },
-  { value: 0.25, label: '¼' },
-  { value: 0.5, label: '½' },
-  { value: 1, label: '1' },
-];
+// Fraction labels for common cup amounts. Anything not in this map is
+// rendered as the decimal (e.g., 3.125 -> "3.125 cups").
+const FRACTION_LABELS = {
+  0: '0',
+  0.125: '⅛',
+  0.25: '¼',
+  0.375: '⅜',
+  0.5: '½',
+  0.625: '⅝',
+  0.75: '¾',
+  0.875: '⅞',
+};
 
-function formatTime(ms) {
-  if (!ms) return null;
+function labelForCups(cups) {
+  if (cups == null || Number.isNaN(cups)) return '';
+  const whole = Math.floor(cups);
+  const frac = Number((cups - whole).toFixed(3));
+  const fracLabel = FRACTION_LABELS[frac];
+  if (whole === 0) {
+    if (fracLabel === undefined) return `${cups} cups`;
+    return `${fracLabel} cup`;
+  }
+  if (frac === 0) return `${whole} cup${whole === 1 ? '' : 's'}`;
+  if (fracLabel === undefined) return `${cups} cups`;
+  return `${whole}${fracLabel} cups`;
+}
+
+// ⅛-cup steps up to 2 cups, then ¼-cup steps up to 4 cups. Covers the
+// realistic range for a Smart Feed without an unwieldy list.
+const CUP_OPTIONS = (() => {
+  const out = [];
+  for (let i = 1; i <= 16; i++) out.push(i * 0.125);
+  for (let i = 9; i <= 16; i++) out.push(i * 0.25);
+  return out;
+})();
+
+function CupsSelect({ value, onChange, disabled, id, ariaLabel }) {
+  return (
+    <select
+      id={id}
+      aria-label={ariaLabel}
+      className="cups-select"
+      value={value}
+      onChange={e => onChange(Number(e.target.value))}
+      disabled={disabled}
+    >
+      {CUP_OPTIONS.map(v => (
+        <option key={v} value={v}>{labelForCups(v)}</option>
+      ))}
+    </select>
+  );
+}
+
+function formatTime(input) {
+  if (input == null) return null;
+  const ms = typeof input === 'string' ? Date.parse(input) : input;
+  if (Number.isNaN(ms)) return null;
   return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
@@ -22,12 +70,6 @@ function formatScheduleTime(hhmm) {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-function formatCups(cups) {
-  if (cups == null) return '';
-  if (cups === Math.floor(cups)) return `${cups} cup${cups === 1 ? '' : 's'}`;
-  return `${cups} cups`;
-}
-
 function formatVacationUntil(iso) {
   if (!iso) return '';
   try {
@@ -37,9 +79,34 @@ function formatVacationUntil(iso) {
   }
 }
 
+function formatRelative(msAgo) {
+  if (msAgo == null || Number.isNaN(msAgo)) return '';
+  const sec = Math.floor(msAgo / 1000);
+  if (sec < 60) return 'just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} hr ago`;
+  const day = Math.floor(hr / 24);
+  return `${day} day${day === 1 ? '' : 's'} ago`;
+}
+
+function extractLastFedTimestamp(lastFeeding, localLastFedAt) {
+  const candidates = [];
+  if (localLastFedAt) candidates.push(localLastFedAt);
+  if (lastFeeding) {
+    for (const key of ['created_at', 'timestamp', 'time', 'date']) {
+      const raw = lastFeeding[key];
+      if (raw) {
+        const ms = Date.parse(raw);
+        if (!Number.isNaN(ms)) candidates.push(ms);
+      }
+    }
+  }
+  return candidates.length ? Math.max(...candidates) : null;
+}
+
 function nowLocalDatetimeInput() {
-  // toISOString gives UTC. Adjust to local so <input type="datetime-local"> min
-  // reflects the user's actual "now".
   const d = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
   return d.toISOString().slice(0, 16);
 }
@@ -50,9 +117,8 @@ function ScheduleForm({ initialTime, initialCups, saving, onSave, onCancel }) {
 
   const submit = (e) => {
     e.preventDefault();
-    const n = Number(cups);
-    if (!time || !n || n <= 0) return;
-    onSave(time, n);
+    if (!time || !cups || cups <= 0) return;
+    onSave(time, cups);
   };
 
   return (
@@ -63,32 +129,15 @@ function ScheduleForm({ initialTime, initialCups, saving, onSave, onCancel }) {
           <input type="time" value={time} onChange={e => setTime(e.target.value)} required />
         </label>
         <label className="schedule-form__field">
-          <span className="schedule-form__label">Cups</span>
-          <input
-            type="number"
-            step="0.125"
-            min="0.125"
-            max="12"
-            value={cups}
-            onChange={e => setCups(e.target.value)}
-            required
-          />
+          <span className="schedule-form__label">Amount</span>
+          <CupsSelect value={cups} onChange={setCups} disabled={saving} ariaLabel="Cups" />
         </label>
       </div>
       <div className="schedule-form__actions">
-        <button
-          type="button"
-          className="feeder-secondary-button"
-          onClick={onCancel}
-          disabled={saving}
-        >
+        <button type="button" className="feeder-secondary-button" onClick={onCancel} disabled={saving}>
           Cancel
         </button>
-        <button
-          type="submit"
-          className="feeder-primary-button feeder-primary-button--sm"
-          disabled={saving}
-        >
+        <button type="submit" className="feeder-primary-button feeder-primary-button--sm" disabled={saving}>
           {saving ? 'Saving…' : 'Save'}
         </button>
       </div>
@@ -116,12 +165,7 @@ function VacationForm({ saving, onSubmit, onCancel }) {
         />
       </label>
       <div className="vacation-form__actions">
-        <button
-          type="button"
-          className="feeder-secondary-button"
-          onClick={onCancel}
-          disabled={saving}
-        >
+        <button type="button" className="feeder-secondary-button" onClick={onCancel} disabled={saving}>
           Cancel
         </button>
         <button
@@ -142,6 +186,7 @@ export default function FeederPage() {
   const {
     status,
     schedules,
+    lastFeeding,
     loading,
     error,
     feeding,
@@ -166,8 +211,6 @@ export default function FeederPage() {
     [schedules]
   );
 
-  // Find the next scheduled fire (spanning to tomorrow if today's are past)
-  // so we can render Feed-Now and delay previews in local time.
   const nextScheduled = useMemo(() => {
     if (!schedules || schedules.length === 0) return null;
     const now = new Date();
@@ -215,10 +258,15 @@ export default function FeederPage() {
   const skippedCount = status?.skipped_count || 0;
   const pauseUntilLocal = status?.pause_until ? formatVacationUntil(status.pause_until) : null;
 
+  const lastFedTs = extractLastFedTimestamp(lastFeeding, lastFedAt);
+  const lastFedLine = lastFedTs
+    ? `Last fed at ${formatTime(lastFedTs)} · ${formatRelative(Date.now() - lastFedTs)}`
+    : null;
+
   const feedNowCaption = nextScheduled
-    ? `Feeds ${formatCups(nextScheduled.cups)} now and skips the ${formatScheduleTime(nextScheduled.time)} feeding (auto-restored after).`
+    ? `Feeds ${labelForCups(nextScheduled.cups)} now and skips the ${formatScheduleTime(nextScheduled.time)} feeding.`
     : target != null
-      ? `Feeds ${formatCups(target)} now. No scheduled feedings to skip.`
+      ? `Feeds ${labelForCups(target)} now. No scheduled feedings to skip.`
       : 'Add a scheduled feeding or set target_meal_cups in your config first.';
   const canFeedNow = !!(nextScheduled || target != null);
 
@@ -231,73 +279,36 @@ export default function FeederPage() {
   })();
 
   const handleAdd = async (t, c) => {
-    try {
-      await feeder.addSchedule(t, c);
-      setAddOpen(false);
-    } catch {
-      // stay open
-    }
+    try { await feeder.addSchedule(t, c); setAddOpen(false); } catch { /* stay open */ }
   };
-
   const handleModify = async (id, t, c) => {
-    try {
-      await feeder.modifySchedule(id, t, c);
-      setEditingId(null);
-    } catch {
-      // stay open
-    }
+    try { await feeder.modifySchedule(id, t, c); setEditingId(null); } catch { /* stay open */ }
   };
-
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this scheduled feeding?')) return;
-    try {
-      await feeder.deleteSchedule(id);
-    } catch {
-      // error surfaced in banner
-    }
+    try { await feeder.deleteSchedule(id); } catch { /* surfaced */ }
   };
-
   const handleFeedNow = async () => {
     if (!canFeedNow) return;
-    try {
-      await feeder.feedNow();
-    } catch {
-      // error surfaced in banner
-    }
+    try { await feeder.feedNow(); } catch { /* surfaced */ }
   };
-
   const handleSkipNext = async () => {
     if (!nextScheduled) return;
-    if (
-      !window.confirm(
-        `Skip the ${formatScheduleTime(nextScheduled.time)} feeding? It will restore automatically after that time passes.`
-      )
-    ) return;
-    try {
-      await feeder.skipNext();
-    } catch {
-      // error surfaced in banner
-    }
+    if (!window.confirm(
+      `Skip the ${formatScheduleTime(nextScheduled.time)} feeding? It will restore automatically after that time passes.`
+    )) return;
+    try { await feeder.skipNext(); } catch { /* surfaced */ }
   };
-
   const handleDelay = async () => {
     if (delayTotal <= 0 || !nextScheduled) return;
     try {
       await feeder.delayNext(delayTotal);
       setDelayHours(0);
       setDelayMinutes(30);
-    } catch {
-      // error surfaced in banner
-    }
+    } catch { /* surfaced */ }
   };
-
   const handleVacation = async (until) => {
-    try {
-      await feeder.pauseUntil(until);
-      setVacationOpen(false);
-    } catch {
-      // stay open on error
-    }
+    try { await feeder.pauseUntil(until); setVacationOpen(false); } catch { /* stay open */ }
   };
 
   return (
@@ -345,7 +356,7 @@ export default function FeederPage() {
         </div>
       )}
 
-      <section className="feeder-hero">
+      <section className="feeder-card feeder-card--hero">
         <button
           type="button"
           className="feeder-hero__button"
@@ -356,6 +367,7 @@ export default function FeederPage() {
           <span>{mutating || feeding ? 'Feeding…' : 'Feed Now'}</span>
         </button>
         <p className="feeder-hero__caption">{feedNowCaption}</p>
+        {lastFedLine && <p className="feeder-hero__last-fed">{lastFedLine}</p>}
       </section>
 
       <section className="feeder-card">
@@ -431,7 +443,7 @@ export default function FeederPage() {
                             <span className="schedule-list__time">
                               {formatScheduleTime(s.time)}
                             </span>
-                            <span className="schedule-list__amount">{formatCups(s.cups)}</span>
+                            <span className="schedule-list__amount">{labelForCups(s.cups)}</span>
                             {isDelayed && (
                               <span className="schedule-list__badge">delayed</span>
                             )}
@@ -539,25 +551,15 @@ export default function FeederPage() {
         <div className="feeder-card__header">
           <h2 className="feeder-card__title">Give a treat</h2>
         </div>
-        <div className="feeder-controls__cups" role="radiogroup" aria-label="Amount">
-          {CUP_OPTIONS.map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={cups === value}
-              className={
-                'feeder-controls__cup' +
-                (cups === value ? ' feeder-controls__cup--active' : '')
-              }
-              onClick={() => setCupsOverride(value)}
-              disabled={feeding}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
+        <label className="feeder-controls__amount">
+          <span className="feeder-controls__amount-label">Amount</span>
+          <CupsSelect
+            value={cups}
+            onChange={setCupsOverride}
+            disabled={feeding}
+            ariaLabel="Treat amount"
+          />
+        </label>
         <label className="feeder-controls__slow">
           <input
             type="checkbox"
@@ -567,21 +569,14 @@ export default function FeederPage() {
           />
           Slow feed
         </label>
-
         <button
           type="button"
           className="feeder-secondary-button feeder-secondary-button--full"
           onClick={() => feeder.feed(cups, slow)}
           disabled={feeding}
         >
-          {feeding ? 'Feeding…' : `Give ${formatCups(cups)}`}
+          {feeding ? 'Feeding…' : `Give ${labelForCups(cups)}`}
         </button>
-
-        {lastFedAt && (
-          <p className="feeder-meta feeder-meta--centered">
-            Last fed at {formatTime(lastFedAt)} from this device.
-          </p>
-        )}
       </section>
     </div>
   );

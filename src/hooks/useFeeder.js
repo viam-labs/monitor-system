@@ -33,6 +33,7 @@ export function useFeeder(client, feederName) {
 
   const [status, setStatus] = useState(null);
   const [schedules, setSchedules] = useState(null);
+  const [lastFeeding, setLastFeeding] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [feeding, setFeeding] = useState(false);
@@ -48,14 +49,16 @@ export function useFeeder(client, feederName) {
     if (!feederClient) return;
     setError(null);
     try {
-      const [statusResult, scheduleResult] = await callWithRetry(() =>
+      const [statusResult, scheduleResult, lastFeedingResult] = await callWithRetry(() =>
         Promise.all([
           feederClient.doCommand({ command: 'status' }),
           feederClient.doCommand({ command: 'schedule' }),
+          feederClient.doCommand({ command: 'last_feeding' }),
         ])
       );
       setStatus(statusResult);
       setSchedules(scheduleResult.schedules || []);
+      setLastFeeding(lastFeedingResult.last_feeding || null);
     } catch (e) {
       setError(e.message || String(e));
     } finally {
@@ -164,6 +167,7 @@ export function useFeeder(client, feederName) {
   return {
     status,
     schedules,
+    lastFeeding,
     loading,
     error,
     feeding,
