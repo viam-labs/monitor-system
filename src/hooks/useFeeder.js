@@ -17,6 +17,7 @@ export function useFeeder(client, feederName) {
   const [error, setError] = useState(null);
   const [feeding, setFeeding] = useState(false);
   const [pausing, setPausing] = useState(false);
+  const [mutating, setMutating] = useState(false);
   // Module doesn't expose schedule-pause state yet, so we track the
   // user's last-known intent locally. Reload = unknown until we can
   // query it.
@@ -85,6 +86,39 @@ export function useFeeder(client, feederName) {
     [feederClient, schedulePaused]
   );
 
+  const runMutation = useCallback(
+    async (command) => {
+      if (!feederClient) return;
+      setMutating(true);
+      setError(null);
+      try {
+        await feederClient.doCommand(command);
+        await refresh();
+      } catch (e) {
+        setError(e.message || String(e));
+        throw e;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [feederClient, refresh]
+  );
+
+  const addSchedule = useCallback(
+    (time, cups) => runMutation({ command: 'add_schedule', time, cups }),
+    [runMutation]
+  );
+
+  const modifySchedule = useCallback(
+    (id, time, cups) => runMutation({ command: 'modify_schedule', id, time, cups }),
+    [runMutation]
+  );
+
+  const deleteSchedule = useCallback(
+    (id) => runMutation({ command: 'delete_schedule', id }),
+    [runMutation]
+  );
+
   return {
     status,
     schedules,
@@ -92,10 +126,14 @@ export function useFeeder(client, feederName) {
     error,
     feeding,
     pausing,
+    mutating,
     schedulePaused,
     lastFedAt,
     feed,
     refresh,
     pauseSchedule,
+    addSchedule,
+    modifySchedule,
+    deleteSchedule,
   };
 }
