@@ -398,6 +398,19 @@ code {
   color: var(--text-muted);
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.battery-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.battery-pill--low {
+  color: #fbbf24;
+  font-weight: 600;
 }
 
 .thermostat-state {
@@ -730,6 +743,40 @@ code {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+.day-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.day-picker__chip {
+  flex: 1 1 auto;
+  min-width: 40px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.day-picker__chip:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.day-picker__chip--on {
+  background: rgba(74, 222, 128, 0.18);
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #86efac;
+}
+
+.day-picker__chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .automation-form__field {
