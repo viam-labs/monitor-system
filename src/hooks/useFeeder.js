@@ -125,10 +125,14 @@ export function useFeeder(client, feederName) {
     [runMutation]
   );
 
-  const feedNow = useCallback(
-    () => runMutation({ command: 'feed_now' }),
-    [runMutation]
-  );
+  const feedNow = useCallback(async () => {
+    // PetSafe's server + our module's 5-minute read cache both lag a
+    // fresh feeding, so seed the "Last fed at" line locally the moment
+    // the button succeeds — extractLastFedTimestamp already takes the
+    // max of the local timestamp and PetSafe's history.
+    await runMutation({ command: 'feed_now' });
+    setLastFedAt(Date.now());
+  }, [runMutation]);
 
   const delayNext = useCallback(
     (hours) => runMutation({ command: 'delay_next', hours }),
