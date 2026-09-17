@@ -29,6 +29,16 @@ function formatClock(hhmm) {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+// Common house-temperature range in Fahrenheit — covers cooling
+// setpoints (65-85), heating setpoints (55-75), and everything in
+// between. Rendered as a dropdown instead of a number spinner for
+// consistent dark styling.
+const TEMP_OPTIONS_F = (() => {
+  const out = [];
+  for (let f = 55; f <= 95; f++) out.push(f);
+  return out;
+})();
+
 function pickTemperature(readings) {
   if (!readings) return null;
   for (const key of ['temperature', 'temperature_c', 'tempC', 'temp']) {
@@ -154,31 +164,29 @@ function AutomationCard({
           <div className="automation-form__row">
             <label className="automation-form__field">
               <span className="automation-form__label">Turn on at</span>
-              <div className="automation-form__input-with-unit">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={onInput}
-                  onChange={e => setOnInput(e.target.value)}
-                  disabled={busy}
-                  required
-                />
-                <span>°F</span>
-              </div>
+              <select
+                className="cups-select"
+                value={onInput}
+                onChange={e => setOnInput(e.target.value)}
+                disabled={busy}
+              >
+                {TEMP_OPTIONS_F.map(f => (
+                  <option key={f} value={f}>{f}°F</option>
+                ))}
+              </select>
             </label>
             <label className="automation-form__field">
               <span className="automation-form__label">Turn off at</span>
-              <div className="automation-form__input-with-unit">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={offInput}
-                  onChange={e => setOffInput(e.target.value)}
-                  disabled={busy}
-                  required
-                />
-                <span>°F</span>
-              </div>
+              <select
+                className="cups-select"
+                value={offInput}
+                onChange={e => setOffInput(e.target.value)}
+                disabled={busy}
+              >
+                {TEMP_OPTIONS_F.map(f => (
+                  <option key={f} value={f}>{f}°F</option>
+                ))}
+              </select>
             </label>
           </div>
           {previewMode && previewMode !== modeText && (
@@ -298,31 +306,29 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
       <div className="automation-form__row">
         <label className="automation-form__field">
           <span className="automation-form__label">Turn on at</span>
-          <div className="automation-form__input-with-unit">
-            <input
-              type="number"
-              inputMode="numeric"
-              value={onInput}
-              onChange={e => setOnInput(e.target.value)}
-              disabled={busy}
-              required
-            />
-            <span>°F</span>
-          </div>
+          <select
+            className="cups-select"
+            value={onInput}
+            onChange={e => setOnInput(e.target.value)}
+            disabled={busy}
+          >
+            {TEMP_OPTIONS_F.map(f => (
+              <option key={f} value={f}>{f}°F</option>
+            ))}
+          </select>
         </label>
         <label className="automation-form__field">
           <span className="automation-form__label">Turn off at</span>
-          <div className="automation-form__input-with-unit">
-            <input
-              type="number"
-              inputMode="numeric"
-              value={offInput}
-              onChange={e => setOffInput(e.target.value)}
-              disabled={busy}
-              required
-            />
-            <span>°F</span>
-          </div>
+          <select
+            className="cups-select"
+            value={offInput}
+            onChange={e => setOffInput(e.target.value)}
+            disabled={busy}
+          >
+            {TEMP_OPTIONS_F.map(f => (
+              <option key={f} value={f}>{f}°F</option>
+            ))}
+          </select>
         </label>
       </div>
 
