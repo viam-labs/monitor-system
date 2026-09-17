@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import MachinePage from './pages/MachinePage';
 import CamerasPage from './pages/CamerasPage';
 import FeederPage from './pages/FeederPage';
+import ThermostatPage from './pages/ThermostatPage';
 
 // HashRouter (not BrowserRouter) because Viam Applications' static
 // hosting does not rewrite unknown paths back to index.html — a
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<MachinePage />}>
           <Route index element={<CamerasPage />} />
           <Route path="feeder" element={<FeederPage />} />
+          <Route path="thermostat" element={<ThermostatPage />} />
         </Route>
       </Routes>
     </Router>
