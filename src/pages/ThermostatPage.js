@@ -114,94 +114,105 @@ function AutomationCard({ status, busy, onEnable, onSaveThresholds, onSaveHours 
       </div>
 
       {activeMode && (
-        <p className="feeder-meta">
-          Mode: <strong>{activeMode}</strong>
-          {status.within_active_window === false && ' · outside active hours'}
-        </p>
+        <div className="automation-status">
+          <span className="automation-status__label">Currently</span>
+          <span className="automation-status__value">
+            {activeMode}
+            {status.within_active_window === false && ' · outside active hours'}
+          </span>
+        </div>
       )}
 
-      <form className="automation-form" onSubmit={submitThresholds}>
-        <div className="automation-form__row">
-          <label className="automation-form__field">
-            <span className="automation-form__label">Turn on at</span>
-            <div className="automation-form__input-with-unit">
-              <input
-                type="number"
-                inputMode="numeric"
-                value={onInput}
-                onChange={e => setOnInput(e.target.value)}
-                disabled={busy}
-                required
-              />
-              <span>°F</span>
-            </div>
-          </label>
-          <label className="automation-form__field">
-            <span className="automation-form__label">Turn off at</span>
-            <div className="automation-form__input-with-unit">
-              <input
-                type="number"
-                inputMode="numeric"
-                value={offInput}
-                onChange={e => setOffInput(e.target.value)}
-                disabled={busy}
-                required
-              />
-              <span>°F</span>
-            </div>
-          </label>
-        </div>
-        <div className="automation-form__footer">
-          {previewMode && (
-            <span className="feeder-meta">Would be: <strong>{previewMode}</strong></span>
+      <div className="automation-section">
+        <h3 className="automation-section__title">Thresholds</h3>
+        <form className="automation-form" onSubmit={submitThresholds}>
+          <div className="automation-form__row">
+            <label className="automation-form__field">
+              <span className="automation-form__label">Turn on at</span>
+              <div className="automation-form__input-with-unit">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={onInput}
+                  onChange={e => setOnInput(e.target.value)}
+                  disabled={busy}
+                  required
+                />
+                <span>°F</span>
+              </div>
+            </label>
+            <label className="automation-form__field">
+              <span className="automation-form__label">Turn off at</span>
+              <div className="automation-form__input-with-unit">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={offInput}
+                  onChange={e => setOffInput(e.target.value)}
+                  disabled={busy}
+                  required
+                />
+                <span>°F</span>
+              </div>
+            </label>
+          </div>
+          {previewMode && previewMode !== activeMode && (
+            <p className="feeder-meta">Would be: <strong>{previewMode}</strong></p>
           )}
+        <div className="automation-form__footer">
           <button
             type="submit"
             className="feeder-primary-button feeder-primary-button--sm"
             disabled={busy || !thresholdsDirty}
           >
-            {busy ? 'Saving…' : 'Save thresholds'}
+              {busy ? 'Saving…' : 'Save'}
           </button>
         </div>
-      </form>
+        </form>
+      </div>
 
-      <form className="automation-form" onSubmit={submitHours}>
-        <div className="automation-form__row">
-          <label className="automation-form__field">
-            <span className="automation-form__label">Active from</span>
-            <input
-              type="time"
-              value={startInput}
-              onChange={e => setStartInput(e.target.value)}
-              disabled={busy}
-            />
-          </label>
-          <label className="automation-form__field">
-            <span className="automation-form__label">Until</span>
-            <input
-              type="time"
-              value={endInput}
-              onChange={e => setEndInput(e.target.value)}
-              disabled={busy}
-            />
-          </label>
-        </div>
-        <div className="automation-form__footer">
-          <span className="feeder-meta">
-            {(!startInput && !endInput) ? 'Always active (both blank).' : 'Blank both to always be active.'}
-          </span>
-          <button
-            type="submit"
-            className="feeder-primary-button feeder-primary-button--sm"
-            disabled={busy || !hoursDirty}
-          >
-            {busy ? 'Saving…' : 'Save hours'}
-          </button>
-        </div>
-      </form>
+      <div className="automation-section">
+        <h3 className="automation-section__title">Active hours</h3>
+        <form className="automation-form" onSubmit={submitHours}>
+          <div className="automation-form__row">
+            <label className="automation-form__field">
+              <span className="automation-form__label">From</span>
+              <input
+                type="time"
+                value={startInput}
+                onChange={e => setStartInput(e.target.value)}
+                disabled={busy}
+              />
+            </label>
+            <label className="automation-form__field">
+              <span className="automation-form__label">Until</span>
+              <input
+                type="time"
+                value={endInput}
+                onChange={e => setEndInput(e.target.value)}
+                disabled={busy}
+              />
+            </label>
+          </div>
+          <p className="feeder-meta">
+            {(!startInput && !endInput)
+              ? 'Always active (both blank).'
+              : 'Blank both to always be active.'}
+          </p>
+          <div className="automation-form__footer">
+            <button
+              type="submit"
+              className="feeder-primary-button feeder-primary-button--sm"
+              disabled={busy || !hoursDirty}
+            >
+              {busy ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {status.last_action_at && (
-        <p className="feeder-meta">
+        <p className="feeder-meta automation-last-action">
           Automation last acted at {formatTime(status.last_action_at)}
           {status.last_action_position === 1 ? ' (on)' : status.last_action_position === 0 ? ' (off)' : ''}.
         </p>

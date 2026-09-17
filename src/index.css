@@ -453,6 +453,23 @@ code {
   cursor: not-allowed;
 }
 
+.curtain-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.curtain-slider__label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.curtain-slider input[type="range"] {
+  accent-color: var(--accent);
+  width: 100%;
+}
+
 .automation-toggle {
   display: flex;
   align-items: center;
@@ -462,6 +479,47 @@ code {
   font-weight: 500;
   cursor: pointer;
   user-select: none;
+}
+
+.automation-status {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 0 4px 2px;
+}
+
+.automation-status__label {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.automation-status__value {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.automation-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.automation-section__title {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+
+.automation-last-action {
+  margin: 4px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .automation-toggle input {
@@ -792,6 +850,13 @@ code {
 .delay-row {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.delay-row__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
@@ -1196,13 +1261,44 @@ code {
   .thermostat-buttons {
     gap: 12px;
   }
+  /* Automation card gets extra breathing room on mobile: each
+     sub-section is its own visual block with its own inputs + save. */
+  .automation-section {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    gap: 10px;
+  }
   .automation-form {
-    padding: 14px;
+    padding: 0;
+    background: transparent;
+    border: 0;
     gap: 12px;
   }
+  .automation-form__row {
+    gap: 12px;
+  }
+  .automation-form input[type="number"],
+  .automation-form input[type="time"] {
+    padding: 12px;
+    font-size: 1rem;
+    min-height: 44px;
+  }
   .automation-form__footer {
-    flex-wrap: wrap;
-    row-gap: 8px;
+    justify-content: stretch;
+  }
+  .automation-form__footer .feeder-primary-button {
+    width: 100%;
+  }
+  /* Header title + toggle stay on one line — both are short enough. */
+  .feeder-card__header {
+    row-gap: 0;
+    flex-wrap: nowrap;
+  }
+  .automation-toggle input {
+    width: 22px;
+    height: 22px;
   }
 }
 
