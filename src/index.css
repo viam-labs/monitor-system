@@ -124,7 +124,7 @@ code {
 .back-button {
   position: absolute;
   top: 8px;
-  right: 8px;
+  left: 8px;
   background: rgba(0, 0, 0, 0.6);
   color: var(--text);
   padding: 4px 10px;
@@ -364,6 +364,13 @@ code {
 .thermostat-readings {
   align-items: center;
   padding: 24px 16px;
+  position: relative;
+}
+
+.thermostat-readings__refresh {
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
 
 .thermostat-temp {
@@ -470,17 +477,6 @@ code {
   width: 100%;
 }
 
-.automation-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  user-select: none;
-}
-
 .automation-status {
   display: flex;
   align-items: baseline;
@@ -522,10 +518,135 @@ code {
   border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.automation-toggle input {
-  accent-color: var(--accent);
-  width: 18px;
-  height: 18px;
+/* Multi-automation list */
+.automation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.automation-card--active {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.06);
+}
+
+.automation-card--add {
+  gap: 12px;
+  border-color: rgba(244, 162, 97, 0.28);
+  background: rgba(244, 162, 97, 0.06);
+}
+
+.automation-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.automation-card__disclose {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.automation-card__chevron {
+  display: inline-block;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  transition: transform 0.15s;
+  width: 12px;
+}
+
+.automation-card__chevron--open {
+  transform: rotate(90deg);
+}
+
+.automation-card__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.automation-card__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  background: rgba(74, 222, 128, 0.18);
+  color: #86efac;
+}
+
+.automation-card__summary {
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.automation-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.automation-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.automation-card__spacer {
+  flex: 1;
+}
+
+.automation-form__section-title {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding-top: 4px;
+}
+
+.automation-form input[type="text"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  width: 100%;
+}
+
+.automation-card__form input[type="text"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  width: 100%;
 }
 
 .automation-form {
@@ -1296,9 +1417,16 @@ code {
     row-gap: 0;
     flex-wrap: nowrap;
   }
-  .automation-toggle input {
+  .toggle__track {
+    width: 44px;
+    height: 26px;
+  }
+  .toggle__thumb {
     width: 22px;
     height: 22px;
+  }
+  .toggle input:checked + .toggle__track .toggle__thumb {
+    transform: translateX(18px);
   }
 }
 
