@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 
-export default function HamburgerMenu({ machineId }) {
+export default function HamburgerMenu({ machineId, showFeeder }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -48,17 +48,19 @@ export default function HamburgerMenu({ machineId }) {
               Cameras
             </NavLink>
           </li>
-          <li>
-            <NavLink
-              to={`/${machineId}/feeder`}
-              onClick={close}
-              className={({ isActive }) =>
-                `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
-              }
-            >
-              Feeder
-            </NavLink>
-          </li>
+          {showFeeder && (
+            <li>
+              <NavLink
+                to={`/${machineId}/feeder`}
+                onClick={close}
+                className={({ isActive }) =>
+                  `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
+                }
+              >
+                Feeder
+              </NavLink>
+            </li>
+          )}
         </ul>
       )}
     </div>

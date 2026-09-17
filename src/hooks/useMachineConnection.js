@@ -15,11 +15,17 @@ async function createClient() {
 // Establishes the machine connection once at MachinePage mount, so it
 // survives navigation between pages. Streams are populated per-camera
 // as each getStream() resolves.
+// Name we look for when detecting the PetSafe generic component. Users
+// wiring a differently-named feeder will need to rename this or make it
+// configurable.
+const FEEDER_RESOURCE_NAME = 'feeder';
+
 export function useMachineConnection() {
   const [client, setClient] = useState(null);
   const [cameras, setCameras] = useState([]);
   const [streams, setStreams] = useState({});
   const [audioName, setAudioName] = useState('');
+  const [feederName, setFeederName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -46,6 +52,11 @@ export function useMachineConnection() {
           r => r.subtype === 'audio_in' || r.subtype === 'audio_input'
         );
         if (audio) setAudioName(audio.name);
+
+        const feeder = resources.find(
+          r => r.subtype === 'generic' && r.name === FEEDER_RESOURCE_NAME
+        );
+        if (feeder) setFeederName(feeder.name);
 
         setLoading(false);
 
@@ -81,5 +92,5 @@ export function useMachineConnection() {
     };
   }, []);
 
-  return { client, cameras, streams, audioName, loading, error };
+  return { client, cameras, streams, audioName, feederName, loading, error };
 }
