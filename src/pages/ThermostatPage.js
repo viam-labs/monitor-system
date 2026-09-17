@@ -93,23 +93,18 @@ export default function ThermostatPage() {
           </span>
           <span className="thermostat-temp__unit">°F</span>
         </div>
-        <div className="thermostat-secondary">
-          {tempC != null && (
-            <span className="thermostat-secondary__item">
-              {tempC.toFixed(1)}°C
-            </span>
-          )}
-          {humidity != null && (
+        {humidity != null && (
+          <div className="thermostat-secondary">
             <span className="thermostat-secondary__item">
               {Math.round(humidity)}% humidity
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       <section className="feeder-card">
         <div className="feeder-card__header">
-          <h2 className="feeder-card__title">Air conditioner</h2>
+          <h2 className="feeder-card__title">Bot</h2>
           <span className={
             'thermostat-state' +
             (on ? ' thermostat-state--on' : off ? ' thermostat-state--off' : '')
@@ -118,17 +113,28 @@ export default function ThermostatPage() {
           </span>
         </div>
 
-        <div className="thermostat-controls">
+        <div className="thermostat-buttons">
           <button
             type="button"
             className={
-              'thermostat-power' +
-              (on ? ' thermostat-power--on' : '')
+              'thermostat-button' +
+              (on ? ' thermostat-button--active' : '')
             }
-            onClick={() => t.setAcOn(!on)}
-            disabled={busy || position == null}
+            onClick={() => t.setAcOn(true)}
+            disabled={busy}
           >
-            {busy ? 'Sending…' : on ? 'Turn OFF' : 'Turn ON'}
+            {busy && position !== 1 ? 'Sending…' : 'On'}
+          </button>
+          <button
+            type="button"
+            className={
+              'thermostat-button' +
+              (off ? ' thermostat-button--active' : '')
+            }
+            onClick={() => t.setAcOn(false)}
+            disabled={busy}
+          >
+            {busy && position !== 0 ? 'Sending…' : 'Off'}
           </button>
         </div>
 
@@ -139,7 +145,8 @@ export default function ThermostatPage() {
         )}
         <p className="feeder-meta feeder-meta--centered">
           Commanded state — reflects what Viam last told the Bot to press,
-          not whether the A/C is actually running.
+          not what the appliance is actually doing. Whether "on" means A/C
+          or heat depends on the mode the physical remote is in.
         </p>
       </section>
     </div>
