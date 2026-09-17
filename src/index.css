@@ -237,8 +237,9 @@ code {
   z-index: 0;
 }
 
+/* No paw--tr — the hamburger nav sits in the top-right corner and
+   would cover it. */
 .paw--tl { top: var(--paw-offset); left: var(--paw-offset); transform: rotate(-25deg); }
-.paw--tr { top: var(--paw-offset); right: var(--paw-offset); transform: rotate(25deg); }
 .paw--bl { bottom: var(--paw-offset); left: var(--paw-offset); transform: rotate(-155deg); }
 .paw--br { bottom: var(--paw-offset); right: var(--paw-offset); transform: rotate(155deg); }
 
@@ -909,7 +910,7 @@ code {
 @media (max-width: 900px), (max-height: 600px) {
   .feeder-page {
     gap: 12px;
-    padding-top: 68px;
+    padding-top: 88px;
   }
   .feeder-card {
     padding: 14px;
