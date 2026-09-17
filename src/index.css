@@ -397,31 +397,59 @@ code {
   letter-spacing: 0.06em;
 }
 
-.feeder-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 20px;
-}
-
-.feeder-stat {
+.feeder-topbar {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px;
+  min-height: 32px;
 }
 
-.feeder-stat__label {
+.feeder-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.feeder-topbar__cached {
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 500;
+  letter-spacing: 0.06em;
 }
 
-.feeder-stat__value {
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  font-size: 1.15rem;
+.feeder-icon-button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.feeder-icon-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.feeder-icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.feeder-icon-button--danger:hover:not(:disabled) {
+  border-color: #fca5a5;
+  color: #fca5a5;
 }
 
 .feeder-status__pill {
@@ -463,6 +491,13 @@ code {
   margin: 0;
   color: #fca5a5;
   font-size: 0.85rem;
+}
+
+.feeder-error--banner {
+  padding: 8px 12px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  border-radius: 8px;
 }
 
 .feeder-secondary-button {
@@ -508,10 +543,19 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 8px 12px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.schedule-list__body {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
 
 .schedule-list__time {
@@ -524,6 +568,64 @@ code {
   color: var(--text-muted);
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
+}
+
+.schedule-list__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedule-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(244, 162, 97, 0.06);
+  border: 1px solid rgba(244, 162, 97, 0.28);
+}
+
+.schedule-form__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.schedule-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schedule-form__label {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.schedule-form input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color-scheme: dark;
+}
+
+.schedule-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.schedule-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .feeder-controls__cups {
@@ -604,6 +706,17 @@ code {
 
 .feeder-primary-button__emoji {
   font-size: 1.2rem;
+}
+
+.feeder-primary-button--sm {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+}
+
+.feeder-secondary-button--full {
+  align-self: stretch;
+  text-align: center;
 }
 
 @media (max-width: 900px), (max-height: 600px) {
