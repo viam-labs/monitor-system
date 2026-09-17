@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 
-export default function HamburgerMenu({ machineId, showFeeder }) {
+export default function HamburgerMenu({ showFeeder }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -38,7 +38,7 @@ export default function HamburgerMenu({ machineId, showFeeder }) {
         <ul className="nav-menu__list" role="menu">
           <li>
             <NavLink
-              to={`/${machineId}`}
+              to="/"
               end
               onClick={close}
               className={({ isActive }) =>
@@ -51,7 +51,7 @@ export default function HamburgerMenu({ machineId, showFeeder }) {
           {showFeeder && (
             <li>
               <NavLink
-                to={`/${machineId}/feeder`}
+                to="/feeder"
                 onClick={close}
                 className={({ isActive }) =>
                   `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
