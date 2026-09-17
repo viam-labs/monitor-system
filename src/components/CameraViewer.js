@@ -1,18 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
-import { createRobotClient, StreamClient } from '@viamrobotics/sdk';
-import Cookies from 'js-cookie';
+import { useOutletContext } from 'react-router-dom';
 import MicButton from './MicButton';
-
-async function createClient() {
-  const cookieKey = window.location.pathname.split('/')[2];
-  const { apiKey: { id, key }, hostname } = JSON.parse(Cookies.get(cookieKey));
-  return await createRobotClient({
-    host: hostname,
-    signalingAddress: 'https://app.viam.com:443',
-    credentials: { type: 'api-key', payload: key, authEntity: id },
-  });
-}
 
 // Wraps a state update in the View Transitions API when available, so
 // tile focus/unfocus animates via CSS morphing instead of snapping.
@@ -104,54 +93,8 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit, gridSpan }) {
 }
 
 function CameraViewer() {
-  const [cameras, setCameras] = useState([]);
-  const [streams, setStreams] = useState({});
+  const { client, cameras, streams, audioName, loading, error } = useOutletContext();
   const [selected, setSelected] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [client, setClient] = useState(null);
-  const [audioName, setAudioName] = useState('');
-
-  useEffect(() => {
-    const startedStreams = {};
-    async function init() {
-      try {
-        const c = await createClient();
-        setClient(c);
-        const resources = await c.resourceNames();
-        const cams = resources
-          .filter(r => r.subtype === 'camera')
-          .map(r => ({ id: r.name, name: r.name }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-        setCameras(cams);
-
-        const audio = resources.find(
-          r => r.subtype === 'audio_in' || r.subtype === 'audio_input'
-        );
-        if (audio) setAudioName(audio.name);
-
-        const streamClient = new StreamClient(c);
-        for (const cam of cams) {
-          try {
-            startedStreams[cam.name] = await streamClient.getStream(cam.name);
-          } catch (e) {
-            console.error(`Failed to start stream for ${cam.name}:`, e);
-          }
-        }
-        setStreams({ ...startedStreams });
-      } catch (e) {
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    init();
-    return () => {
-      Object.values(startedStreams).forEach(s => {
-        s?.getTracks().forEach(t => t.stop());
-      });
-    };
-  }, []);
 
   useEffect(() => {
     if (!selected) return;
