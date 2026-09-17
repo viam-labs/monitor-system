@@ -2,17 +2,40 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useFeeder } from '../hooks/useFeeder';
 
-const CUP_OPTIONS = [0.125, 0.25, 0.5, 1];
+const CUP_OPTIONS = [
+  { value: 0.125, label: '⅛' },
+  { value: 0.25, label: '¼' },
+  { value: 0.5, label: '½' },
+  { value: 1, label: '1' },
+];
 
 function formatTime(ms) {
   if (!ms) return null;
   return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+function formatScheduleTime(hhmm) {
+  if (!hhmm) return '';
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function formatCups(cups) {
+  if (cups == null) return '';
+  if (cups === Math.floor(cups)) return `${cups} cup${cups === 1 ? '' : 's'}`;
+  return `${cups} cups`;
+}
+
 export default function FeederPage() {
   const { client, feederName, loading: connectionLoading } = useOutletContext();
-  const { status, loading, error, feeding, lastFedAt, feed, refresh } = useFeeder(client, feederName);
-  const [cups, setCups] = useState(0.25);
+  const feeder = useFeeder(client, feederName);
+  const { status, schedules, loading, error, feeding, pausing, schedulePaused, lastFedAt } = feeder;
+
+  const target = status?.target_meal_cups ?? null;
+  const [cupsOverride, setCupsOverride] = useState(null);
+  const cups = cupsOverride ?? target ?? 0.25;
   const [slow, setSlow] = useState(false);
 
   if (connectionLoading) {
@@ -40,57 +63,97 @@ export default function FeederPage() {
 
   return (
     <div className="feeder-page">
-      <h1 className="feeder-page__title">{status?.name || 'Feeder'}</h1>
+      <h1 className="feeder-page__title">
+        <span aria-hidden="true">🦴</span> {status?.name || 'Feeder'}
+      </h1>
 
-      <div className="feeder-status">
+      <section className="feeder-card">
         {loading && !status && <p className="feeder-status__loading">Loading…</p>}
         {status && (
           <>
-            <div className="feeder-status__row">
-              <span className="feeder-status__label">Food</span>
+            <div className="feeder-row">
+              <span className="feeder-row__label">Food</span>
               <span className={foodStateClass}>{status.food_state}</span>
             </div>
-            <div className="feeder-status__row">
-              <span className="feeder-status__label">Battery</span>
-              <span className="feeder-status__value">{status.battery_level}%</span>
-            </div>
+            {target != null && (
+              <div className="feeder-row">
+                <span className="feeder-row__label">Target meal</span>
+                <span className="feeder-row__value">{formatCups(target)}</span>
+              </div>
+            )}
             {status.cached && (
-              <p className="feeder-status__meta">
-                Cached — module refreshes at most once per 5 min.
+              <p className="feeder-meta">
+                Cached — refreshes at most once per 5 min.
               </p>
             )}
           </>
         )}
-        {error && <p className="feeder-status__error">{error}</p>}
+        {error && <p className="feeder-error">{error}</p>}
         <button
           type="button"
-          className="feeder-status__refresh"
-          onClick={refresh}
+          className="feeder-secondary-button"
+          onClick={feeder.refresh}
           disabled={loading || feeding}
         >
           Refresh
         </button>
-      </div>
+      </section>
 
-      <div className="feeder-controls">
-        <div className="feeder-controls__section">
-          <label className="feeder-controls__label">Amount</label>
-          <div className="feeder-controls__cups">
-            {CUP_OPTIONS.map(v => (
-              <button
-                key={v}
-                type="button"
-                className={
-                  'feeder-controls__cup' +
-                  (cups === v ? ' feeder-controls__cup--active' : '')
-                }
-                onClick={() => setCups(v)}
-                disabled={feeding}
-              >
-                {v} cup{v === 1 ? '' : 's'}
-              </button>
-            ))}
-          </div>
+      <section className="feeder-card">
+        <div className="feeder-card__header">
+          <h2 className="feeder-card__title">Schedule</h2>
+          <button
+            type="button"
+            className={
+              'feeder-secondary-button' +
+              (schedulePaused ? ' feeder-secondary-button--active' : '')
+            }
+            onClick={() => feeder.pauseSchedule(!schedulePaused)}
+            disabled={pausing || !schedules}
+          >
+            {schedulePaused ? 'Resume' : 'Pause'}
+          </button>
+        </div>
+        {loading && !schedules && <p className="feeder-status__loading">Loading…</p>}
+        {schedules && schedules.length === 0 && (
+          <p className="feeder-meta">No scheduled feedings.</p>
+        )}
+        {schedules && schedules.length > 0 && (
+          <ul className="schedule-list">
+            {schedules
+              .slice()
+              .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+              .map(s => (
+                <li key={s.id || s.time} className="schedule-list__item">
+                  <span className="schedule-list__time">{formatScheduleTime(s.time)}</span>
+                  <span className="schedule-list__amount">{formatCups(s.cups)}</span>
+                </li>
+              ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="feeder-card feeder-card--controls">
+        <div className="feeder-card__header">
+          <h2 className="feeder-card__title">Manual feed</h2>
+        </div>
+        <div className="feeder-controls__cups" role="radiogroup" aria-label="Amount">
+          {CUP_OPTIONS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={cups === value}
+              className={
+                'feeder-controls__cup' +
+                (cups === value ? ' feeder-controls__cup--active' : '')
+              }
+              onClick={() => setCupsOverride(value)}
+              disabled={feeding}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         <label className="feeder-controls__slow">
@@ -105,19 +168,20 @@ export default function FeederPage() {
 
         <button
           type="button"
-          className="feeder-controls__feed"
-          onClick={() => feed(cups, slow)}
+          className="feeder-primary-button"
+          onClick={() => feeder.feed(cups, slow)}
           disabled={feeding}
         >
-          {feeding ? 'Feeding…' : `Feed ${cups} cup${cups === 1 ? '' : 's'}`}
+          {feeding ? 'Feeding…' : `Feed ${formatCups(cups)}`}
+          <span aria-hidden="true" className="feeder-primary-button__emoji">🐶</span>
         </button>
 
         {lastFedAt && (
-          <p className="feeder-controls__last-fed">
+          <p className="feeder-meta feeder-meta--centered">
             Last fed at {formatTime(lastFedAt)} from this device.
           </p>
         )}
-      </div>
+      </section>
     </div>
   );
 }
