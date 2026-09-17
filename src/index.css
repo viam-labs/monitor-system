@@ -645,8 +645,10 @@ code {
   margin-right: 4px;
 }
 
-.delay-row__inputs > button {
-  margin-left: auto;
+.delay-row__buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .vacation-form {

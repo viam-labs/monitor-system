@@ -81,7 +81,10 @@ function formatVacationUntil(iso) {
 
 function formatRelative(msAgo) {
   if (msAgo == null || Number.isNaN(msAgo)) return '';
-  const sec = Math.floor(msAgo / 1000);
+  // Future timestamps mean something's wrong upstream (clock skew,
+  // wrong tz assumption). Don't confidently print "in 2 hours".
+  if (msAgo < -60000) return '';
+  const sec = Math.max(0, Math.floor(msAgo / 1000));
   if (sec < 60) return 'just now';
   const min = Math.floor(sec / 60);
   if (min < 60) return `${min} min ago`;
@@ -91,19 +94,34 @@ function formatRelative(msAgo) {
   return `${day} day${day === 1 ? '' : 's'} ago`;
 }
 
+// PetSafe returns timestamps without a timezone marker but the values
+// are UTC. Date.parse of a naive string is browser-dependent (some
+// parse as UTC, some as local), so force UTC here to avoid displaying
+// times shifted by the local UTC offset.
+function parseServerTimestamp(raw) {
+  if (raw == null) return NaN;
+  if (typeof raw === 'number') {
+    return raw < 1e12 ? raw * 1000 : raw;
+  }
+  if (typeof raw !== 'string') return NaN;
+  const hasTz = /[Zz]|[+-]\d{2}:?\d{2}$/.test(raw);
+  return Date.parse(hasTz ? raw : raw + 'Z');
+}
+
 function extractLastFedTimestamp(lastFeeding, localLastFedAt) {
   const candidates = [];
   if (localLastFedAt) candidates.push(localLastFedAt);
   if (lastFeeding) {
     for (const key of ['created_at', 'timestamp', 'time', 'date']) {
-      const raw = lastFeeding[key];
-      if (raw) {
-        const ms = Date.parse(raw);
-        if (!Number.isNaN(ms)) candidates.push(ms);
-      }
+      const ms = parseServerTimestamp(lastFeeding[key]);
+      if (!Number.isNaN(ms)) candidates.push(ms);
     }
   }
-  return candidates.length ? Math.max(...candidates) : null;
+  // Filter out timestamps meaningfully in the future — better to show
+  // nothing than "3:51 PM · just now" when it's currently 1:24 PM.
+  const nowMs = Date.now();
+  const valid = candidates.filter(ms => ms <= nowMs + 60000);
+  return valid.length ? Math.max(...valid) : null;
 }
 
 function nowLocalDatetimeInput() {
@@ -270,12 +288,24 @@ export default function FeederPage() {
       : 'Add a scheduled feeding or set target_meal_cups in your config first.';
   const canFeedNow = !!(nextScheduled || target != null);
 
-  const delayTotal = Number(delayHours) + Number(delayMinutes) / 60;
-  const delayPreview = (() => {
-    if (!nextScheduled) return 'No upcoming feedings to delay.';
-    if (delayTotal <= 0) return 'Enter a delay above.';
-    const shifted = new Date(nextScheduled.fireAt.getTime() + delayTotal * 3600 * 1000);
-    return `Feeding at ${formatScheduleTime(nextScheduled.time)} will move to ${formatTime(shifted.getTime())}.`;
+  const moveTotalHours = Number(delayHours) + Number(delayMinutes) / 60;
+  const shiftedLater = nextScheduled
+    ? new Date(nextScheduled.fireAt.getTime() + moveTotalHours * 3600 * 1000)
+    : null;
+  const shiftedEarlier = nextScheduled
+    ? new Date(nextScheduled.fireAt.getTime() - moveTotalHours * 3600 * 1000)
+    : null;
+  const nowMs = Date.now();
+  const canMoveEarlier = !!shiftedEarlier && shiftedEarlier.getTime() > nowMs;
+  const canMoveLater = !!shiftedLater;
+  const movePreview = (() => {
+    if (!nextScheduled) return 'No upcoming feedings to move.';
+    if (moveTotalHours <= 0) return 'Enter an amount above.';
+    const origLabel = formatScheduleTime(nextScheduled.time);
+    if (canMoveEarlier) {
+      return `Earlier: ${origLabel} → ${formatTime(shiftedEarlier.getTime())}. Later: ${origLabel} → ${formatTime(shiftedLater.getTime())}.`;
+    }
+    return `Later: ${origLabel} → ${formatTime(shiftedLater.getTime())}. (Earlier would land in the past.)`;
   })();
 
   const handleAdd = async (t, c) => {
@@ -299,10 +329,11 @@ export default function FeederPage() {
     )) return;
     try { await feeder.skipNext(); } catch { /* surfaced */ }
   };
-  const handleDelay = async () => {
-    if (delayTotal <= 0 || !nextScheduled) return;
+  const moveNext = async (direction) => {
+    if (moveTotalHours <= 0 || !nextScheduled) return;
+    const hours = direction === 'earlier' ? -moveTotalHours : moveTotalHours;
     try {
-      await feeder.delayNext(delayTotal);
+      await feeder.delayNext(hours);
       setDelayHours(0);
       setDelayMinutes(30);
     } catch { /* surfaced */ }
@@ -489,7 +520,7 @@ export default function FeederPage() {
                   Skip next feeding
                 </button>
                 <div className="delay-row">
-                  <span className="delay-row__label">Delay next by</span>
+                  <span className="delay-row__label">Move next by</span>
                   <div className="delay-row__inputs">
                     <input
                       type="number"
@@ -511,17 +542,32 @@ export default function FeederPage() {
                       disabled={mutating}
                     />
                     <span className="delay-row__unit">min</span>
+                  </div>
+                  <div className="delay-row__buttons">
+                    <button
+                      type="button"
+                      className="feeder-secondary-button"
+                      onClick={() => moveNext('earlier')}
+                      disabled={mutating || moveTotalHours <= 0 || !canMoveEarlier}
+                      title={
+                        !canMoveEarlier && nextScheduled && moveTotalHours > 0
+                          ? 'Moving earlier by that much would land in the past.'
+                          : undefined
+                      }
+                    >
+                      ← Earlier
+                    </button>
                     <button
                       type="button"
                       className="feeder-primary-button feeder-primary-button--sm"
-                      onClick={handleDelay}
-                      disabled={mutating || delayTotal <= 0 || !nextScheduled}
+                      onClick={() => moveNext('later')}
+                      disabled={mutating || moveTotalHours <= 0 || !canMoveLater}
                     >
-                      Delay
+                      Delay →
                     </button>
                   </div>
                 </div>
-                <p className="feeder-meta">{delayPreview}</p>
+                <p className="feeder-meta">{movePreview}</p>
               </div>
             )}
 
