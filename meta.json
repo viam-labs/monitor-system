@@ -2,7 +2,7 @@
     "module_id": "joseph:monitor-system",
     "visibility": "public",
     "url": "https://github.com/viam-labs/monitor-system",
-    "description": "Monitor cameras across a Viam machine and its remotes.",
+    "description": "Personal home dashboard: cameras, pet feeder, and SwitchBot devices.",
     "models": [],
     "entrypoint": "",
     "applications": [
