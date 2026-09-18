@@ -300,28 +300,6 @@ export default function CurtainPage() {
       </section>
 
       <section className="feeder-card">
-        {isOpen ? (
-          <button
-            type="button"
-            className="curtain-action curtain-action--close"
-            onClick={c.close}
-            disabled={busy}
-          >
-            {busy ? 'Sending…' : 'Close'}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="curtain-action curtain-action--open"
-            onClick={c.open}
-            disabled={busy}
-          >
-            {busy ? 'Sending…' : 'Open'}
-          </button>
-        )}
-      </section>
-
-      <section className="feeder-card">
         <div className="feeder-card__header">
           <h2 className="feeder-card__title">Schedules</h2>
         </div>
@@ -363,6 +341,28 @@ export default function CurtainPage() {
             disabled={busy}
           >
             + Add schedule
+          </button>
+        )}
+      </section>
+
+      <section className="feeder-card">
+        {isOpen ? (
+          <button
+            type="button"
+            className="curtain-action curtain-action--close"
+            onClick={c.close}
+            disabled={busy}
+          >
+            {busy ? 'Sending…' : 'Close'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="curtain-action curtain-action--open"
+            onClick={c.open}
+            disabled={busy}
+          >
+            {busy ? 'Sending…' : 'Open'}
           </button>
         )}
       </section>
