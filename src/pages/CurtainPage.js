@@ -189,7 +189,9 @@ export default function CurtainPage() {
     curtainName,
     loading: connectionLoading,
     detectingFeatures,
+    pendingProbes,
   } = useOutletContext();
+  const curtainStillProbing = !curtainName && pendingProbes && pendingProbes.generic > 0;
   const c = useCurtain(client, curtainName);
   const { position, battery, moving, schedules, loading, error, busy } = c;
   const [addOpen, setAddOpen] = useState(false);
@@ -200,7 +202,7 @@ export default function CurtainPage() {
   const stateLabel = typeof position !== 'number' ? '—' : isOpen ? 'Open' : 'Closed';
   const batteryLow = battery != null && battery <= LOW_BATTERY_THRESHOLD;
 
-  if (connectionLoading || detectingFeatures) {
+  if (connectionLoading || detectingFeatures || curtainStillProbing) {
     return (
       <div className="paw-loader" aria-label="Connecting">
         <span>🐾</span>
