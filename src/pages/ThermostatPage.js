@@ -70,7 +70,41 @@ function pickBattery(readings) {
 
 const LOW_BATTERY_THRESHOLD = 20;
 
-function AutomationCard({
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+
+function daysIntersect(a, b) {
+  const setA = new Set(a && a.length ? a : ALL_DAYS);
+  const bs = b && b.length ? b : ALL_DAYS;
+  return bs.some(d => setA.has(d));
+}
+
+// Compare a proposed scheduled automation to existing ones. Returns
+// { level: 'block'|'warn', other } when it collides (same time +
+// overlapping days) with another scheduled entry: opposite action is
+// a hard block, same action is a warning. null when there's no clash.
+function findScheduledConflict(candidate, existing, ignoreId) {
+  for (const other of existing || []) {
+    if (!other || other.id === ignoreId) continue;
+    if (other.kind !== 'scheduled') continue;
+    if (other.enabled === false) continue;
+    if (other.time !== candidate.time) continue;
+    if (!daysIntersect(candidate.days_of_week, other.days_of_week)) continue;
+    return {
+      level: other.action === candidate.action ? 'warn' : 'block',
+      other,
+    };
+  }
+  return null;
+}
+
+function AutomationCard(props) {
+  if (props.automation?.kind === 'scheduled') {
+    return <ScheduledCard {...props} />;
+  }
+  return <HysteresisCard {...props} />;
+}
+
+function HysteresisCard({
   automation,
   isActive,
   isFirst,
@@ -133,6 +167,7 @@ function AutomationCard({
     onSave({
       id: automation.id,
       name: trimmedName,
+      kind: 'hysteresis',
       on_temp_c: fToC(onFVal),
       off_temp_c: fToC(offFVal),
       active_start: start,
@@ -298,7 +333,209 @@ function AutomationCard({
   );
 }
 
-function AddAutomationForm({ busy, onAdd, onCancel }) {
+function ScheduledCard({
+  automation,
+  allAutomations,
+  isFirst,
+  isLast,
+  busy,
+  onToggle,
+  onSave,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [name, setName] = useState(automation.name);
+  const [action, setAction] = useState(automation.action || 'off');
+  const [time, setTime] = useState(automation.time || '07:00');
+  const [days, setDays] = useState(automation.days_of_week || []);
+
+  useEffect(() => setName(automation.name), [automation.name]);
+  useEffect(() => setAction(automation.action || 'off'), [automation.action]);
+  useEffect(() => setTime(automation.time || '07:00'), [automation.time]);
+  useEffect(() => setDays(automation.days_of_week || []), [automation.days_of_week]);
+
+  const savedDays = automation.days_of_week || [];
+  const daysDirty =
+    days.length !== savedDays.length || days.some((d, i) => d !== savedDays[i]);
+  const dirty =
+    name !== automation.name ||
+    action !== (automation.action || 'off') ||
+    time !== (automation.time || '07:00') ||
+    daysDirty;
+
+  const conflict = findScheduledConflict(
+    { time, action, days_of_week: days },
+    allAutomations,
+    automation.id,
+  );
+
+  const summaryLines = [
+    `Turn ${(automation.action || 'off').toUpperCase()} at ${formatClock(automation.time)}`,
+    summarizeDays(savedDays),
+  ];
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (conflict?.level === 'block') return;
+    onSave({
+      id: automation.id,
+      name: name.trim() || automation.name,
+      kind: 'scheduled',
+      action,
+      time,
+      days_of_week: days,
+    });
+  };
+
+  return (
+    <div className="automation-card">
+      <div className="automation-card__header">
+        <button
+          type="button"
+          className="automation-card__disclose"
+          onClick={() => setExpanded(v => !v)}
+          aria-expanded={expanded}
+        >
+          <span className={'automation-card__chevron' + (expanded ? ' automation-card__chevron--open' : '')}>›</span>
+          <span className="automation-card__name">{automation.name}</span>
+        </button>
+        <Toggle
+          checked={automation.enabled}
+          onChange={(v) => onToggle(automation.id, v)}
+          disabled={busy}
+          ariaLabel={`Enable ${automation.name}`}
+        />
+      </div>
+
+      <div className="automation-card__summary">
+        {summaryLines.map((line, i) => (
+          <div key={i}>{line}</div>
+        ))}
+      </div>
+
+      {expanded && (
+        <form className="automation-card__form" onSubmit={submit}>
+          <label className="automation-form__field">
+            <span className="automation-form__label">Name</span>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              disabled={busy}
+              maxLength={40}
+            />
+          </label>
+
+          <div className="automation-form__row">
+            <label className="automation-form__field">
+              <span className="automation-form__label">Action</span>
+              <select
+                className="cups-select"
+                value={action}
+                onChange={e => setAction(e.target.value)}
+                disabled={busy}
+              >
+                <option value="on">Turn ON</option>
+                <option value="off">Turn OFF</option>
+              </select>
+            </label>
+            <label className="automation-form__field">
+              <span className="automation-form__label">Time</span>
+              <TimeSelect value={time} onChange={setTime} disabled={busy} />
+            </label>
+          </div>
+
+          <div className="automation-form__field">
+            <span className="automation-form__label">Days ({summarizeDays(days)})</span>
+            <DayPicker value={days} onChange={setDays} disabled={busy} />
+          </div>
+
+          {conflict && (
+            <p className={
+              conflict.level === 'block'
+                ? 'feeder-error feeder-error--banner'
+                : 'feeder-meta'
+            }>
+              {conflict.level === 'block'
+                ? `Conflicts with "${conflict.other.name}" — same time, opposite action.`
+                : `Same time and action as "${conflict.other.name}"; second entry is redundant.`}
+            </p>
+          )}
+
+          <div className="automation-card__actions">
+            <button
+              type="button"
+              className="feeder-icon-button"
+              onClick={() => onMoveUp(automation.id)}
+              disabled={busy || isFirst}
+              aria-label="Move up"
+              title="Move up (higher precedence)"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              className="feeder-icon-button"
+              onClick={() => onMoveDown(automation.id)}
+              disabled={busy || isLast}
+              aria-label="Move down"
+              title="Move down"
+            >
+              ↓
+            </button>
+            <button
+              type="button"
+              className="feeder-icon-button feeder-icon-button--danger"
+              onClick={() => onDelete(automation.id)}
+              disabled={busy}
+              aria-label="Delete automation"
+              title="Delete"
+            >
+              ✕
+            </button>
+            <span className="automation-card__spacer" />
+            <button
+              type="submit"
+              className="feeder-primary-button feeder-primary-button--sm"
+              disabled={busy || !dirty || conflict?.level === 'block'}
+            >
+              {busy ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
+function AddAutomationForm({ busy, existing, onAdd, onCancel }) {
+  const [kind, setKind] = useState('hysteresis');
+  return (
+    <div className="automation-card automation-card--add">
+      <div className="automation-form__row">
+        <label className="automation-form__field">
+          <span className="automation-form__label">Type</span>
+          <select
+            className="cups-select"
+            value={kind}
+            onChange={e => setKind(e.target.value)}
+            disabled={busy}
+          >
+            <option value="hysteresis">Temperature (hysteresis)</option>
+            <option value="scheduled">Scheduled on/off</option>
+          </select>
+        </label>
+      </div>
+      {kind === 'hysteresis'
+        ? <AddHysteresisFormBody busy={busy} onAdd={onAdd} onCancel={onCancel} />
+        : <AddScheduledFormBody busy={busy} existing={existing} onAdd={onAdd} onCancel={onCancel} />}
+    </div>
+  );
+}
+
+function AddHysteresisFormBody({ busy, onAdd, onCancel }) {
   const [name, setName] = useState('Automation');
   const [onInput, setOnInput] = useState('78');
   const [offInput, setOffInput] = useState('74');
@@ -314,6 +551,7 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
     if ((startInput === '') !== (endInput === '')) return;
     onAdd({
       name: name.trim() || 'Automation',
+      kind: 'hysteresis',
       on_temp_c: fToC(onFVal),
       off_temp_c: fToC(offFVal),
       active_start: startInput || null,
@@ -324,7 +562,7 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
   };
 
   return (
-    <form className="automation-card automation-card--add" onSubmit={submit}>
+    <form className="automation-card__form" onSubmit={submit}>
       <label className="automation-form__field">
         <span className="automation-form__label">Name</span>
         <input
@@ -416,6 +654,103 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
   );
 }
 
+function AddScheduledFormBody({ busy, existing, onAdd, onCancel }) {
+  const [name, setName] = useState('Scheduled');
+  const [action, setAction] = useState('off');
+  const [time, setTime] = useState('07:00');
+  const [days, setDays] = useState([]);
+
+  const conflict = findScheduledConflict(
+    { time, action, days_of_week: days },
+    existing,
+    null,
+  );
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (conflict?.level === 'block') return;
+    onAdd({
+      name: name.trim() || 'Scheduled',
+      kind: 'scheduled',
+      action,
+      time,
+      days_of_week: days,
+      enabled: true,
+    });
+  };
+
+  return (
+    <form className="automation-card__form" onSubmit={submit}>
+      <label className="automation-form__field">
+        <span className="automation-form__label">Name</span>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          disabled={busy}
+          maxLength={40}
+          autoFocus
+        />
+      </label>
+
+      <div className="automation-form__row">
+        <label className="automation-form__field">
+          <span className="automation-form__label">Action</span>
+          <select
+            className="cups-select"
+            value={action}
+            onChange={e => setAction(e.target.value)}
+            disabled={busy}
+          >
+            <option value="on">Turn ON</option>
+            <option value="off">Turn OFF</option>
+          </select>
+        </label>
+        <label className="automation-form__field">
+          <span className="automation-form__label">Time</span>
+          <TimeSelect value={time} onChange={setTime} disabled={busy} />
+        </label>
+      </div>
+
+      <div className="automation-form__field">
+        <span className="automation-form__label">Days ({summarizeDays(days)})</span>
+        <DayPicker value={days} onChange={setDays} disabled={busy} />
+      </div>
+
+      {conflict && (
+        <p className={
+          conflict.level === 'block'
+            ? 'feeder-error feeder-error--banner'
+            : 'feeder-meta'
+        }>
+          {conflict.level === 'block'
+            ? `Conflicts with "${conflict.other.name}" — same time, opposite action.`
+            : `Same time and action as "${conflict.other.name}"; second entry is redundant.`}
+        </p>
+      )}
+
+      <div className="automation-card__actions">
+        <button
+          type="button"
+          className="feeder-secondary-button"
+          onClick={onCancel}
+          disabled={busy}
+        >
+          Cancel
+        </button>
+        <span className="automation-card__spacer" />
+        <button
+          type="submit"
+          className="feeder-primary-button feeder-primary-button--sm"
+          disabled={busy || conflict?.level === 'block'}
+        >
+          {busy ? 'Adding…' : 'Add'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function ThermostatPage() {
   const {
     client, acBotName, roomMeterName, thermostatName,
@@ -425,7 +760,7 @@ export default function ThermostatPage() {
     !!acBotName && !roomMeterName && pendingProbes && pendingProbes.sensor > 0;
   const t = useThermostat(client, acBotName, roomMeterName);
   const ctrl = useThermostatController(client, thermostatName);
-  const { position, readings, loading, error, busy, lastSetAt, lastSetPosition } = t;
+  const { position, readings, loading, error, busy } = t;
   const [addOpen, setAddOpen] = useState(false);
 
   if (connectionLoading || detectingFeatures || thermostatStillProbing) {
@@ -553,17 +888,6 @@ export default function ThermostatPage() {
             ariaLabel={on ? 'Turn thermostat off' : 'Turn thermostat on'}
           />
         </div>
-        {lastSetAt && (
-          <p className="feeder-meta feeder-meta--centered">
-            Last set {lastSetPosition === 1 ? 'ON' : lastSetPosition === 0 ? 'OFF' : ''}{' '}
-            at {formatTime(lastSetAt)}.
-          </p>
-        )}
-        <p className="feeder-meta feeder-meta--centered">
-          Commanded state — reflects what Viam last told the Bot to press,
-          not what the appliance is actually doing. Whether "on" means A/C
-          or heat depends on the mode the physical remote is in.
-        </p>
       </section>
 
       {thermostatName && ctrl.status && (
@@ -580,6 +904,7 @@ export default function ThermostatPage() {
             <AutomationCard
               key={auto.id}
               automation={auto}
+              allAutomations={automations}
               isActive={auto.id === activeId}
               isFirst={i === 0}
               isLast={i === automations.length - 1}
@@ -595,6 +920,7 @@ export default function ThermostatPage() {
           {addOpen ? (
             <AddAutomationForm
               busy={ctrl.busy}
+              existing={automations}
               onAdd={handleAddAutomation}
               onCancel={() => setAddOpen(false)}
             />
