@@ -116,7 +116,10 @@ function AutomationCard({
   const hoursText = automation.active_start && automation.active_end
     ? `${formatClock(automation.active_start)}–${formatClock(automation.active_end)}`
     : 'always';
-  const summary = `${modeText} · on ${onF}° / off ${offF}° · ${hoursText} · ${summarizeDays(savedDays)}`;
+  const summaryLines = [
+    `${modeText} · on ${onF}° / off ${offF}°`,
+    `${hoursText} · ${summarizeDays(savedDays)}`,
+  ];
 
   const submit = (e) => {
     e.preventDefault();
@@ -156,7 +159,6 @@ function AutomationCard({
         >
           <span className={'automation-card__chevron' + (expanded ? ' automation-card__chevron--open' : '')}>›</span>
           <span className="automation-card__name">{automation.name}</span>
-          {isActive && <span className="automation-card__badge">active</span>}
         </button>
         <Toggle
           checked={automation.enabled}
@@ -166,7 +168,11 @@ function AutomationCard({
         />
       </div>
 
-      <div className="automation-card__summary">{summary}</div>
+      <div className="automation-card__summary">
+        {summaryLines.map((line, i) => (
+          <div key={i}>{line}</div>
+        ))}
+      </div>
 
       {expanded && (
         <form className="automation-card__form" onSubmit={submit}>
@@ -451,7 +457,6 @@ export default function ThermostatPage() {
 
   const automations = ctrl.status?.automations || [];
   const activeId = ctrl.status?.active_id || null;
-  const activeAutomation = automations.find(a => a.id === activeId) || null;
 
   const handleSaveAutomation = async (payload) => {
     try {
@@ -540,12 +545,12 @@ export default function ThermostatPage() {
 
       <section className="feeder-card">
         <div className="feeder-card__header">
-          <h2 className="feeder-card__title">Bot</h2>
+          <h2 className="feeder-card__title">Thermostat {on ? 'On' : 'Off'}</h2>
           <Toggle
             checked={on}
             onChange={(v) => t.setAcOn(v)}
             disabled={busy}
-            label={on ? 'On' : 'Off'}
+            ariaLabel={on ? 'Turn thermostat off' : 'Turn thermostat on'}
           />
         </div>
         {lastSetAt && (
@@ -565,11 +570,6 @@ export default function ThermostatPage() {
         <section className="feeder-card">
           <div className="feeder-card__header">
             <h2 className="feeder-card__title">Automations</h2>
-            {activeAutomation && (
-              <span className="feeder-meta">
-                Active: <strong>{activeAutomation.name}</strong>
-              </span>
-            )}
           </div>
 
           {automations.length === 0 && !addOpen && (
