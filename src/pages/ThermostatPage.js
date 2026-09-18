@@ -4,6 +4,7 @@ import { useThermostat } from '../hooks/useThermostat';
 import { useThermostatController } from '../hooks/useThermostatController';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
+import DayPicker, { summarizeDays } from '../components/DayPicker';
 
 function celsiusToF(c) {
   if (c == null || Number.isNaN(c)) return null;
@@ -90,25 +91,32 @@ function AutomationCard({
   const [offInput, setOffInput] = useState(String(offF));
   const [startInput, setStartInput] = useState(automation.active_start || '');
   const [endInput, setEndInput] = useState(automation.active_end || '');
+  const [days, setDays] = useState(automation.days_of_week || []);
 
   useEffect(() => setName(automation.name), [automation.name]);
   useEffect(() => setOnInput(String(onF)), [onF]);
   useEffect(() => setOffInput(String(offF)), [offF]);
   useEffect(() => setStartInput(automation.active_start || ''), [automation.active_start]);
   useEffect(() => setEndInput(automation.active_end || ''), [automation.active_end]);
+  useEffect(() => setDays(automation.days_of_week || []), [automation.days_of_week]);
 
+  const savedDays = automation.days_of_week || [];
+  const daysDirty =
+    days.length !== savedDays.length ||
+    days.some((d, i) => d !== savedDays[i]);
   const dirty =
     name !== automation.name ||
     onInput !== String(onF) ||
     offInput !== String(offF) ||
     (startInput || '') !== (automation.active_start || '') ||
-    (endInput || '') !== (automation.active_end || '');
+    (endInput || '') !== (automation.active_end || '') ||
+    daysDirty;
 
   const modeText = automation.mode === 'cooling' ? 'Cooling' : 'Heating';
   const hoursText = automation.active_start && automation.active_end
     ? `${formatClock(automation.active_start)}–${formatClock(automation.active_end)}`
     : 'always';
-  const summary = `${modeText} · on ${onF}° / off ${offF}° · ${hoursText}`;
+  const summary = `${modeText} · on ${onF}° / off ${offF}° · ${hoursText} · ${summarizeDays(savedDays)}`;
 
   const submit = (e) => {
     e.preventDefault();
@@ -126,6 +134,7 @@ function AutomationCard({
       off_temp_c: fToC(offFVal),
       active_start: start,
       active_end: end,
+      days_of_week: days,
     });
   };
 
@@ -234,6 +243,9 @@ function AutomationCard({
               : 'Blank both to always be active.'}
           </p>
 
+          <div className="automation-form__section-title">Days ({summarizeDays(days)})</div>
+          <DayPicker value={days} onChange={setDays} disabled={busy} />
+
           <div className="automation-card__actions">
             <button
               type="button"
@@ -286,6 +298,7 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
   const [offInput, setOffInput] = useState('74');
   const [startInput, setStartInput] = useState('');
   const [endInput, setEndInput] = useState('');
+  const [days, setDays] = useState([]);
 
   const submit = (e) => {
     e.preventDefault();
@@ -299,6 +312,7 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
       off_temp_c: fToC(offFVal),
       active_start: startInput || null,
       active_end: endInput || null,
+      days_of_week: days,
       enabled: true,
     });
   };
@@ -367,6 +381,11 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
             blankLabel="Always"
           />
         </label>
+      </div>
+
+      <div className="automation-form__field">
+        <span className="automation-form__label">Days ({summarizeDays(days)})</span>
+        <DayPicker value={days} onChange={setDays} disabled={busy} />
       </div>
 
       <div className="automation-card__actions">
