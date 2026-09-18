@@ -115,17 +115,27 @@ export function useFeeder(client, feederName) {
   );
 
   const addSchedule = useCallback(
-    (time, cups) => runMutation({ command: 'add_schedule', time, cups }),
+    (payload) => runMutation({ command: 'add_schedule', schedule: payload }),
     [runMutation]
   );
 
   const modifySchedule = useCallback(
-    (id, time, cups) => runMutation({ command: 'modify_schedule', id, time, cups }),
+    (payload) => runMutation({ command: 'modify_schedule', schedule: payload }),
     [runMutation]
   );
 
   const deleteSchedule = useCallback(
     (id) => runMutation({ command: 'delete_schedule', id }),
+    [runMutation]
+  );
+
+  const setScheduleEnabled = useCallback(
+    (id, enabled) => runMutation({ command: 'set_schedule_enabled', id, enabled }),
+    [runMutation]
+  );
+
+  const setSkipNext = useCallback(
+    (id, skip) => runMutation({ command: 'set_skip_next', id, skip }),
     [runMutation]
   );
 
@@ -173,6 +183,8 @@ export function useFeeder(client, feederName) {
     feedNow,
     delayNext,
     skipNext,
+    setScheduleEnabled,
+    setSkipNext,
     pauseUntil,
   };
 }
