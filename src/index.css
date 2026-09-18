@@ -778,6 +778,9 @@ code {
   color: var(--text-muted);
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .automation-card__form {
