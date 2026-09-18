@@ -1,20 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useCurtain } from '../hooks/useCurtain';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
-
-// SwitchBot semantics: 0 = fully open, 100 = fully closed. The UI is
-// friendlier if we present it inverted: 100% "open" = fully open.
-function apiToOpenPercent(slide) {
-  if (typeof slide !== 'number') return null;
-  return Math.max(0, Math.min(100, 100 - slide));
-}
-
-function openPercentToApi(openPct) {
-  return Math.max(0, Math.min(100, 100 - openPct));
-}
 
 const LOW_BATTERY_THRESHOLD = 20;
 
@@ -37,11 +26,8 @@ function summarizeAction(schedule) {
 
 function ScheduleForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
   const [name, setName] = useState(initial.name || 'Schedule');
-  const [action, setAction] = useState(initial.action || 'open');
-  const [openPercent, setOpenPercent] = useState(
-    initial.action === 'position' && typeof initial.position === 'number'
-      ? 100 - initial.position
-      : 50
+  const [action, setAction] = useState(
+    initial.action === 'position' ? 'open' : (initial.action || 'open')
   );
   const [time, setTime] = useState(initial.time || '07:00');
   const [days, setDays] = useState(initial.days_of_week || []);
@@ -57,7 +43,6 @@ function ScheduleForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
       enabled: initial.enabled !== false,
     };
     if (initial.id) payload.id = initial.id;
-    if (action === 'position') payload.position = openPercentToApi(openPercent);
     onSubmit(payload);
   };
 
@@ -85,7 +70,6 @@ function ScheduleForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
           >
             <option value="open">Open</option>
             <option value="close">Close</option>
-            <option value="position">Set position</option>
           </select>
         </label>
         <label className="automation-form__field">
@@ -97,21 +81,6 @@ function ScheduleForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
           />
         </label>
       </div>
-
-      {action === 'position' && (
-        <label className="automation-form__field">
-          <span className="automation-form__label">Open to {openPercent}%</span>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            value={openPercent}
-            onChange={e => setOpenPercent(Number(e.target.value))}
-            disabled={busy}
-          />
-        </label>
-      )}
 
       <div className="automation-form__field">
         <span className="automation-form__label">Days ({summarizeDays(days)})</span>
@@ -225,13 +194,11 @@ export default function CurtainPage() {
   const { position, battery, moving, schedules, loading, error, busy } = c;
   const [addOpen, setAddOpen] = useState(false);
 
-  const openPercent = apiToOpenPercent(position);
-  const [sliderValue, setSliderValue] = useState(openPercent ?? 50);
+  // SwitchBot slide_position: 0 = fully open, 100 = fully closed. Anything
+  // below the midpoint reads as "open" for the binary UI.
+  const isOpen = typeof position === 'number' && position < 50;
+  const stateLabel = typeof position !== 'number' ? '—' : isOpen ? 'Open' : 'Closed';
   const batteryLow = battery != null && battery <= LOW_BATTERY_THRESHOLD;
-
-  useEffect(() => {
-    if (openPercent != null) setSliderValue(openPercent);
-  }, [openPercent]);
 
   if (connectionLoading || detectingFeatures) {
     return (
@@ -254,11 +221,6 @@ export default function CurtainPage() {
       </div>
     );
   }
-
-  const commitPosition = () => {
-    if (sliderValue === openPercent) return;
-    c.setSlidePosition(openPercentToApi(sliderValue));
-  };
 
   const handleAdd = async (payload) => {
     try {
@@ -312,10 +274,7 @@ export default function CurtainPage() {
           ↻
         </button>
         <div className="thermostat-temp">
-          <span className="thermostat-temp__value">
-            {openPercent != null ? openPercent : '—'}
-          </span>
-          <span className="thermostat-temp__unit">% open</span>
+          <span className="thermostat-temp__value">{stateLabel}</span>
         </div>
         {(battery != null || moving) && (
           <div className="thermostat-secondary">
@@ -339,56 +298,27 @@ export default function CurtainPage() {
       </section>
 
       <section className="feeder-card">
-        <div className="feeder-card__header">
-          <h2 className="feeder-card__title">Position</h2>
-        </div>
         <div className="thermostat-buttons">
-          <button
-            type="button"
-            className="thermostat-button"
-            onClick={c.open}
-            disabled={busy}
-          >
-            {busy ? 'Sending…' : 'Open'}
-          </button>
-          <button
-            type="button"
-            className="thermostat-button"
-            onClick={c.pause}
-            disabled={busy}
-          >
-            Pause
-          </button>
-          <button
-            type="button"
-            className="thermostat-button"
-            onClick={c.close}
-            disabled={busy}
-          >
-            Close
-          </button>
+          {isOpen ? (
+            <button
+              type="button"
+              className="thermostat-button"
+              onClick={c.close}
+              disabled={busy}
+            >
+              {busy ? 'Sending…' : 'Close'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="thermostat-button"
+              onClick={c.open}
+              disabled={busy}
+            >
+              {busy ? 'Sending…' : 'Open'}
+            </button>
+          )}
         </div>
-
-        <label className="curtain-slider">
-          <span className="curtain-slider__label">
-            Set to {sliderValue}% open
-          </span>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            value={sliderValue}
-            onChange={e => setSliderValue(Number(e.target.value))}
-            onMouseUp={commitPosition}
-            onTouchEnd={commitPosition}
-            disabled={busy}
-          />
-        </label>
-
-        <p className="feeder-meta feeder-meta--centered">
-          Slide to a specific opening, release to send. 0% = fully closed, 100% = fully open.
-        </p>
       </section>
 
       <section className="feeder-card">
