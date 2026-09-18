@@ -47,8 +47,15 @@ function MachinePage() {
       <Paw className="paw--br" />
       <HamburgerMenu
         showFeeder={!!connection.feederName}
+        feederLoading={!connection.feederName && connection.pendingProbes.generic > 0}
         showThermostat={!!(connection.acBotName && connection.roomMeterName)}
+        thermostatLoading={
+          !!connection.acBotName
+          && !connection.roomMeterName
+          && connection.pendingProbes.sensor > 0
+        }
         showCurtain={!!connection.curtainName}
+        curtainLoading={!connection.curtainName && connection.pendingProbes.generic > 0}
       />
       {connectionLost && (
         <div className="connection-banner" role="alert">

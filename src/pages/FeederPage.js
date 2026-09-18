@@ -292,7 +292,14 @@ function VacationForm({ saving, onSubmit, onCancel }) {
 }
 
 export default function FeederPage() {
-  const { client, feederName, loading: connectionLoading, detectingFeatures } = useOutletContext();
+  const {
+    client,
+    feederName,
+    loading: connectionLoading,
+    detectingFeatures,
+    pendingProbes,
+  } = useOutletContext();
+  const feederStillProbing = !feederName && pendingProbes && pendingProbes.generic > 0;
   const feeder = useFeeder(client, feederName);
   const {
     status,
@@ -363,7 +370,7 @@ export default function FeederPage() {
     });
   }, [schedules]);
 
-  if (connectionLoading || detectingFeatures) {
+  if (connectionLoading || detectingFeatures || feederStillProbing) {
     return (
       <div className="paw-loader" aria-label="Connecting">
         <span>🐾</span>

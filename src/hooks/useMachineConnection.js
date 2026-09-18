@@ -17,17 +17,68 @@ async function createClient() {
   });
 }
 
-// The JS SDK's resourceNames() and getMachineStatus() return name +
-// subtype but NOT model, so we can't filter by model. Detect by
-// capability instead:
-//  - Generic components: probe do_command({command:"status"}) and match
-//    on response shape (feeder returns food_state, thermostat returns
-//    above_temp_c / bot_position).
-//  - Sensors: getReadings() and match on temperature_c (SwitchBot
-//    meter shape).
-//  - Switches: no probe distinguishes them, so we take the first one.
-//    If a user later has a second switch, we'll need a config hint.
-async function detectFeaturePages(c, resources) {
+const PROBE_TIMEOUT_MS = 5000;
+const RETRY_INTERVAL_MS = 15000;
+// Cap the retry loop so a permanently-broken component stops
+// showing "loading" forever. 4 rounds × 15s ≈ 1 minute of retries.
+const MAX_RETRY_ROUNDS = 4;
+
+class ProbeTimeout extends Error {
+  constructor(name) {
+    super(`probe timed out: ${name}`);
+    this.isTimeout = true;
+  }
+}
+
+function probeWithTimeout(fn, name, ms) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new ProbeTimeout(name)), ms);
+  });
+  return Promise.race([fn(), timeout]).finally(() => clearTimeout(timer));
+}
+
+// Match a generic-component status response to one of our known models
+// by shape, and set the corresponding name into `into`.
+function matchGeneric(name, status, into) {
+  if (!status || typeof status !== 'object') return;
+  if ('food_state' in status || 'food_low_status' in status) {
+    into.feederName = name;
+  } else if ('on_temp_c' in status || 'off_temp_c' in status || 'bot_position' in status) {
+    into.thermostatName = name;
+  } else if ('slide_position' in status) {
+    into.curtainName = name;
+  }
+}
+
+function matchSensor(name, readings, into) {
+  if (readings && typeof readings === 'object' && 'temperature_c' in readings) {
+    into.roomMeterName = name;
+  }
+}
+
+async function probeGeneric(c, name, timeoutMs) {
+  return probeWithTimeout(
+    () => new GenericComponentClient(c, name).doCommand({ command: 'status' }),
+    name,
+    timeoutMs,
+  );
+}
+
+async function probeSensor(c, name, timeoutMs) {
+  return probeWithTimeout(
+    () => new SensorClient(c, name).getReadings(),
+    name,
+    timeoutMs,
+  );
+}
+
+// The JS SDK's resourceNames() returns name + subtype but NOT model,
+// so we can't filter by model. Detect by capability instead. Each
+// probe races a 5s timeout; anything that times out gets returned in
+// `pendingRetry` for background retry so a slow cloud API doesn't
+// permanently hide a healthy component.
+async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
   const detected = {
     feederName: null,
     thermostatName: null,
@@ -35,6 +86,7 @@ async function detectFeaturePages(c, resources) {
     acBotName: null,
     roomMeterName: null,
   };
+  const pendingRetry = [];
 
   const generics = resources.filter(r => r.subtype === 'generic');
   const sensors = resources.filter(r => r.subtype === 'sensor');
@@ -42,29 +94,19 @@ async function detectFeaturePages(c, resources) {
 
   await Promise.all(generics.map(async r => {
     try {
-      const status = await new GenericComponentClient(c, r.name).doCommand({ command: 'status' });
-      if (status && typeof status === 'object') {
-        if ('food_state' in status || 'food_low_status' in status) {
-          detected.feederName = r.name;
-        } else if ('on_temp_c' in status || 'off_temp_c' in status || 'bot_position' in status) {
-          detected.thermostatName = r.name;
-        } else if ('slide_position' in status) {
-          detected.curtainName = r.name;
-        }
-      }
-    } catch {
-      // Generic without a status command — not one of ours.
+      const status = await probeGeneric(c, r.name, timeoutMs);
+      matchGeneric(r.name, status, detected);
+    } catch (e) {
+      if (e?.isTimeout) pendingRetry.push({ kind: 'generic', name: r.name });
     }
   }));
 
   await Promise.all(sensors.map(async r => {
     try {
-      const readings = await new SensorClient(c, r.name).getReadings();
-      if (readings && typeof readings === 'object' && 'temperature_c' in readings) {
-        detected.roomMeterName = r.name;
-      }
-    } catch {
-      // Sensor unreachable or non-temperature — skip.
+      const readings = await probeSensor(c, r.name, timeoutMs);
+      matchSensor(r.name, readings, detected);
+    } catch (e) {
+      if (e?.isTimeout) pendingRetry.push({ kind: 'sensor', name: r.name });
     }
   }));
 
@@ -72,7 +114,52 @@ async function detectFeaturePages(c, resources) {
     detected.acBotName = switches[0].name;
   }
 
-  return detected;
+  return { detected, pendingRetry };
+}
+
+function countPending(list) {
+  const out = { generic: 0, sensor: 0 };
+  for (const r of list) out[r.kind] = (out[r.kind] || 0) + 1;
+  return out;
+}
+
+function scheduleRetries(c, initialPending, applyDetected, onPendingChange, isCancelled) {
+  let remaining = [...initialPending];
+  let round = 0;
+  let timer = null;
+
+  const tick = async () => {
+    if (isCancelled()) return;
+    round += 1;
+    const stillPending = [];
+    for (const entry of remaining) {
+      if (isCancelled()) return;
+      try {
+        const partial = {};
+        if (entry.kind === 'generic') {
+          const status = await probeGeneric(c, entry.name, PROBE_TIMEOUT_MS);
+          matchGeneric(entry.name, status, partial);
+        } else if (entry.kind === 'sensor') {
+          const readings = await probeSensor(c, entry.name, PROBE_TIMEOUT_MS);
+          matchSensor(entry.name, readings, partial);
+        }
+        if (!isCancelled()) applyDetected(partial);
+      } catch (e) {
+        if (e?.isTimeout && round < MAX_RETRY_ROUNDS) stillPending.push(entry);
+        // Non-timeout, or past the retry cap → drop from the list.
+      }
+    }
+    remaining = stillPending;
+    if (!isCancelled()) onPendingChange(countPending(remaining));
+    if (remaining.length > 0 && !isCancelled()) {
+      timer = setTimeout(tick, RETRY_INTERVAL_MS);
+    }
+  };
+
+  timer = setTimeout(tick, RETRY_INTERVAL_MS);
+  return () => {
+    if (timer) clearTimeout(timer);
+  };
 }
 
 export function useMachineConnection() {
@@ -86,25 +173,31 @@ export function useMachineConnection() {
   const [acBotName, setAcBotName] = useState(null);
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Feature-page probes run after `loading` flips false so the cameras
-  // page paints quickly, but that meant a page like /curtain would see
-  // curtainName === null before the probe resolved and flash the "not
-  // configured" stub. Consumers gate on this flag until we know.
   const [detectingFeatures, setDetectingFeatures] = useState(true);
+  const [pendingProbes, setPendingProbes] = useState({ generic: 0, sensor: 0 });
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     const startedStreams = {};
+    let stopRetries = null;
+
+    const applyDetected = (d) => {
+      if (d.feederName) setFeederName(d.feederName);
+      if (d.thermostatName) setThermostatName(d.thermostatName);
+      if (d.curtainName) setCurtainName(d.curtainName);
+      if (d.acBotName) setAcBotName(d.acBotName);
+      if (d.roomMeterName) setRoomMeterName(d.roomMeterName);
+    };
 
     async function init() {
       try {
         const c = await createClient();
         if (cancelled) return;
-        // Wait for the first RPC to succeed before exposing the client
-        // to consumers. On slower networks the WebRTC data channel
-        // isn't ready the instant createRobotClient returns; using
-        // resourceNames as the readiness probe is free.
+        // Wait for the first RPC to succeed before exposing the client.
+        // On slower networks the WebRTC data channel isn't ready the
+        // instant createRobotClient returns; resourceNames doubles as
+        // a readiness probe.
         const resources = await c.resourceNames();
         if (cancelled) return;
         setClient(c);
@@ -120,16 +213,20 @@ export function useMachineConnection() {
         );
         if (audio) setAudioName(audio.name);
 
-        // Feature-page detection runs alongside stream startup so a
-        // slow probe doesn't block the cameras page from painting.
-        detectFeaturePages(c, resources).then(d => {
+        detectFeaturePages(c, resources).then(({ detected, pendingRetry }) => {
           if (cancelled) return;
-          setFeederName(d.feederName);
-          setThermostatName(d.thermostatName);
-          setCurtainName(d.curtainName);
-          setAcBotName(d.acBotName);
-          setRoomMeterName(d.roomMeterName);
+          applyDetected(detected);
+          setPendingProbes(countPending(pendingRetry));
           setDetectingFeatures(false);
+          if (pendingRetry.length > 0) {
+            stopRetries = scheduleRetries(
+              c,
+              pendingRetry,
+              applyDetected,
+              setPendingProbes,
+              () => cancelled,
+            );
+          }
         }).catch(() => {
           if (cancelled) return;
           setDetectingFeatures(false);
@@ -163,6 +260,7 @@ export function useMachineConnection() {
 
     return () => {
       cancelled = true;
+      if (stopRetries) stopRetries();
       Object.values(startedStreams).forEach(s => {
         s?.getTracks().forEach(t => t.stop());
       });
@@ -181,6 +279,7 @@ export function useMachineConnection() {
     roomMeterName,
     loading,
     detectingFeatures,
+    pendingProbes,
     error,
   };
 }

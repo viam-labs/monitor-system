@@ -411,13 +411,18 @@ function AddAutomationForm({ busy, onAdd, onCancel }) {
 }
 
 export default function ThermostatPage() {
-  const { client, acBotName, roomMeterName, thermostatName, loading: connectionLoading, detectingFeatures } = useOutletContext();
+  const {
+    client, acBotName, roomMeterName, thermostatName,
+    loading: connectionLoading, detectingFeatures, pendingProbes,
+  } = useOutletContext();
+  const thermostatStillProbing =
+    !!acBotName && !roomMeterName && pendingProbes && pendingProbes.sensor > 0;
   const t = useThermostat(client, acBotName, roomMeterName);
   const ctrl = useThermostatController(client, thermostatName);
   const { position, readings, loading, error, busy, lastSetAt, lastSetPosition } = t;
   const [addOpen, setAddOpen] = useState(false);
 
-  if (connectionLoading || detectingFeatures) {
+  if (connectionLoading || detectingFeatures || thermostatStillProbing) {
     return (
       <div className="paw-loader" aria-label="Connecting">
         <span>🐾</span>
