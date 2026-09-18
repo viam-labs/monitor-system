@@ -1049,6 +1049,28 @@ code {
   border-color: rgba(244, 162, 97, 0.35);
 }
 
+.feeder-banner--missed {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+}
+
+.automation-card--disabled {
+  opacity: 0.55;
+}
+
+.automation-card__inline-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.automation-card__inline-toggle-label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .feeder-card--hero {
   gap: 10px;
 }
