@@ -300,27 +300,25 @@ export default function CurtainPage() {
       </section>
 
       <section className="feeder-card">
-        <div className="thermostat-buttons">
-          {isOpen ? (
-            <button
-              type="button"
-              className="thermostat-button"
-              onClick={c.close}
-              disabled={busy}
-            >
-              {busy ? 'Sending…' : 'Close'}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="thermostat-button"
-              onClick={c.open}
-              disabled={busy}
-            >
-              {busy ? 'Sending…' : 'Open'}
-            </button>
-          )}
-        </div>
+        {isOpen ? (
+          <button
+            type="button"
+            className="curtain-action curtain-action--close"
+            onClick={c.close}
+            disabled={busy}
+          >
+            {busy ? 'Sending…' : 'Close'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="curtain-action curtain-action--open"
+            onClick={c.open}
+            disabled={busy}
+          >
+            {busy ? 'Sending…' : 'Open'}
+          </button>
+        )}
       </section>
 
       <section className="feeder-card">
