@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useFeeder } from '../hooks/useFeeder';
+import Toggle from '../components/Toggle';
+import TimeSelect from '../components/TimeSelect';
+import DayPicker, { summarizeDays } from '../components/DayPicker';
 
 // Fraction labels for common cup amounts. Anything not in this map is
 // rendered as the decimal (e.g., 3.125 -> "3.125 cups").
@@ -114,37 +117,142 @@ function nowLocalDatetimeInput() {
   return d.toISOString().slice(0, 16);
 }
 
-function ScheduleForm({ initialTime, initialCups, saving, onSave, onCancel }) {
-  const [time, setTime] = useState(initialTime || '07:00');
-  const [cups, setCups] = useState(initialCups ?? 1);
+function ScheduleForm({ initial, submitLabel, saving, onSave, onCancel }) {
+  const [name, setName] = useState(initial.name || '');
+  const [time, setTime] = useState(initial.time || '07:00');
+  const [cups, setCups] = useState(initial.cups ?? 1);
+  const [days, setDays] = useState(initial.days_of_week || []);
 
   const submit = (e) => {
     e.preventDefault();
     if (!time || !cups || cups <= 0) return;
-    onSave(time, cups);
+    const payload = {
+      time,
+      cups,
+      days_of_week: days,
+      name: name.trim() || undefined,
+    };
+    if (initial.id) payload.id = initial.id;
+    onSave(payload);
   };
 
   return (
-    <form className="schedule-form" onSubmit={submit}>
-      <div className="schedule-form__fields">
-        <label className="schedule-form__field">
-          <span className="schedule-form__label">Time</span>
-          <input type="time" value={time} onChange={e => setTime(e.target.value)} required />
+    <form className="automation-card__form" onSubmit={submit}>
+      <label className="automation-form__field">
+        <span className="automation-form__label">Name</span>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          disabled={saving}
+          placeholder={`Feed ${time}`}
+          maxLength={40}
+        />
+      </label>
+
+      <div className="automation-form__row">
+        <label className="automation-form__field">
+          <span className="automation-form__label">Time</span>
+          <TimeSelect value={time} onChange={setTime} disabled={saving} />
         </label>
-        <label className="schedule-form__field">
-          <span className="schedule-form__label">Amount</span>
+        <label className="automation-form__field">
+          <span className="automation-form__label">Amount</span>
           <CupsSelect value={cups} onChange={setCups} disabled={saving} ariaLabel="Cups" />
         </label>
       </div>
-      <div className="schedule-form__actions">
-        <button type="button" className="feeder-secondary-button" onClick={onCancel} disabled={saving}>
-          Cancel
-        </button>
+
+      <div className="automation-form__field">
+        <span className="automation-form__label">Days ({summarizeDays(days)})</span>
+        <DayPicker value={days} onChange={setDays} disabled={saving} />
+      </div>
+
+      <div className="automation-card__actions">
+        {onCancel && (
+          <button type="button" className="feeder-secondary-button" onClick={onCancel} disabled={saving}>
+            Cancel
+          </button>
+        )}
+        <span className="automation-card__spacer" />
         <button type="submit" className="feeder-primary-button feeder-primary-button--sm" disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? 'Saving…' : submitLabel}
         </button>
       </div>
     </form>
+  );
+}
+
+function ScheduleCard({ schedule, busy, onSave, onDelete, onToggleEnabled, onSetSkip }) {
+  const [expanded, setExpanded] = useState(false);
+  const enabled = schedule.enabled !== false;
+  const skipping = !!schedule.skip_next_fire;
+  const delayedUntil = schedule.delayed_until;
+  const summary =
+    `${formatScheduleTime(schedule.time)} · ${labelForCups(schedule.cups)} · ` +
+    summarizeDays(schedule.days_of_week);
+
+  return (
+    <div className={'automation-card' + (enabled ? '' : ' automation-card--disabled')}>
+      <div className="automation-card__header">
+        <button
+          type="button"
+          className="automation-card__disclose"
+          onClick={() => setExpanded(v => !v)}
+          aria-expanded={expanded}
+        >
+          <span className={'automation-card__chevron' + (expanded ? ' automation-card__chevron--open' : '')}>›</span>
+          <span className="automation-card__name">
+            {schedule.name || `Feed ${schedule.time}`}
+          </span>
+          {skipping && <span className="automation-card__badge">skip next</span>}
+          {delayedUntil && (
+            <span className="automation-card__badge">
+              delayed → {formatTime(delayedUntil)}
+            </span>
+          )}
+        </button>
+        <Toggle
+          checked={enabled}
+          onChange={(v) => onToggleEnabled(schedule.id, v)}
+          disabled={busy}
+          ariaLabel={`Enable ${schedule.name || schedule.time}`}
+        />
+      </div>
+
+      <div className="automation-card__summary">{summary}</div>
+
+      {expanded && (
+        <>
+          <ScheduleForm
+            initial={schedule}
+            submitLabel="Save"
+            saving={busy}
+            onSave={onSave}
+          />
+          <div className="automation-card__actions">
+            <label className="automation-card__inline-toggle">
+              <Toggle
+                checked={skipping}
+                onChange={(v) => onSetSkip(schedule.id, v)}
+                disabled={busy}
+                ariaLabel="Skip next fire"
+              />
+              <span className="automation-card__inline-toggle-label">Skip next fire</span>
+            </label>
+            <span className="automation-card__spacer" />
+            <button
+              type="button"
+              className="feeder-icon-button feeder-icon-button--danger"
+              onClick={() => onDelete(schedule.id)}
+              disabled={busy}
+              aria-label="Delete schedule"
+              title="Delete"
+            >
+              ✕
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -195,12 +303,10 @@ export default function FeederPage() {
     feeding,
     pausing,
     mutating,
-    schedulePaused,
     lastFedAt,
   } = feeder;
 
   const target = status?.target_meal_cups ?? null;
-  const [editingId, setEditingId] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   const [vacationOpen, setVacationOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
@@ -218,17 +324,43 @@ export default function FeederPage() {
     let best = null;
     let bestFire = null;
     for (const s of schedules) {
+      if (s.enabled === false) continue;
       if (!s.time || !s.time.includes(':')) continue;
+      const dows = s.days_of_week || [];
       const [h, m] = s.time.split(':').map(Number);
-      const fire = new Date();
-      fire.setHours(h, m, 0, 0);
-      if (fire <= now) fire.setDate(fire.getDate() + 1);
-      if (bestFire === null || fire < bestFire) {
-        bestFire = fire;
-        best = { ...s, fireAt: fire };
+      for (let offset = 0; offset < 8; offset++) {
+        const fire = new Date(now);
+        fire.setDate(now.getDate() + offset);
+        fire.setHours(h, m, 0, 0);
+        if (fire <= now) continue;
+        if (dows.length && !dows.includes((fire.getDay() + 6) % 7)) continue;
+        if (bestFire === null || fire < bestFire) {
+          bestFire = fire;
+          best = { ...s, fireAt: fire };
+        }
+        break;
       }
     }
     return best;
+  }, [schedules]);
+
+  const missedFeeds = useMemo(() => {
+    if (!schedules) return [];
+    const nowMs = Date.now();
+    const today = new Date();
+    return schedules.filter(s => {
+      if (s.enabled === false) return false;
+      if (!s.time || !s.time.includes(':')) return false;
+      const [h, m] = s.time.split(':').map(Number);
+      const fireToday = new Date(today);
+      fireToday.setHours(h, m, 0, 0);
+      if (fireToday.getTime() > nowMs) return false;
+      const lastFiredMs = s.last_fired_at ? Date.parse(s.last_fired_at) : NaN;
+      if (!Number.isNaN(lastFiredMs) && lastFiredMs >= fireToday.getTime()) {
+        return false;
+      }
+      return nowMs - fireToday.getTime() > 30 * 60 * 1000;
+    });
   }, [schedules]);
 
   if (connectionLoading || detectingFeatures) {
@@ -255,9 +387,12 @@ export default function FeederPage() {
     : 'feeder-status__pill';
 
   const scheduleEmpty = !schedules || schedules.length === 0;
-  const delayedIds = new Set(status?.delayed_schedule_ids || []);
-  const skippedCount = status?.skipped_count || 0;
-  const pauseUntilLocal = status?.pause_until ? formatVacationUntil(status.pause_until) : null;
+  const paused = !!status?.pause_until;
+  // pause_until year 2099+ = indefinite pause (from Pause button). Show
+  // the vacation banner only for a real date the user picked.
+  const isVacation = !!status?.pause_until &&
+    new Date(status.pause_until).getFullYear() < 2099;
+  const pauseUntilLocal = isVacation ? formatVacationUntil(status.pause_until) : null;
 
   const lastFedTs = extractLastFedTimestamp(lastFeeding, lastFedAt);
   const lastFedLine = lastFedTs
@@ -293,15 +428,21 @@ export default function FeederPage() {
     return [laterLine, '(Earlier would land in the past.)'];
   })();
 
-  const handleAdd = async (t, c) => {
-    try { await feeder.addSchedule(t, c); setAddOpen(false); } catch { /* stay open */ }
+  const handleAdd = async (payload) => {
+    try { await feeder.addSchedule(payload); setAddOpen(false); } catch { /* stay open */ }
   };
-  const handleModify = async (id, t, c) => {
-    try { await feeder.modifySchedule(id, t, c); setEditingId(null); } catch { /* stay open */ }
+  const handleModify = async (payload) => {
+    try { await feeder.modifySchedule(payload); } catch { /* surfaced */ }
   };
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this scheduled feeding?')) return;
     try { await feeder.deleteSchedule(id); } catch { /* surfaced */ }
+  };
+  const handleToggleEnabled = async (id, enabled) => {
+    try { await feeder.setScheduleEnabled(id, enabled); } catch { /* surfaced */ }
+  };
+  const handleSetSkip = async (id, skip) => {
+    try { await feeder.setSkipNext(id, skip); } catch { /* surfaced */ }
   };
   const handleFeedNow = async () => {
     if (!canFeedNow) return;
@@ -367,9 +508,11 @@ export default function FeederPage() {
         </div>
       )}
 
-      {skippedCount > 0 && (
-        <div className="feeder-banner">
-          {skippedCount} pending skip{skippedCount === 1 ? '' : 's'} — will restore automatically after each original time passes.
+      {missedFeeds.length > 0 && (
+        <div className="feeder-banner feeder-banner--missed">
+          Missed {missedFeeds.length} scheduled feed{missedFeeds.length === 1 ? '' : 's'} today
+          {missedFeeds.map(s => ` (${formatScheduleTime(s.time)})`).join('')}
+          . Pi may have been offline at fire time.
         </div>
       )}
 
@@ -381,19 +524,19 @@ export default function FeederPage() {
               type="button"
               className={
                 'feeder-secondary-button' +
-                (schedulePaused ? ' feeder-secondary-button--active' : '')
+                (paused ? ' feeder-secondary-button--active' : '')
               }
-              onClick={() => feeder.pauseSchedule(!schedulePaused)}
-              disabled={pausing || scheduleEmpty || !!pauseUntilLocal}
+              onClick={() => feeder.pauseSchedule(!paused)}
+              disabled={pausing || scheduleEmpty || isVacation}
               title={
-                pauseUntilLocal
+                isVacation
                   ? 'Vacation pause is active — use Resume in the banner above.'
                   : scheduleEmpty
                     ? 'Nothing to pause — add a scheduled feeding first.'
                     : undefined
               }
             >
-              {schedulePaused ? 'Resume' : 'Pause'}
+              {paused ? 'Resume' : 'Pause'}
             </button>
             <button
               type="button"
@@ -420,66 +563,17 @@ export default function FeederPage() {
             {scheduleEmpty && !addOpen && (
               <p className="feeder-meta">No scheduled feedings yet.</p>
             )}
-            {sortedSchedules.length > 0 && (
-              <ul className="schedule-list">
-                {sortedSchedules.map(s => {
-                  const isDelayed = delayedIds.has(s.id);
-                  return (
-                    <li
-                      key={s.id || s.time}
-                      className={
-                        'schedule-list__item' +
-                        (isDelayed ? ' schedule-list__item--delayed' : '')
-                      }
-                    >
-                      {editingId === s.id ? (
-                        <ScheduleForm
-                          initialTime={s.time}
-                          initialCups={s.cups}
-                          saving={mutating}
-                          onSave={(t, c) => handleModify(s.id, t, c)}
-                          onCancel={() => setEditingId(null)}
-                        />
-                      ) : (
-                        <>
-                          <div className="schedule-list__body">
-                            <span className="schedule-list__time">
-                              {formatScheduleTime(s.time)}
-                            </span>
-                            <span className="schedule-list__amount">{labelForCups(s.cups)}</span>
-                            {isDelayed && (
-                              <span className="schedule-list__badge">delayed</span>
-                            )}
-                          </div>
-                          <div className="schedule-list__actions">
-                            <button
-                              type="button"
-                              className="feeder-icon-button"
-                              onClick={() => setEditingId(s.id)}
-                              aria-label="Edit"
-                              title="Edit"
-                              disabled={mutating}
-                            >
-                              ✎
-                            </button>
-                            <button
-                              type="button"
-                              className="feeder-icon-button feeder-icon-button--danger"
-                              onClick={() => handleDelete(s.id)}
-                              aria-label="Delete"
-                              title="Delete"
-                              disabled={mutating}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            {sortedSchedules.map(s => (
+              <ScheduleCard
+                key={s.id || s.time}
+                schedule={s}
+                busy={mutating}
+                onSave={handleModify}
+                onDelete={handleDelete}
+                onToggleEnabled={handleToggleEnabled}
+                onSetSkip={handleSetSkip}
+              />
+            ))}
 
             {!scheduleEmpty && (
               <div className="quick-actions">
@@ -571,13 +665,15 @@ export default function FeederPage() {
             )}
 
             {addOpen ? (
-              <ScheduleForm
-                initialTime="07:00"
-                initialCups={target ?? 1}
-                saving={mutating}
-                onSave={handleAdd}
-                onCancel={() => setAddOpen(false)}
-              />
+              <div className="automation-card automation-card--add">
+                <ScheduleForm
+                  initial={{ time: '07:00', cups: target ?? 1, days_of_week: [] }}
+                  submitLabel="Add"
+                  saving={mutating}
+                  onSave={handleAdd}
+                  onCancel={() => setAddOpen(false)}
+                />
+              </div>
             ) : (
               <button
                 type="button"
