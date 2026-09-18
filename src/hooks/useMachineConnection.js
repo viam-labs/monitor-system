@@ -19,6 +19,9 @@ async function createClient() {
 
 const PROBE_TIMEOUT_MS = 5000;
 const RETRY_INTERVAL_MS = 15000;
+// Cap the retry loop so a permanently-broken component stops
+// showing "loading" forever. 4 rounds × 15s ≈ 1 minute of retries.
+const MAX_RETRY_ROUNDS = 4;
 
 class ProbeTimeout extends Error {
   constructor(name) {
@@ -114,12 +117,20 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
   return { detected, pendingRetry };
 }
 
-function scheduleRetries(c, initialPending, applyDetected, isCancelled) {
+function countPending(list) {
+  const out = { generic: 0, sensor: 0 };
+  for (const r of list) out[r.kind] = (out[r.kind] || 0) + 1;
+  return out;
+}
+
+function scheduleRetries(c, initialPending, applyDetected, onPendingChange, isCancelled) {
   let remaining = [...initialPending];
+  let round = 0;
   let timer = null;
 
   const tick = async () => {
     if (isCancelled()) return;
+    round += 1;
     const stillPending = [];
     for (const entry of remaining) {
       if (isCancelled()) return;
@@ -134,12 +145,12 @@ function scheduleRetries(c, initialPending, applyDetected, isCancelled) {
         }
         if (!isCancelled()) applyDetected(partial);
       } catch (e) {
-        if (e?.isTimeout) stillPending.push(entry);
-        // Non-timeout errors mean the component isn't one of ours;
-        // drop it from the retry list.
+        if (e?.isTimeout && round < MAX_RETRY_ROUNDS) stillPending.push(entry);
+        // Non-timeout, or past the retry cap → drop from the list.
       }
     }
     remaining = stillPending;
+    if (!isCancelled()) onPendingChange(countPending(remaining));
     if (remaining.length > 0 && !isCancelled()) {
       timer = setTimeout(tick, RETRY_INTERVAL_MS);
     }
@@ -163,6 +174,7 @@ export function useMachineConnection() {
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detectingFeatures, setDetectingFeatures] = useState(true);
+  const [pendingProbes, setPendingProbes] = useState({ generic: 0, sensor: 0 });
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -204,12 +216,14 @@ export function useMachineConnection() {
         detectFeaturePages(c, resources).then(({ detected, pendingRetry }) => {
           if (cancelled) return;
           applyDetected(detected);
+          setPendingProbes(countPending(pendingRetry));
           setDetectingFeatures(false);
           if (pendingRetry.length > 0) {
             stopRetries = scheduleRetries(
               c,
               pendingRetry,
               applyDetected,
+              setPendingProbes,
               () => cancelled,
             );
           }
@@ -265,6 +279,7 @@ export function useMachineConnection() {
     roomMeterName,
     loading,
     detectingFeatures,
+    pendingProbes,
     error,
   };
 }

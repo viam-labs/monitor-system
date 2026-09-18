@@ -1,7 +1,43 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 
-export default function HamburgerMenu({ showFeeder, showThermostat, showCurtain }) {
+function MiniPaws() {
+  return (
+    <span className="mini-paws" aria-label="loading">
+      <span>🐾</span>
+      <span>🐾</span>
+      <span>🐾</span>
+    </span>
+  );
+}
+
+function FeatureLink({ to, label, loading, onClick }) {
+  return (
+    <li>
+      <NavLink
+        to={to}
+        onClick={onClick}
+        className={({ isActive }) =>
+          'nav-menu__link' +
+          (isActive ? ' nav-menu__link--active' : '') +
+          (loading ? ' nav-menu__link--loading' : '')
+        }
+      >
+        <span>{label}</span>
+        {loading && <MiniPaws />}
+      </NavLink>
+    </li>
+  );
+}
+
+export default function HamburgerMenu({
+  showFeeder,
+  feederLoading,
+  showThermostat,
+  thermostatLoading,
+  showCurtain,
+  curtainLoading,
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -48,44 +84,14 @@ export default function HamburgerMenu({ showFeeder, showThermostat, showCurtain 
               Cameras
             </NavLink>
           </li>
-          {showFeeder && (
-            <li>
-              <NavLink
-                to="/feeder"
-                onClick={close}
-                className={({ isActive }) =>
-                  `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
-                }
-              >
-                Feeder
-              </NavLink>
-            </li>
+          {(showFeeder || feederLoading) && (
+            <FeatureLink to="/feeder" label="Feeder" loading={!showFeeder && feederLoading} onClick={close} />
           )}
-          {showThermostat && (
-            <li>
-              <NavLink
-                to="/thermostat"
-                onClick={close}
-                className={({ isActive }) =>
-                  `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
-                }
-              >
-                Thermostat
-              </NavLink>
-            </li>
+          {(showThermostat || thermostatLoading) && (
+            <FeatureLink to="/thermostat" label="Thermostat" loading={!showThermostat && thermostatLoading} onClick={close} />
           )}
-          {showCurtain && (
-            <li>
-              <NavLink
-                to="/curtain"
-                onClick={close}
-                className={({ isActive }) =>
-                  `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
-                }
-              >
-                Curtain
-              </NavLink>
-            </li>
+          {(showCurtain || curtainLoading) && (
+            <FeatureLink to="/curtain" label="Curtain" loading={!showCurtain && curtainLoading} onClick={close} />
           )}
         </ul>
       )}
