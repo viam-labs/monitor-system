@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useCurtain } from '../hooks/useCurtain';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
@@ -185,14 +184,13 @@ function ScheduleCard({ schedule, isFirst, isLast, busy, onToggle, onSave, onDel
 
 export default function CurtainPage() {
   const {
-    client,
     curtainName,
     loading: connectionLoading,
     detectingFeatures,
     pendingProbes,
+    curtain: c,
   } = useOutletContext();
   const curtainStillProbing = !curtainName && pendingProbes && pendingProbes.generic > 0;
-  const c = useCurtain(client, curtainName);
   const { position, battery, moving, schedules, loading, error, busy } = c;
   const [addOpen, setAddOpen] = useState(false);
 
