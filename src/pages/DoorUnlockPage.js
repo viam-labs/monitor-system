@@ -90,16 +90,18 @@ export default function DoorUnlockPage() {
       {error && <p className="feeder-error feeder-error--banner">{error}</p>}
 
       <section className="feeder-card door-card">
-        <button
-          type="button"
-          className="feeder-icon-button door-card__refresh"
-          onClick={d.refresh}
-          disabled={loading || busy}
-          aria-label="Refresh"
-          title="Refresh"
-        >
-          ↻
-        </button>
+        <div className="door-card__header">
+          <button
+            type="button"
+            className="feeder-icon-button"
+            onClick={d.refresh}
+            disabled={loading || busy}
+            aria-label="Refresh"
+            title="Refresh"
+          >
+            ↻
+          </button>
+        </div>
         <button
           type="button"
           className="curtain-action curtain-action--open"
