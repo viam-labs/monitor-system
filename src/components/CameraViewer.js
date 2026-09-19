@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useOutletContext } from 'react-router-dom';
 import MicButton from './MicButton';
+import { useCameraStreams } from '../hooks/useCameraStreams';
 
 // Wraps a state update in the View Transitions API when available, so
 // tile focus/unfocus animates via CSS morphing instead of snapping.
@@ -93,7 +94,8 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit, gridSpan }) {
 }
 
 function CameraViewer() {
-  const { client, cameras, streams, audioName, loading, error } = useOutletContext();
+  const { client, cameras, audioName, loading, error } = useOutletContext();
+  const streams = useCameraStreams(client, cameras);
   const [selected, setSelected] = useState('');
 
   useEffect(() => {
