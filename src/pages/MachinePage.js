@@ -9,6 +9,7 @@ const PAGE_TITLES = {
   '/feeder': 'Feeder',
   '/thermostat': 'Thermostat',
   '/curtain': 'Curtain',
+  '/door': 'Building Door',
 };
 
 function Paw({ className }) {
@@ -56,6 +57,8 @@ function MachinePage() {
         }
         showCurtain={!!connection.curtainName}
         curtainLoading={!connection.curtainName && connection.pendingProbes.generic > 0}
+        showDoor={!!connection.doorUnlockName}
+        doorLoading={!connection.doorUnlockName && connection.pendingProbes.generic > 0}
       />
       {connectionLost && (
         <div className="connection-banner" role="alert">
