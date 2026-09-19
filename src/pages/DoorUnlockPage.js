@@ -1,6 +1,5 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useDoorUnlock } from '../hooks/useDoorUnlock';
 
 const LOW_BATTERY_THRESHOLD = 20;
 
@@ -27,16 +26,15 @@ function formatAbsolute(iso) {
 
 export default function DoorUnlockPage() {
   const {
-    client,
     doorUnlockName,
     loading: connectionLoading,
     detectingFeatures,
     pendingProbes,
+    door: d,
   } = useOutletContext();
   const doorStillProbing =
     !doorUnlockName && pendingProbes && pendingProbes.generic > 0;
 
-  const d = useDoorUnlock(client, doorUnlockName);
   const { lastOpenedAt, battery, loading, error, busy } = d;
   const batteryLow = battery != null && battery <= LOW_BATTERY_THRESHOLD;
 
