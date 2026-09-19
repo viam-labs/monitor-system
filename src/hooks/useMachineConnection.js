@@ -42,6 +42,10 @@ function probeWithTimeout(fn, name, ms) {
 // by shape, and set the corresponding name into `into`.
 function matchGeneric(name, status, into) {
   if (!status || typeof status !== 'object') return;
+  if (status.kind === 'clicker') {
+    into.doorUnlockName = name;
+    return;
+  }
   if ('food_state' in status || 'food_low_status' in status) {
     into.feederName = name;
   } else if ('on_temp_c' in status || 'off_temp_c' in status || 'bot_position' in status) {
@@ -83,6 +87,7 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
     feederName: null,
     thermostatName: null,
     curtainName: null,
+    doorUnlockName: null,
     acBotName: null,
     roomMeterName: null,
   };
@@ -170,6 +175,7 @@ export function useMachineConnection() {
   const [feederName, setFeederName] = useState(null);
   const [thermostatName, setThermostatName] = useState(null);
   const [curtainName, setCurtainName] = useState(null);
+  const [doorUnlockName, setDoorUnlockName] = useState(null);
   const [acBotName, setAcBotName] = useState(null);
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -186,6 +192,7 @@ export function useMachineConnection() {
       if (d.feederName) setFeederName(d.feederName);
       if (d.thermostatName) setThermostatName(d.thermostatName);
       if (d.curtainName) setCurtainName(d.curtainName);
+      if (d.doorUnlockName) setDoorUnlockName(d.doorUnlockName);
       if (d.acBotName) setAcBotName(d.acBotName);
       if (d.roomMeterName) setRoomMeterName(d.roomMeterName);
     };
@@ -275,6 +282,7 @@ export function useMachineConnection() {
     feederName,
     thermostatName,
     curtainName,
+    doorUnlockName,
     acBotName,
     roomMeterName,
     loading,
