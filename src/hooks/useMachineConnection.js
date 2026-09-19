@@ -3,7 +3,6 @@ import {
   createRobotClient,
   GenericComponentClient,
   SensorClient,
-  StreamClient,
 } from '@viamrobotics/sdk';
 import Cookies from 'js-cookie';
 
@@ -170,7 +169,6 @@ function scheduleRetries(c, initialPending, applyDetected, onPendingChange, isCa
 export function useMachineConnection() {
   const [client, setClient] = useState(null);
   const [cameras, setCameras] = useState([]);
-  const [streams, setStreams] = useState({});
   const [audioName, setAudioName] = useState('');
   const [feederName, setFeederName] = useState(null);
   const [thermostatName, setThermostatName] = useState(null);
@@ -185,7 +183,6 @@ export function useMachineConnection() {
 
   useEffect(() => {
     let cancelled = false;
-    const startedStreams = {};
     let stopRetries = null;
 
     const applyDetected = (d) => {
@@ -240,22 +237,6 @@ export function useMachineConnection() {
         });
 
         setLoading(false);
-
-        const streamClient = new StreamClient(c);
-        cams.forEach(cam => {
-          streamClient.getStream(cam.name)
-            .then(stream => {
-              if (cancelled) {
-                stream?.getTracks().forEach(t => t.stop());
-                return;
-              }
-              startedStreams[cam.name] = stream;
-              setStreams(prev => ({ ...prev, [cam.name]: stream }));
-            })
-            .catch(e => {
-              console.error(`Failed to start stream for ${cam.name}:`, e);
-            });
-        });
       } catch (e) {
         if (cancelled) return;
         setError(e.message);
@@ -268,16 +249,12 @@ export function useMachineConnection() {
     return () => {
       cancelled = true;
       if (stopRetries) stopRetries();
-      Object.values(startedStreams).forEach(s => {
-        s?.getTracks().forEach(t => t.stop());
-      });
     };
   }, []);
 
   return {
     client,
     cameras,
-    streams,
     audioName,
     feederName,
     thermostatName,
