@@ -70,14 +70,29 @@ export default function DoorUnlockPage() {
   const lastOpenedRel = formatRelative(lastOpenedAt);
   const lastOpenedAbs = formatAbsolute(lastOpenedAt);
 
+  const metaParts = [];
+  if (lastOpenedRel) metaParts.push(`Last opened ${lastOpenedRel}`);
+  if (battery != null) {
+    metaParts.push(
+      <span
+        key="bat"
+        className={'battery-pill' + (batteryLow ? ' battery-pill--low' : '')}
+        title={batteryLow ? 'Clicker battery is low — charge soon.' : undefined}
+      >
+        {batteryLow && <span aria-hidden="true">⚠ </span>}
+        {battery}% battery
+      </span>
+    );
+  }
+
   return (
     <div className="feeder-page">
       {error && <p className="feeder-error feeder-error--banner">{error}</p>}
 
-      <section className="feeder-card thermostat-readings">
+      <section className="feeder-card door-card">
         <button
           type="button"
-          className="feeder-icon-button thermostat-readings__refresh"
+          className="feeder-icon-button door-card__refresh"
           onClick={d.refresh}
           disabled={loading || busy}
           aria-label="Refresh"
@@ -85,36 +100,6 @@ export default function DoorUnlockPage() {
         >
           ↻
         </button>
-        <div className="thermostat-temp">
-          <span className="thermostat-temp__value">Building Door</span>
-        </div>
-        {(battery != null || lastOpenedAbs) && (
-          <div className="thermostat-secondary">
-            {battery != null && (
-              <span
-                className={
-                  'thermostat-secondary__item battery-pill' +
-                  (batteryLow ? ' battery-pill--low' : '')
-                }
-                title={batteryLow ? 'Clicker battery is low — charge soon.' : undefined}
-              >
-                {batteryLow && <span aria-hidden="true">⚠</span>}
-                {battery}% battery
-              </span>
-            )}
-            {lastOpenedRel && (
-              <span
-                className="thermostat-secondary__item"
-                title={lastOpenedAbs}
-              >
-                Last opened {lastOpenedRel}
-              </span>
-            )}
-          </div>
-        )}
-      </section>
-
-      <section className="feeder-card">
         <button
           type="button"
           className="curtain-action curtain-action--open"
@@ -123,6 +108,16 @@ export default function DoorUnlockPage() {
         >
           {busy ? 'Opening…' : 'Open'}
         </button>
+        {metaParts.length > 0 && (
+          <p className="door-card__meta" title={lastOpenedAbs || undefined}>
+            {metaParts.map((part, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <span aria-hidden="true"> · </span>}
+                {part}
+              </React.Fragment>
+            ))}
+          </p>
+        )}
       </section>
     </div>
   );
