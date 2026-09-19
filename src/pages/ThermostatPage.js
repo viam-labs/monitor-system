@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useThermostat } from '../hooks/useThermostat';
-import { useThermostatController } from '../hooks/useThermostatController';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
@@ -753,13 +751,12 @@ function AddScheduledFormBody({ busy, existing, onAdd, onCancel }) {
 
 export default function ThermostatPage() {
   const {
-    client, acBotName, roomMeterName, thermostatName,
+    acBotName, roomMeterName, thermostatName,
     loading: connectionLoading, detectingFeatures, pendingProbes,
+    thermostat: t, thermostatController: ctrl,
   } = useOutletContext();
   const thermostatStillProbing =
     !!acBotName && !roomMeterName && pendingProbes && pendingProbes.sensor > 0;
-  const t = useThermostat(client, acBotName, roomMeterName);
-  const ctrl = useThermostatController(client, thermostatName);
   const { position, readings, loading, error, busy } = t;
   const [addOpen, setAddOpen] = useState(false);
 

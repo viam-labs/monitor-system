@@ -1,7 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useMachineConnection } from '../hooks/useMachineConnection';
+import { useFeeder } from '../hooks/useFeeder';
+import { useThermostat } from '../hooks/useThermostat';
+import { useThermostatController } from '../hooks/useThermostatController';
+import { useCurtain } from '../hooks/useCurtain';
+import { useDoorUnlock } from '../hooks/useDoorUnlock';
 import { subscribeConnectionHealth } from '../lib/connectionHealth';
 
 const PAGE_TITLES = {
@@ -34,6 +39,25 @@ function MachinePage() {
   const connection = useMachineConnection();
   const location = useLocation();
   const [connectionLost, setConnectionLost] = useState(false);
+
+  // Hoisted so state (schedules, readings, last-fed, etc.) survives
+  // navigation and pages hydrate instantly on mount instead of
+  // re-fetching. Each hook's polling continues in the background;
+  // any that lack a configured resource are cheap no-ops.
+  const feeder = useFeeder(connection.client, connection.feederName);
+  const thermostat = useThermostat(
+    connection.client, connection.acBotName, connection.roomMeterName,
+  );
+  const thermostatController = useThermostatController(
+    connection.client, connection.thermostatName,
+  );
+  const curtain = useCurtain(connection.client, connection.curtainName);
+  const door = useDoorUnlock(connection.client, connection.doorUnlockName);
+
+  const outletContext = useMemo(
+    () => ({ ...connection, feeder, thermostat, thermostatController, curtain, door }),
+    [connection, feeder, thermostat, thermostatController, curtain, door],
+  );
 
   useEffect(() => {
     document.title = PAGE_TITLES[location.pathname] || 'Home';
@@ -75,7 +99,7 @@ function MachinePage() {
         </div>
       )}
       <div className="page">
-        <Outlet context={connection} />
+        <Outlet context={outletContext} />
       </div>
     </>
   );
