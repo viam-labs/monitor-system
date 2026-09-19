@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useFeeder } from '../hooks/useFeeder';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
@@ -293,14 +292,13 @@ function VacationForm({ saving, onSubmit, onCancel }) {
 
 export default function FeederPage() {
   const {
-    client,
     feederName,
     loading: connectionLoading,
     detectingFeatures,
     pendingProbes,
+    feeder,
   } = useOutletContext();
   const feederStillProbing = !feederName && pendingProbes && pendingProbes.generic > 0;
-  const feeder = useFeeder(client, feederName);
   const {
     status,
     schedules,
