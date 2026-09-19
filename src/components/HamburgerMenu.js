@@ -37,6 +37,8 @@ export default function HamburgerMenu({
   thermostatLoading,
   showCurtain,
   curtainLoading,
+  showDoor,
+  doorLoading,
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -92,6 +94,9 @@ export default function HamburgerMenu({
           )}
           {(showCurtain || curtainLoading) && (
             <FeatureLink to="/curtain" label="Curtain" loading={!showCurtain && curtainLoading} onClick={close} />
+          )}
+          {(showDoor || doorLoading) && (
+            <FeatureLink to="/door" label="Building Door" loading={!showDoor && doorLoading} onClick={close} />
           )}
         </ul>
       )}
