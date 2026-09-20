@@ -1603,6 +1603,23 @@ code {
   text-align: center;
 }
 
+.feeder-action {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.feeder-action + .feeder-action {
+  margin-top: 4px;
+}
+
+.feeder-action__desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
 @media (max-width: 900px), (max-height: 600px) {
   .feeder-page {
     gap: 14px;
