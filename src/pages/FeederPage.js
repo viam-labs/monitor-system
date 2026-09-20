@@ -524,43 +524,7 @@ export default function FeederPage() {
       <section className="feeder-card">
         <div className="feeder-card__header">
           <h2 className="feeder-card__title">Schedule</h2>
-          <div className="feeder-card__actions">
-            <button
-              type="button"
-              className={
-                'feeder-secondary-button' +
-                (paused ? ' feeder-secondary-button--active' : '')
-              }
-              onClick={() => feeder.pauseSchedule(!paused)}
-              disabled={pausing || scheduleEmpty || isVacation}
-              title={
-                isVacation
-                  ? 'Vacation pause is active — use Resume in the banner above.'
-                  : scheduleEmpty
-                    ? 'Nothing to pause — add a scheduled feeding first.'
-                    : undefined
-              }
-            >
-              {paused ? 'Resume' : 'Pause'}
-            </button>
-            <button
-              type="button"
-              className="feeder-secondary-button"
-              onClick={() => setVacationOpen(o => !o)}
-              disabled={mutating || scheduleEmpty}
-            >
-              Vacation…
-            </button>
-          </div>
         </div>
-
-        {vacationOpen && (
-          <VacationForm
-            saving={mutating}
-            onSubmit={handleVacation}
-            onCancel={() => setVacationOpen(false)}
-          />
-        )}
 
         {loading && !schedules && <p className="feeder-status__loading">Loading…</p>}
         {schedules && (
@@ -579,95 +543,6 @@ export default function FeederPage() {
                 onSetSkip={handleSetSkip}
               />
             ))}
-
-            {!scheduleEmpty && (
-              <div className="quick-actions">
-                <button
-                  type="button"
-                  className="feeder-secondary-button"
-                  onClick={handleSkipNext}
-                  disabled={mutating || !nextScheduled}
-                >
-                  Skip next feeding
-                </button>
-                {!moveOpen ? (
-                  <button
-                    type="button"
-                    className="feeder-secondary-button"
-                    onClick={() => setMoveOpen(true)}
-                    disabled={mutating || !nextScheduled}
-                  >
-                    Move next by…
-                  </button>
-                ) : (
-                  <div className="delay-row">
-                    <div className="delay-row__header">
-                      <span className="delay-row__label">Move next by</span>
-                      <button
-                        type="button"
-                        className="feeder-icon-button"
-                        onClick={() => setMoveOpen(false)}
-                        aria-label="Cancel"
-                        title="Cancel"
-                        disabled={mutating}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className="delay-row__inputs">
-                      <input
-                        type="number"
-                        min="0"
-                        max="23"
-                        value={delayHours}
-                        onChange={e => setDelayHours(Math.max(0, Math.min(23, Number(e.target.value) || 0)))}
-                        aria-label="Hours"
-                        disabled={mutating}
-                      />
-                      <span className="delay-row__unit">hr</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={delayMinutes}
-                        onChange={e => setDelayMinutes(Math.max(0, Math.min(59, Number(e.target.value) || 0)))}
-                        aria-label="Minutes"
-                        disabled={mutating}
-                      />
-                      <span className="delay-row__unit">min</span>
-                    </div>
-                    <div className="delay-row__buttons">
-                      <button
-                        type="button"
-                        className="move-button"
-                        onClick={() => moveNext('earlier')}
-                        disabled={mutating || moveTotalHours <= 0 || !canMoveEarlier}
-                        title={
-                          !canMoveEarlier && nextScheduled && moveTotalHours > 0
-                            ? 'Moving earlier by that much would land in the past.'
-                            : undefined
-                        }
-                      >
-                        ← Earlier
-                      </button>
-                      <button
-                        type="button"
-                        className="move-button"
-                        onClick={() => moveNext('later')}
-                        disabled={mutating || moveTotalHours <= 0 || !canMoveLater}
-                      >
-                        Later →
-                      </button>
-                    </div>
-                    <div className="move-preview">
-                      {movePreviewLines.map((line, i) => (
-                        <p key={i} className="feeder-meta">{line}</p>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
             {addOpen ? (
               <div className="automation-card automation-card--add">
@@ -692,6 +567,162 @@ export default function FeederPage() {
           </>
         )}
       </section>
+
+      {schedules && !scheduleEmpty && (
+        <section className="feeder-card">
+          <div className="feeder-card__header">
+            <h2 className="feeder-card__title">Pause</h2>
+          </div>
+          <div className="feeder-action">
+            <button
+              type="button"
+              className={
+                'feeder-secondary-button feeder-secondary-button--full' +
+                (paused ? ' feeder-secondary-button--active' : '')
+              }
+              onClick={() => feeder.pauseSchedule(!paused)}
+              disabled={pausing || isVacation}
+              title={
+                isVacation
+                  ? 'Vacation pause is active — use Resume in the banner above.'
+                  : undefined
+              }
+            >
+              {paused ? 'Resume schedule' : 'Pause schedule'}
+            </button>
+            <p className="feeder-action__desc">
+              Stop all scheduled feedings until you manually resume.
+            </p>
+          </div>
+          <div className="feeder-action">
+            {!vacationOpen ? (
+              <>
+                <button
+                  type="button"
+                  className="feeder-secondary-button feeder-secondary-button--full"
+                  onClick={() => setVacationOpen(true)}
+                  disabled={mutating}
+                >
+                  Vacation…
+                </button>
+                <p className="feeder-action__desc">
+                  Pause automatically until a specific date and time.
+                </p>
+              </>
+            ) : (
+              <VacationForm
+                saving={mutating}
+                onSubmit={handleVacation}
+                onCancel={() => setVacationOpen(false)}
+              />
+            )}
+          </div>
+        </section>
+      )}
+
+      {schedules && !scheduleEmpty && (
+        <section className="feeder-card">
+          <div className="feeder-card__header">
+            <h2 className="feeder-card__title">Next feeding</h2>
+          </div>
+          <div className="feeder-action">
+            <button
+              type="button"
+              className="feeder-secondary-button feeder-secondary-button--full"
+              onClick={handleSkipNext}
+              disabled={mutating || !nextScheduled}
+            >
+              Skip next feeding
+            </button>
+            <p className="feeder-action__desc">
+              Skip only the very next scheduled feeding. Later feedings still fire normally.
+            </p>
+          </div>
+          <div className="feeder-action">
+            {!moveOpen ? (
+              <>
+                <button
+                  type="button"
+                  className="feeder-secondary-button feeder-secondary-button--full"
+                  onClick={() => setMoveOpen(true)}
+                  disabled={mutating || !nextScheduled}
+                >
+                  Move next by…
+                </button>
+                <p className="feeder-action__desc">
+                  Delay or advance the next scheduled feeding by hours.
+                </p>
+              </>
+            ) : (
+              <div className="delay-row">
+                <div className="delay-row__header">
+                  <span className="delay-row__label">Move next by</span>
+                  <button
+                    type="button"
+                    className="feeder-icon-button"
+                    onClick={() => setMoveOpen(false)}
+                    aria-label="Cancel"
+                    title="Cancel"
+                    disabled={mutating}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="delay-row__inputs">
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={delayHours}
+                    onChange={e => setDelayHours(Math.max(0, Math.min(23, Number(e.target.value) || 0)))}
+                    aria-label="Hours"
+                    disabled={mutating}
+                  />
+                  <span className="delay-row__unit">hr</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={delayMinutes}
+                    onChange={e => setDelayMinutes(Math.max(0, Math.min(59, Number(e.target.value) || 0)))}
+                    aria-label="Minutes"
+                    disabled={mutating}
+                  />
+                  <span className="delay-row__unit">min</span>
+                </div>
+                <div className="delay-row__buttons">
+                  <button
+                    type="button"
+                    className="move-button"
+                    onClick={() => moveNext('earlier')}
+                    disabled={mutating || moveTotalHours <= 0 || !canMoveEarlier}
+                    title={
+                      !canMoveEarlier && nextScheduled && moveTotalHours > 0
+                        ? 'Moving earlier by that much would land in the past.'
+                        : undefined
+                    }
+                  >
+                    ← Earlier
+                  </button>
+                  <button
+                    type="button"
+                    className="move-button"
+                    onClick={() => moveNext('later')}
+                    disabled={mutating || moveTotalHours <= 0 || !canMoveLater}
+                  >
+                    Later →
+                  </button>
+                </div>
+                <div className="move-preview">
+                  {movePreviewLines.map((line, i) => (
+                    <p key={i} className="feeder-meta">{line}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="feeder-card feeder-card--hero">
         <button
