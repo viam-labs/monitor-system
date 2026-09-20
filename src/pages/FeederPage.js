@@ -353,9 +353,13 @@ export default function FeederPage() {
     if (!schedules) return [];
     const nowMs = Date.now();
     const today = new Date();
+    // Backend uses Mon=0..Sun=6; JS getDay() is Sun=0..Sat=6.
+    const todayDow = (today.getDay() + 6) % 7;
     return schedules.filter(s => {
       if (s.enabled === false) return false;
       if (!s.time || !s.time.includes(':')) return false;
+      const dows = s.days_of_week || [];
+      if (dows.length && !dows.includes(todayDow)) return false;
       const [h, m] = s.time.split(':').map(Number);
       const fireToday = new Date(today);
       fireToday.setHours(h, m, 0, 0);
