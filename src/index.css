@@ -983,7 +983,7 @@ code {
   max-width: 520px;
   width: 100%;
   margin: 0 auto;
-  padding-top: 60px;
+  padding-top: 24px;
   overflow-y: auto;
   min-height: 0;
 }
