@@ -76,6 +76,9 @@ export default function HamburgerMenu({
       </button>
       {open && (
         <ul className="nav-menu__list" role="menu">
+          {(showDoor || doorLoading) && (
+            <FeatureLink to="/door" label="Building Door" loading={!showDoor && doorLoading} onClick={close} />
+          )}
           <li>
             <NavLink
               to="/"
@@ -88,9 +91,6 @@ export default function HamburgerMenu({
               Cameras
             </NavLink>
           </li>
-          {(showDoor || doorLoading) && (
-            <FeatureLink to="/door" label="Building Door" loading={!showDoor && doorLoading} onClick={close} />
-          )}
           {(showCurtain || curtainLoading) && (
             <FeatureLink to="/curtain" label="Curtain" loading={!showCurtain && curtainLoading} onClick={close} />
           )}
