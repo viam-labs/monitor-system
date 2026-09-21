@@ -45,6 +45,10 @@ function matchGeneric(name, status, into) {
     into.doorUnlockName = name;
     return;
   }
+  if (status.kind === 'waterer_pump') {
+    into.watererName = name;
+    return;
+  }
   if ('food_state' in status || 'food_low_status' in status) {
     into.feederName = name;
   } else if ('on_temp_c' in status || 'off_temp_c' in status || 'bot_position' in status) {
@@ -87,6 +91,7 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
     thermostatName: null,
     curtainName: null,
     doorUnlockName: null,
+    watererName: null,
     acBotName: null,
     roomMeterName: null,
   };
@@ -174,6 +179,7 @@ export function useMachineConnection() {
   const [thermostatName, setThermostatName] = useState(null);
   const [curtainName, setCurtainName] = useState(null);
   const [doorUnlockName, setDoorUnlockName] = useState(null);
+  const [watererName, setWatererName] = useState(null);
   const [acBotName, setAcBotName] = useState(null);
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -190,6 +196,7 @@ export function useMachineConnection() {
       if (d.thermostatName) setThermostatName(d.thermostatName);
       if (d.curtainName) setCurtainName(d.curtainName);
       if (d.doorUnlockName) setDoorUnlockName(d.doorUnlockName);
+      if (d.watererName) setWatererName(d.watererName);
       if (d.acBotName) setAcBotName(d.acBotName);
       if (d.roomMeterName) setRoomMeterName(d.roomMeterName);
     };
@@ -260,6 +267,7 @@ export function useMachineConnection() {
     thermostatName,
     curtainName,
     doorUnlockName,
+    watererName,
     acBotName,
     roomMeterName,
     loading,
