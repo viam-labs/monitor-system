@@ -88,17 +88,17 @@ export default function HamburgerMenu({
               Cameras
             </NavLink>
           </li>
+          {(showDoor || doorLoading) && (
+            <FeatureLink to="/door" label="Building Door" loading={!showDoor && doorLoading} onClick={close} />
+          )}
+          {(showCurtain || curtainLoading) && (
+            <FeatureLink to="/curtain" label="Curtain" loading={!showCurtain && curtainLoading} onClick={close} />
+          )}
           {(showFeeder || feederLoading) && (
             <FeatureLink to="/feeder" label="Feeder" loading={!showFeeder && feederLoading} onClick={close} />
           )}
           {(showThermostat || thermostatLoading) && (
             <FeatureLink to="/thermostat" label="Thermostat" loading={!showThermostat && thermostatLoading} onClick={close} />
-          )}
-          {(showCurtain || curtainLoading) && (
-            <FeatureLink to="/curtain" label="Curtain" loading={!showCurtain && curtainLoading} onClick={close} />
-          )}
-          {(showDoor || doorLoading) && (
-            <FeatureLink to="/door" label="Building Door" loading={!showDoor && doorLoading} onClick={close} />
           )}
           {(showWaterer || watererLoading) && (
             <FeatureLink to="/waterer" label="Waterer" loading={!showWaterer && watererLoading} onClick={close} />
