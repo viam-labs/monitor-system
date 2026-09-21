@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 
-// 30-minute HH:MM values. Native <input type="time"> looks fine on
+// 15-minute HH:MM values. Native <input type="time"> looks fine on
 // desktop but on iOS/mobile the picker chrome fights the dark theme
 // and ends up looking washed out — a plain <select> matches the
 // existing temperature dropdowns.
 const TIME_VALUES = (() => {
   const out = [];
   for (let h = 0; h < 24; h++) {
-    for (const m of [0, 30]) {
+    for (const m of [0, 15, 30, 45]) {
       out.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
     }
   }
@@ -31,7 +31,7 @@ export default function TimeSelect({
 }) {
   const options = useMemo(() => TIME_VALUES.map(v => ({ v, label: formatLabel(v) })), []);
 
-  // If the caller has a non-30-minute value (e.g., 07:15 from an older
+  // If the caller has an off-grid value (e.g., 07:05 from an older
   // config), include it as an extra option so we round-trip it losslessly.
   const extra = value && !TIME_VALUES.includes(value) ? value : null;
 
