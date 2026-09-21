@@ -208,7 +208,6 @@ export default function WatererPage() {
     busy,
   } = w;
   const [addOpen, setAddOpen] = useState(false);
-  const [customMl, setCustomMl] = useState('');
 
   if (connectionLoading || detectingFeatures || watererStillProbing) {
     return (
@@ -271,18 +270,6 @@ export default function WatererPage() {
 
   const handleDispensePreset = async () => {
     try { await w.dispenseMl(DEFAULT_DOSE_ML); } catch { /* surfaced */ }
-  };
-
-  const handleDispenseCustom = async (e) => {
-    e.preventDefault();
-    const ml = Number(customMl);
-    if (!Number.isFinite(ml) || ml <= 0) return;
-    try {
-      await w.dispenseMl(ml);
-      setCustomMl('');
-    } catch {
-      // surfaced
-    }
   };
 
   const dailyTotalMl = dailyTotal && typeof dailyTotal.ml === 'number'
@@ -378,9 +365,6 @@ export default function WatererPage() {
       </section>
 
       <section className="feeder-card">
-        <div className="feeder-card__header">
-          <h2 className="feeder-card__title">Dispense now</h2>
-        </div>
         <button
           type="button"
           className="curtain-action curtain-action--open"
@@ -389,31 +373,6 @@ export default function WatererPage() {
         >
           {busy ? 'Dispensing…' : `Dispense ${DEFAULT_DOSE_ML} ml`}
         </button>
-        <form className="automation-card__form" onSubmit={handleDispenseCustom}>
-          <div className="automation-form__row">
-            <label className="automation-form__field">
-              <span className="automation-form__label">Custom (ml)</span>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={customMl}
-                onChange={e => setCustomMl(e.target.value)}
-                disabled={busy}
-                placeholder="e.g. 100"
-              />
-            </label>
-            <div className="automation-form__field automation-form__field--button">
-              <button
-                type="submit"
-                className="feeder-primary-button feeder-primary-button--sm"
-                disabled={busy || !customMl}
-              >
-                Dispense
-              </button>
-            </div>
-          </div>
-        </form>
       </section>
     </div>
   );
