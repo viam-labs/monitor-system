@@ -76,15 +76,20 @@ function ScheduleForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
           />
         </label>
         <label className="automation-form__field">
-          <span className="automation-form__label">Amount (ml)</span>
-          <input
-            type="number"
-            min="1"
-            step="1"
+          <span className="automation-form__label">Amount</span>
+          <select
+            className="cups-select"
             value={doseMl}
             onChange={e => setDoseMl(e.target.value)}
             disabled={busy}
-          />
+          >
+            {!DOSE_OPTIONS_ML.includes(Number(doseMl)) && doseMl !== '' && (
+              <option value={doseMl}>{doseMl} ml</option>
+            )}
+            {DOSE_OPTIONS_ML.map(ml => (
+              <option key={ml} value={ml}>{ml} ml</option>
+            ))}
+          </select>
         </label>
       </div>
 
