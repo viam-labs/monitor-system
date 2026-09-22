@@ -3,8 +3,26 @@ import { StreamClient } from '@viamrobotics/sdk';
 
 const MAX_RESTART_ATTEMPTS = 5;
 const MUTE_GRACE_MS = 3000;
+const MAX_BACKOFF_MS = 32000;
 
 const log = (name, msg, ...rest) => console.log(`[camera:${name}]`, msg, ...rest);
+
+// Connection-transport errors mean the whole machine WebRTC pipe is
+// down and the SDK is reconnecting on its own schedule. We retry
+// getStream indefinitely (capped at MAX_BACKOFF_MS) for these because
+// giving up mid-outage leaves tiles black forever after the SDK
+// recovers.
+function isTransportError(e) {
+  if (!e) return false;
+  const name = e.name || '';
+  const msg = e.message || '';
+  return (
+    name === 'ConnectionClosedError' ||
+    msg.includes('connection closed') ||
+    msg.includes('timed out') ||
+    msg.includes('Did not receive a stream')
+  );
+}
 
 // Starts WebRTC video streams on mount and stops them on unmount.
 // Also monitors track health: if a track goes silent (onmute for more
@@ -65,10 +83,12 @@ export function useCameraStreams(client, cameras) {
       });
     };
 
-    const scheduleRestart = (name, attempt = 0) => {
+    const scheduleRestart = (name, attempt = 0, transportRetries = 0) => {
       if (cancelled || restarting.has(name)) return;
       restarting.add(name);
-      const delay = attempt === 0 ? 0 : Math.min(2000 * 2 ** (attempt - 1), 32000);
+      const backoffTicks = attempt + transportRetries;
+      const delay =
+        backoffTicks === 0 ? 0 : Math.min(2000 * 2 ** (backoffTicks - 1), MAX_BACKOFF_MS);
       const t = setTimeout(async () => {
         timers.delete(t);
         if (cancelled) {
@@ -86,19 +106,27 @@ export function useCameraStreams(client, cameras) {
           const videoTracks = stream.getVideoTracks();
           log(
             name,
-            `stream received (attempt ${attempt + 1}) — video tracks: ${videoTracks.length}, muted: [${videoTracks.map((t) => t.muted).join(', ')}]`,
+            `stream received (attempt ${attempt + 1}${transportRetries ? `, +${transportRetries} transport retries` : ''}) — video tracks: ${videoTracks.length}, muted: [${videoTracks.map((t) => t.muted).join(', ')}]`,
           );
           attachHandlers(name, stream);
           active.set(name, stream);
           setStreams((prev) => ({ ...prev, [name]: stream }));
           restarting.delete(name);
         } catch (e) {
-          console.warn(`[camera:${name}] getStream attempt ${attempt + 1} failed:`, e);
           restarting.delete(name);
-          if (attempt < MAX_RESTART_ATTEMPTS - 1) {
-            scheduleRestart(name, attempt + 1);
+          if (isTransportError(e)) {
+            console.warn(
+              `[camera:${name}] getStream failed (transport down, retry ${transportRetries + 1}):`,
+              e.message || e,
+            );
+            scheduleRestart(name, attempt, transportRetries + 1);
+          } else if (attempt < MAX_RESTART_ATTEMPTS - 1) {
+            console.warn(`[camera:${name}] getStream attempt ${attempt + 1} failed:`, e);
+            scheduleRestart(name, attempt + 1, transportRetries);
           } else {
-            console.warn(`[camera:${name}] gave up after ${MAX_RESTART_ATTEMPTS} attempts`);
+            console.warn(
+              `[camera:${name}] gave up after ${MAX_RESTART_ATTEMPTS} non-transport attempts`,
+            );
           }
         }
       }, delay);
