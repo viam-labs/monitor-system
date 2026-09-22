@@ -4,6 +4,8 @@ import { StreamClient } from '@viamrobotics/sdk';
 const MAX_RESTART_ATTEMPTS = 5;
 const MUTE_GRACE_MS = 3000;
 
+const log = (name, msg, ...rest) => console.log(`[camera:${name}]`, msg, ...rest);
+
 // Starts WebRTC video streams on mount and stops them on unmount.
 // Also monitors track health: if a track goes silent (onmute for more
 // than MUTE_GRACE_MS) or ends, we tear it down and re-request the
@@ -36,22 +38,26 @@ export function useCameraStreams(client, cameras) {
     };
 
     const attachHandlers = (name, stream) => {
-      stream.getVideoTracks().forEach((track) => {
+      stream.getVideoTracks().forEach((track, i) => {
         let graceTimer = null;
         track.onmute = () => {
+          log(name, `track[${i}] muted (readyState=${track.readyState})`);
           if (cancelled || graceTimer) return;
           graceTimer = setTimeout(() => {
             timers.delete(graceTimer);
             graceTimer = null;
+            log(name, `mute grace elapsed, restarting`);
             scheduleRestart(name);
           }, MUTE_GRACE_MS);
           timers.add(graceTimer);
         };
         track.onunmute = () => {
+          log(name, `track[${i}] unmuted`);
           clearTimer(graceTimer);
           graceTimer = null;
         };
         track.onended = () => {
+          log(name, `track[${i}] ended (readyState=${track.readyState})`);
           clearTimer(graceTimer);
           graceTimer = null;
           if (!cancelled) scheduleRestart(name);
@@ -77,15 +83,22 @@ export function useCameraStreams(client, cameras) {
             restarting.delete(name);
             return;
           }
+          const videoTracks = stream.getVideoTracks();
+          log(
+            name,
+            `stream received (attempt ${attempt + 1}) — video tracks: ${videoTracks.length}, muted: [${videoTracks.map((t) => t.muted).join(', ')}]`,
+          );
           attachHandlers(name, stream);
           active.set(name, stream);
           setStreams((prev) => ({ ...prev, [name]: stream }));
           restarting.delete(name);
         } catch (e) {
-          console.warn(`Stream ${name} attempt ${attempt} failed:`, e);
+          console.warn(`[camera:${name}] getStream attempt ${attempt + 1} failed:`, e);
           restarting.delete(name);
           if (attempt < MAX_RESTART_ATTEMPTS - 1) {
             scheduleRestart(name, attempt + 1);
+          } else {
+            console.warn(`[camera:${name}] gave up after ${MAX_RESTART_ATTEMPTS} attempts`);
           }
         }
       }, delay);
