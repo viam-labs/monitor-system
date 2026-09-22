@@ -38,12 +38,34 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit, gridSpan }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.muted = true;
-      videoRef.current.srcObject = stream;
-      videoRef.current.play().catch(() => {});
-    }
-  }, [stream]);
+    const el = videoRef.current;
+    if (!el || !stream) return undefined;
+    el.muted = true;
+    el.srcObject = stream;
+    el.play().catch(() => {});
+
+    const tag = `[camera:${name}]`;
+    const snapshot = () =>
+      `videoWidth=${el.videoWidth} currentTime=${el.currentTime.toFixed(2)} active=${stream.active}`;
+    const onLoadedMetadata = () => console.log(tag, `video loadedmetadata (${snapshot()})`);
+    const onPlaying = () => console.log(tag, `video playing (${snapshot()})`);
+    const onStalled = () => console.warn(tag, `video stalled (${snapshot()})`);
+    const onWaiting = () => console.warn(tag, `video waiting (${snapshot()})`);
+    const onSuspend = () => console.log(tag, `video suspend (${snapshot()})`);
+
+    el.addEventListener('loadedmetadata', onLoadedMetadata);
+    el.addEventListener('playing', onPlaying);
+    el.addEventListener('stalled', onStalled);
+    el.addEventListener('waiting', onWaiting);
+    el.addEventListener('suspend', onSuspend);
+    return () => {
+      el.removeEventListener('loadedmetadata', onLoadedMetadata);
+      el.removeEventListener('playing', onPlaying);
+      el.removeEventListener('stalled', onStalled);
+      el.removeEventListener('waiting', onWaiting);
+      el.removeEventListener('suspend', onSuspend);
+    };
+  }, [stream, name]);
 
   const clickable = Boolean(onFocus);
   const handleKeyDown = clickable
