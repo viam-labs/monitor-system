@@ -44,14 +44,15 @@ function CameraTile({ name, stream, isFocused, onFocus, onExit, gridSpan }) {
     el.srcObject = stream;
     el.play().catch(() => {});
 
-    const tag = `[camera:${name}]`;
+    const ts = () => `+${(performance.now() / 1000).toFixed(2)}s`;
+    const tag = () => `[camera:${name}] ${ts()}`;
     const snapshot = () =>
       `videoWidth=${el.videoWidth} currentTime=${el.currentTime.toFixed(2)} active=${stream.active}`;
-    const onLoadedMetadata = () => console.log(tag, `video loadedmetadata (${snapshot()})`);
-    const onPlaying = () => console.log(tag, `video playing (${snapshot()})`);
-    const onStalled = () => console.warn(tag, `video stalled (${snapshot()})`);
-    const onWaiting = () => console.warn(tag, `video waiting (${snapshot()})`);
-    const onSuspend = () => console.log(tag, `video suspend (${snapshot()})`);
+    const onLoadedMetadata = () => console.log(tag(), `video loadedmetadata (${snapshot()})`);
+    const onPlaying = () => console.log(tag(), `video playing (${snapshot()})`);
+    const onStalled = () => console.warn(tag(), `video stalled (${snapshot()})`);
+    const onWaiting = () => console.warn(tag(), `video waiting (${snapshot()})`);
+    const onSuspend = () => console.log(tag(), `video suspend (${snapshot()})`);
 
     el.addEventListener('loadedmetadata', onLoadedMetadata);
     el.addEventListener('playing', onPlaying);
