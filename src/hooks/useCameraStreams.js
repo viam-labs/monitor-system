@@ -5,7 +5,11 @@ const MAX_RESTART_ATTEMPTS = 5;
 const MUTE_GRACE_MS = 3000;
 const MAX_BACKOFF_MS = 32000;
 
-const log = (name, msg, ...rest) => console.log(`[camera:${name}]`, msg, ...rest);
+// Seconds since page load; same origin for every log across cameras and
+// components so gaps between related events are read at a glance.
+const ts = () => `+${(performance.now() / 1000).toFixed(2)}s`;
+const log = (name, msg, ...rest) => console.log(`[camera:${name}] ${ts()}`, msg, ...rest);
+const warn = (name, msg, ...rest) => console.warn(`[camera:${name}] ${ts()}`, msg, ...rest);
 
 // Connection-transport errors mean the whole machine WebRTC pipe is
 // down and the SDK is reconnecting on its own schedule. We retry
@@ -115,18 +119,13 @@ export function useCameraStreams(client, cameras) {
         } catch (e) {
           restarting.delete(name);
           if (isTransportError(e)) {
-            console.warn(
-              `[camera:${name}] getStream failed (transport down, retry ${transportRetries + 1}):`,
-              e.message || e,
-            );
+            warn(name, `getStream failed (transport down, retry ${transportRetries + 1}):`, e.message || e);
             scheduleRestart(name, attempt, transportRetries + 1);
           } else if (attempt < MAX_RESTART_ATTEMPTS - 1) {
-            console.warn(`[camera:${name}] getStream attempt ${attempt + 1} failed:`, e);
+            warn(name, `getStream attempt ${attempt + 1} failed:`, e);
             scheduleRestart(name, attempt + 1, transportRetries);
           } else {
-            console.warn(
-              `[camera:${name}] gave up after ${MAX_RESTART_ATTEMPTS} non-transport attempts`,
-            );
+            warn(name, `gave up after ${MAX_RESTART_ATTEMPTS} non-transport attempts`);
           }
         }
       }, delay);
