@@ -1067,6 +1067,19 @@ code {
   color: #fca5a5;
 }
 
+.inventory-row__qty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inventory-row__count {
+  min-width: 2.2ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
 .feeder-status__pill {
   padding: 3px 12px;
   border-radius: 999px;

@@ -7,6 +7,7 @@ import ThermostatPage from './pages/ThermostatPage';
 import CurtainPage from './pages/CurtainPage';
 import DoorUnlockPage from './pages/DoorUnlockPage';
 import WatererPage from './pages/WatererPage';
+import InventoryPage from './pages/InventoryPage';
 
 // HashRouter (not BrowserRouter) because Viam Applications' static
 // hosting does not rewrite unknown paths back to index.html — a
@@ -24,6 +25,7 @@ function App() {
           <Route path="curtain" element={<CurtainPage />} />
           <Route path="door" element={<DoorUnlockPage />} />
           <Route path="waterer" element={<WatererPage />} />
+          <Route path="inventory" element={<InventoryPage />} />
         </Route>
       </Routes>
     </Router>
