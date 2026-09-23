@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
 function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
@@ -130,18 +130,71 @@ function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
   );
 }
 
+function CountEditor({ quantity, busy, onCommit, name }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(quantity));
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!editing) setDraft(String(quantity));
+  }, [quantity, editing]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    const q = Number(draft);
+    if (Number.isInteger(q) && q >= 0 && q !== quantity) onCommit(q);
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setDraft(String(quantity));
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="number"
+        min="0"
+        step="1"
+        inputMode="numeric"
+        className="inventory-row__count inventory-row__count--input"
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+        }}
+        disabled={busy}
+        aria-label={`Set count for ${name}`}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="inventory-row__count inventory-row__count--button"
+      onClick={() => setEditing(true)}
+      disabled={busy}
+      aria-label={`Edit count for ${name} (currently ${quantity})`}
+      title="Edit count"
+    >
+      {quantity}
+    </button>
+  );
+}
+
 function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSave, onDelete }) {
   const [expanded, setExpanded] = useState(false);
-  const [correctOpen, setCorrectOpen] = useState(false);
-  const [correctValue, setCorrectValue] = useState(String(item.quantity));
-
-  const handleCorrect = (e) => {
-    e.preventDefault();
-    const q = Number(correctValue);
-    if (!Number.isInteger(q) || q < 0) return;
-    onSetQuantity(item.id, q);
-    setCorrectOpen(false);
-  };
 
   return (
     <div className="automation-card">
@@ -169,9 +222,12 @@ function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSave, 
           >
             −
           </button>
-          <span className="inventory-row__count" aria-label={`${item.quantity} in stock`}>
-            {item.quantity}
-          </span>
+          <CountEditor
+            quantity={item.quantity}
+            busy={busy}
+            onCommit={(q) => onSetQuantity(item.id, q)}
+            name={item.name}
+          />
           <button
             type="button"
             className="feeder-icon-button"
@@ -187,58 +243,13 @@ function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSave, 
 
       {expanded && (
         <>
-          {correctOpen ? (
-            <form className="automation-card__form" onSubmit={handleCorrect}>
-              <label className="automation-form__field">
-                <span className="automation-form__label">Set count directly</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={correctValue}
-                  onChange={e => setCorrectValue(e.target.value)}
-                  disabled={busy}
-                  autoFocus
-                />
-              </label>
-              <div className="automation-card__actions">
-                <button
-                  type="button"
-                  className="feeder-secondary-button"
-                  onClick={() => { setCorrectOpen(false); setCorrectValue(String(item.quantity)); }}
-                  disabled={busy}
-                >
-                  Cancel
-                </button>
-                <span className="automation-card__spacer" />
-                <button
-                  type="submit"
-                  className="feeder-primary-button feeder-primary-button--sm"
-                  disabled={busy}
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          ) : (
-            <ItemForm
-              initial={item}
-              busy={busy}
-              submitLabel="Save"
-              onSubmit={onSave}
-            />
-          )}
+          <ItemForm
+            initial={item}
+            busy={busy}
+            submitLabel="Save"
+            onSubmit={onSave}
+          />
           <div className="automation-card__actions">
-            {!correctOpen && (
-              <button
-                type="button"
-                className="feeder-secondary-button"
-                onClick={() => { setCorrectValue(String(item.quantity)); setCorrectOpen(true); }}
-                disabled={busy}
-              >
-                Correct count
-              </button>
-            )}
             <span className="automation-card__spacer" />
             <button
               type="button"
