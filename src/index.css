@@ -1074,10 +1074,52 @@ code {
 }
 
 .inventory-row__count {
-  min-width: 2.2ch;
+  min-width: 2.4ch;
   text-align: center;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.4;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.inventory-row__count--button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.inventory-row__count--button:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.inventory-row__count--button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.inventory-row__count--input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: inherit;
+  font-family: inherit;
+  width: 4ch;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.inventory-row__count--input::-webkit-outer-spin-button,
+.inventory-row__count--input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.inventory-row__count--input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .feeder-status__pill {
