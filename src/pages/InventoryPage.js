@@ -1,0 +1,379 @@
+import React, { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
+
+function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
+  const [name, setName] = useState(initial.name || '');
+  const [icon, setIcon] = useState(initial.icon || '');
+  const [packageQty, setPackageQty] = useState(
+    initial.package_qty != null ? String(initial.package_qty) : '1',
+  );
+  const [deckPage, setDeckPage] = useState(
+    initial.deck_page != null ? String(initial.deck_page) : '',
+  );
+  const [deckSlot, setDeckSlot] = useState(
+    initial.deck_slot != null ? String(initial.deck_slot) : '',
+  );
+
+  const submit = (e) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedIcon = icon.trim();
+    if (!trimmedName || !trimmedIcon) return;
+    const pkg = Number(packageQty);
+    if (!Number.isInteger(pkg) || pkg <= 0) return;
+    if ((deckPage === '') !== (deckSlot === '')) return;
+    const payload = {
+      name: trimmedName,
+      icon: trimmedIcon,
+      package_qty: pkg,
+    };
+    if (deckPage !== '') {
+      const p = Number(deckPage);
+      const s = Number(deckSlot);
+      if (!Number.isInteger(p) || p < 0 || !Number.isInteger(s) || s < 0) return;
+      payload.deck_page = p;
+      payload.deck_slot = s;
+    } else {
+      payload.deck_page = null;
+      payload.deck_slot = null;
+    }
+    if (initial.id) payload.id = initial.id;
+    onSubmit(payload);
+  };
+
+  return (
+    <form className="automation-card__form" onSubmit={submit}>
+      <div className="automation-form__row">
+        <label className="automation-form__field">
+          <span className="automation-form__label">Name</span>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            disabled={busy}
+            maxLength={60}
+            required
+          />
+        </label>
+        <label className="automation-form__field">
+          <span className="automation-form__label">Icon (emoji)</span>
+          <input
+            type="text"
+            value={icon}
+            onChange={e => setIcon(e.target.value)}
+            disabled={busy}
+            maxLength={8}
+            required
+            placeholder="🥚"
+          />
+        </label>
+      </div>
+
+      <label className="automation-form__field">
+        <span className="automation-form__label">Per package</span>
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={packageQty}
+          onChange={e => setPackageQty(e.target.value)}
+          disabled={busy}
+        />
+      </label>
+
+      <div className="automation-form__row">
+        <label className="automation-form__field">
+          <span className="automation-form__label">Deck page (optional)</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={deckPage}
+            onChange={e => setDeckPage(e.target.value)}
+            disabled={busy}
+          />
+        </label>
+        <label className="automation-form__field">
+          <span className="automation-form__label">Deck slot (optional)</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={deckSlot}
+            onChange={e => setDeckSlot(e.target.value)}
+            disabled={busy}
+          />
+        </label>
+      </div>
+
+      <div className="automation-card__actions">
+        {onCancel && (
+          <button
+            type="button"
+            className="feeder-secondary-button"
+            onClick={onCancel}
+            disabled={busy}
+          >
+            Cancel
+          </button>
+        )}
+        <span className="automation-card__spacer" />
+        <button
+          type="submit"
+          className="feeder-primary-button feeder-primary-button--sm"
+          disabled={busy}
+        >
+          {busy ? 'Saving…' : submitLabel}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSave, onDelete }) {
+  const [expanded, setExpanded] = useState(false);
+  const [correctOpen, setCorrectOpen] = useState(false);
+  const [correctValue, setCorrectValue] = useState(String(item.quantity));
+
+  const handleCorrect = (e) => {
+    e.preventDefault();
+    const q = Number(correctValue);
+    if (!Number.isInteger(q) || q < 0) return;
+    onSetQuantity(item.id, q);
+    setCorrectOpen(false);
+  };
+
+  return (
+    <div className="automation-card">
+      <div className="automation-card__header">
+        <button
+          type="button"
+          className="automation-card__disclose"
+          onClick={() => setExpanded(v => !v)}
+          aria-expanded={expanded}
+        >
+          <span className={'automation-card__chevron' + (expanded ? ' automation-card__chevron--open' : '')}>›</span>
+          <span className="automation-card__name">
+            <span aria-hidden="true">{item.icon} </span>
+            {item.name}
+          </span>
+        </button>
+        <div className="inventory-row__qty">
+          <button
+            type="button"
+            className="feeder-icon-button"
+            onClick={() => onDecrement(item.id)}
+            disabled={busy || item.quantity === 0}
+            aria-label={`Decrement ${item.name}`}
+            title="−1"
+          >
+            −
+          </button>
+          <span className="inventory-row__count" aria-label={`${item.quantity} in stock`}>
+            {item.quantity}
+          </span>
+          <button
+            type="button"
+            className="feeder-icon-button"
+            onClick={() => onIncrement(item.id)}
+            disabled={busy}
+            aria-label={`Increment ${item.name}`}
+            title="+1"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      {expanded && (
+        <>
+          {correctOpen ? (
+            <form className="automation-card__form" onSubmit={handleCorrect}>
+              <label className="automation-form__field">
+                <span className="automation-form__label">Set count directly</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={correctValue}
+                  onChange={e => setCorrectValue(e.target.value)}
+                  disabled={busy}
+                  autoFocus
+                />
+              </label>
+              <div className="automation-card__actions">
+                <button
+                  type="button"
+                  className="feeder-secondary-button"
+                  onClick={() => { setCorrectOpen(false); setCorrectValue(String(item.quantity)); }}
+                  disabled={busy}
+                >
+                  Cancel
+                </button>
+                <span className="automation-card__spacer" />
+                <button
+                  type="submit"
+                  className="feeder-primary-button feeder-primary-button--sm"
+                  disabled={busy}
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          ) : (
+            <ItemForm
+              initial={item}
+              busy={busy}
+              submitLabel="Save"
+              onSubmit={onSave}
+            />
+          )}
+          <div className="automation-card__actions">
+            {!correctOpen && (
+              <button
+                type="button"
+                className="feeder-secondary-button"
+                onClick={() => { setCorrectValue(String(item.quantity)); setCorrectOpen(true); }}
+                disabled={busy}
+              >
+                Correct count
+              </button>
+            )}
+            <span className="automation-card__spacer" />
+            <button
+              type="button"
+              className="feeder-icon-button feeder-icon-button--danger"
+              onClick={() => onDelete(item.id, item.name)}
+              disabled={busy}
+              aria-label={`Delete ${item.name}`}
+              title="Delete"
+            >
+              ✕
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function InventoryPage() {
+  const {
+    inventoryName,
+    inventoryStateSensorName,
+    loading: connectionLoading,
+    detectingFeatures,
+    pendingProbes,
+    inventory: inv,
+  } = useOutletContext();
+  const stillProbing =
+    !inventoryName && pendingProbes && pendingProbes.generic > 0;
+  const { items, loading, error, busy } = inv;
+  const [addOpen, setAddOpen] = useState(false);
+
+  if (connectionLoading || detectingFeatures || stillProbing) {
+    return (
+      <div className="paw-loader" aria-label="Connecting">
+        <span>🐾</span>
+        <span>🐾</span>
+        <span>🐾</span>
+      </div>
+    );
+  }
+
+  if (!inventoryName || !inventoryStateSensorName) {
+    return (
+      <div className="stub-page">
+        <h1>Inventory</h1>
+        <p>
+          No inventory tracker configured on this machine. Add a{' '}
+          <code>joseph:inventory:tracker</code> generic component paired with a{' '}
+          <code>viam:event-queue:sensor</code> (queue_capacity: 1) named as the
+          tracker's <code>state_sensor</code>.
+        </p>
+      </div>
+    );
+  }
+
+  const handleAdd = async (payload) => {
+    try {
+      await inv.addItem(payload);
+      setAddOpen(false);
+    } catch {
+      // stay open
+    }
+  };
+
+  const handleSave = async (payload) => {
+    try { await inv.editItem(payload); } catch { /* surfaced */ }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Delete ${name}?`)) return;
+    try { await inv.deleteItem(id); } catch { /* surfaced */ }
+  };
+
+  const sortedItems = [...items].sort((a, b) =>
+    (a.name || '').localeCompare(b.name || ''),
+  );
+
+  return (
+    <div className="feeder-page">
+      {error && <p className="feeder-error feeder-error--banner">{error}</p>}
+
+      <section className="feeder-card">
+        <div className="feeder-card__header">
+          <h2 className="feeder-card__title">Items ({sortedItems.length})</h2>
+          <button
+            type="button"
+            className="feeder-icon-button"
+            onClick={inv.refresh}
+            disabled={loading || busy}
+            aria-label="Refresh"
+            title="Refresh"
+          >
+            ↻
+          </button>
+        </div>
+
+        {sortedItems.length === 0 && !addOpen && (
+          <p className="feeder-meta">No items yet.</p>
+        )}
+
+        {sortedItems.map((item) => (
+          <ItemRow
+            key={item.id}
+            item={item}
+            busy={busy}
+            onIncrement={inv.increment}
+            onDecrement={inv.decrement}
+            onSetQuantity={inv.setQuantity}
+            onSave={handleSave}
+            onDelete={handleDelete}
+          />
+        ))}
+
+        {addOpen ? (
+          <div className="automation-card automation-card--add">
+            <ItemForm
+              initial={{}}
+              busy={busy}
+              submitLabel="Add"
+              onSubmit={handleAdd}
+              onCancel={() => setAddOpen(false)}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="feeder-secondary-button feeder-secondary-button--full"
+            onClick={() => setAddOpen(true)}
+            disabled={busy}
+          >
+            + Add item
+          </button>
+        )}
+      </section>
+    </div>
+  );
+}
