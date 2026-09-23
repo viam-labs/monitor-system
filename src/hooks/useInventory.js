@@ -100,6 +100,10 @@ export function useInventory(client, trackerName, stateSensorName) {
     (id, quantity) => runCommand({ command: 'set_quantity', id, quantity }),
     [runCommand],
   );
+  const scanBarcode = useCallback(
+    (barcode) => runCommand({ command: 'scan_barcode', barcode }),
+    [runCommand],
+  );
 
   return {
     items,
@@ -114,5 +118,6 @@ export function useInventory(client, trackerName, stateSensorName) {
     increment,
     decrement,
     setQuantity,
+    scanBarcode,
   };
 }

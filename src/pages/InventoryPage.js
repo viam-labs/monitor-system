@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import BarcodeScanner from '../components/BarcodeScanner';
 
 function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
   const [name, setName] = useState(initial.name || '');
@@ -7,31 +8,29 @@ function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
   const [packageQty, setPackageQty] = useState(
     initial.package_qty != null ? String(initial.package_qty) : '1',
   );
-  const [deckPage, setDeckPage] = useState(
-    initial.deck_page != null ? String(initial.deck_page) : '',
-  );
   const [deckSlot, setDeckSlot] = useState(
     initial.deck_slot != null ? String(initial.deck_slot) : '',
   );
+  const [barcode, setBarcode] = useState(initial.barcode || '');
 
   const submit = (e) => {
     e.preventDefault();
     const trimmedName = name.trim();
     const trimmedIcon = icon.trim();
+    const trimmedBarcode = barcode.trim();
     if (!trimmedName || !trimmedIcon) return;
     const pkg = Number(packageQty);
     if (!Number.isInteger(pkg) || pkg <= 0) return;
-    if ((deckPage === '') !== (deckSlot === '')) return;
     const payload = {
       name: trimmedName,
       icon: trimmedIcon,
       package_qty: pkg,
+      barcode: trimmedBarcode || null,
     };
-    if (deckPage !== '') {
-      const p = Number(deckPage);
+    if (deckSlot !== '') {
       const s = Number(deckSlot);
-      if (!Number.isInteger(p) || p < 0 || !Number.isInteger(s) || s < 0) return;
-      payload.deck_page = p;
+      if (!Number.isInteger(s) || s < 0) return;
+      payload.deck_page = 0;
       payload.deck_slot = s;
     } else {
       payload.deck_page = null;
@@ -69,32 +68,20 @@ function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
         </label>
       </div>
 
-      <label className="automation-form__field">
-        <span className="automation-form__label">Per package</span>
-        <input
-          type="number"
-          min="1"
-          step="1"
-          value={packageQty}
-          onChange={e => setPackageQty(e.target.value)}
-          disabled={busy}
-        />
-      </label>
-
       <div className="automation-form__row">
         <label className="automation-form__field">
-          <span className="automation-form__label">Deck page (optional)</span>
+          <span className="automation-form__label">Add per scan</span>
           <input
             type="number"
-            min="0"
+            min="1"
             step="1"
-            value={deckPage}
-            onChange={e => setDeckPage(e.target.value)}
+            value={packageQty}
+            onChange={e => setPackageQty(e.target.value)}
             disabled={busy}
           />
         </label>
         <label className="automation-form__field">
-          <span className="automation-form__label">Deck slot (optional)</span>
+          <span className="automation-form__label">Deck slot</span>
           <input
             type="number"
             min="0"
@@ -102,9 +89,22 @@ function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
             value={deckSlot}
             onChange={e => setDeckSlot(e.target.value)}
             disabled={busy}
+            placeholder="—"
           />
         </label>
       </div>
+
+      <label className="automation-form__field">
+        <span className="automation-form__label">Barcode</span>
+        <input
+          type="text"
+          value={barcode}
+          onChange={e => setBarcode(e.target.value)}
+          disabled={busy}
+          maxLength={32}
+          placeholder="—"
+        />
+      </label>
 
       <div className="automation-card__actions">
         {onCancel && (
@@ -281,6 +281,15 @@ export default function InventoryPage() {
     !inventoryName && pendingProbes && pendingProbes.generic > 0;
   const { items, loading, error, busy } = inv;
   const [addOpen, setAddOpen] = useState(false);
+  const [addInitial, setAddInitial] = useState({});
+  const [scanOpen, setScanOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const id = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(id);
+  }, [toast]);
 
   if (connectionLoading || detectingFeatures || stillProbing) {
     return (
@@ -310,8 +319,32 @@ export default function InventoryPage() {
     try {
       await inv.addItem(payload);
       setAddOpen(false);
+      setAddInitial({});
     } catch {
       // stay open
+    }
+  };
+
+  const handleScan = async (barcode) => {
+    setScanOpen(false);
+    try {
+      const resp = await inv.scanBarcode(barcode);
+      if (resp?.matched) {
+        setToast({
+          kind: 'success',
+          text: `Added ${resp.added} to ${resp.item?.name} · now ${resp.item?.quantity}`,
+        });
+      } else {
+        const prefill = resp?.prefill || {};
+        setAddInitial({
+          name: prefill.name || '',
+          barcode: resp?.barcode || barcode,
+        });
+        setAddOpen(true);
+        setToast({ kind: 'info', text: 'New barcode — fill in the details' });
+      }
+    } catch (e) {
+      setToast({ kind: 'error', text: e?.message || 'Scan failed' });
     }
   };
 
@@ -332,19 +365,41 @@ export default function InventoryPage() {
     <div className="feeder-page">
       {error && <p className="feeder-error feeder-error--banner">{error}</p>}
 
+      {toast && (
+        <p className={'feeder-error feeder-error--banner feeder-toast--' + toast.kind}>
+          {toast.text}
+        </p>
+      )}
+
+      <BarcodeScanner
+        open={scanOpen}
+        onScan={handleScan}
+        onClose={() => setScanOpen(false)}
+      />
+
       <section className="feeder-card">
         <div className="feeder-card__header">
           <h2 className="feeder-card__title">Items ({sortedItems.length})</h2>
-          <button
-            type="button"
-            className="feeder-icon-button"
-            onClick={inv.refresh}
-            disabled={loading || busy}
-            aria-label="Refresh"
-            title="Refresh"
-          >
-            ↻
-          </button>
+          <div className="inventory-header-actions">
+            <button
+              type="button"
+              className="feeder-secondary-button feeder-secondary-button--sm"
+              onClick={() => setScanOpen(true)}
+              disabled={busy}
+            >
+              Scan
+            </button>
+            <button
+              type="button"
+              className="feeder-icon-button"
+              onClick={inv.refresh}
+              disabled={loading || busy}
+              aria-label="Refresh"
+              title="Refresh"
+            >
+              ↻
+            </button>
+          </div>
         </div>
 
         {sortedItems.length === 0 && !addOpen && (
@@ -367,18 +422,18 @@ export default function InventoryPage() {
         {addOpen ? (
           <div className="automation-card automation-card--add">
             <ItemForm
-              initial={{}}
+              initial={addInitial}
               busy={busy}
               submitLabel="Add"
               onSubmit={handleAdd}
-              onCancel={() => setAddOpen(false)}
+              onCancel={() => { setAddOpen(false); setAddInitial({}); }}
             />
           </div>
         ) : (
           <button
             type="button"
             className="feeder-secondary-button feeder-secondary-button--full"
-            onClick={() => setAddOpen(true)}
+            onClick={() => { setAddInitial({}); setAddOpen(true); }}
             disabled={busy}
           >
             + Add item
