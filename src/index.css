@@ -839,7 +839,8 @@ code {
   width: 100%;
 }
 
-.automation-card__form input[type="text"] {
+.automation-card__form input[type="text"],
+.automation-card__form input[type="number"] {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
@@ -847,7 +848,14 @@ code {
   border-radius: 6px;
   font-family: inherit;
   font-size: 0.95rem;
+  color-scheme: dark;
   width: 100%;
+  min-height: 38px;
+}
+
+.automation-card__form input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .automation-form {
@@ -1656,6 +1664,74 @@ code {
 .feeder-secondary-button--full {
   align-self: stretch;
   text-align: center;
+}
+
+.feeder-secondary-button--sm {
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  min-height: 32px;
+}
+
+.inventory-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feeder-toast--success {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #86efac;
+}
+
+.feeder-toast--info {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #93c5fd;
+}
+
+.feeder-toast--error {
+  /* falls through to the default feeder-error--banner styling */
+}
+
+.barcode-scanner {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.barcode-scanner__bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text);
+}
+
+.barcode-scanner__hint {
+  flex: 1;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.barcode-scanner__viewport {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.barcode-scanner__viewport video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
 }
 
 .feeder-action {
