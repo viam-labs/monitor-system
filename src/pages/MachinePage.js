@@ -8,6 +8,7 @@ import { useThermostatController } from '../hooks/useThermostatController';
 import { useCurtain } from '../hooks/useCurtain';
 import { useDoorUnlock } from '../hooks/useDoorUnlock';
 import { useWaterer } from '../hooks/useWaterer';
+import { useInventory } from '../hooks/useInventory';
 import { subscribeConnectionHealth } from '../lib/connectionHealth';
 
 const PAGE_TITLES = {
@@ -17,6 +18,7 @@ const PAGE_TITLES = {
   '/curtain': 'Curtain',
   '/door': 'Building Door',
   '/waterer': 'Waterer',
+  '/inventory': 'Inventory',
 };
 
 function Paw({ className }) {
@@ -56,10 +58,15 @@ function MachinePage() {
   const curtain = useCurtain(connection.client, connection.curtainName);
   const door = useDoorUnlock(connection.client, connection.doorUnlockName);
   const waterer = useWaterer(connection.client, connection.watererName);
+  const inventory = useInventory(
+    connection.client, connection.inventoryName, connection.inventoryStateSensorName,
+  );
 
   const outletContext = useMemo(
-    () => ({ ...connection, feeder, thermostat, thermostatController, curtain, door, waterer }),
-    [connection, feeder, thermostat, thermostatController, curtain, door, waterer],
+    () => ({
+      ...connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory,
+    }),
+    [connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory],
   );
 
   useEffect(() => {
@@ -88,6 +95,8 @@ function MachinePage() {
         doorLoading={!connection.doorUnlockName && connection.pendingProbes.generic > 0}
         showWaterer={!!connection.watererName}
         watererLoading={!connection.watererName && connection.pendingProbes.generic > 0}
+        showInventory={!!(connection.inventoryName && connection.inventoryStateSensorName)}
+        inventoryLoading={!connection.inventoryName && connection.pendingProbes.generic > 0}
       />
       {connectionLost && (
         <div className="connection-banner" role="alert">

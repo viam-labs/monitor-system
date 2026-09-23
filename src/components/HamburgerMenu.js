@@ -41,6 +41,8 @@ export default function HamburgerMenu({
   doorLoading,
   showWaterer,
   watererLoading,
+  showInventory,
+  inventoryLoading,
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -96,6 +98,9 @@ export default function HamburgerMenu({
           )}
           {(showFeeder || feederLoading) && (
             <FeatureLink to="/feeder" label="Feeder" loading={!showFeeder && feederLoading} onClick={close} />
+          )}
+          {(showInventory || inventoryLoading) && (
+            <FeatureLink to="/inventory" label="Inventory" loading={!showInventory && inventoryLoading} onClick={close} />
           )}
           {(showThermostat || thermostatLoading) && (
             <FeatureLink to="/thermostat" label="Thermostat" loading={!showThermostat && thermostatLoading} onClick={close} />
