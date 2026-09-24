@@ -60,6 +60,12 @@ function matchGeneric(name, status, into) {
     into.feederName = name;
   } else if ('on_temp_c' in status || 'off_temp_c' in status || 'bot_position' in status) {
     into.thermostatName = name;
+    if (typeof status.bot_name === 'string' && status.bot_name) {
+      into.acBotName = status.bot_name;
+    }
+    if (typeof status.meter_name === 'string' && status.meter_name) {
+      into.roomMeterName = status.meter_name;
+    }
   } else if ('slide_position' in status) {
     into.curtainName = name;
   }
@@ -128,7 +134,10 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
     }
   }));
 
-  if (switches.length > 0) {
+  // If the thermostat status told us which switch is the bot, honor it.
+  // Otherwise, fall back to the first switch — only safe when there's one
+  // (older thermostat versions don't expose bot_name).
+  if (!detected.acBotName && switches.length === 1) {
     detected.acBotName = switches[0].name;
   }
 
