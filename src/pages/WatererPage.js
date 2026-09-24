@@ -323,8 +323,6 @@ export default function WatererPage() {
     <div className="feeder-page">
       {error && <p className="feeder-error feeder-error--banner">{error}</p>}
 
-      <WatererCamera client={client} camera={watererCamera} />
-
       <section className="feeder-card thermostat-readings">
         <button
           type="button"
@@ -428,6 +426,8 @@ export default function WatererPage() {
           {busy ? 'Dispensing…' : `Dispense ${dispenseMl} ml`}
         </button>
       </section>
+
+      <WatererCamera client={client} camera={watererCamera} />
     </div>
   );
 }
