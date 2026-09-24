@@ -1,8 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
+import { useCameraStreams } from '../hooks/useCameraStreams';
+
+const CAMERA_NAME = 'waterer';
+
+function WatererCamera({ client, camera }) {
+  const cameras = useMemo(() => (camera ? [camera] : []), [camera]);
+  const streams = useCameraStreams(client, cameras);
+  const stream = camera ? streams[camera.name] : null;
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !stream) return;
+    el.muted = true;
+    el.srcObject = stream;
+    el.play().catch(() => {});
+  }, [stream]);
+
+  if (!camera) return null;
+
+  return (
+    <section className="feeder-card waterer-camera">
+      <video ref={videoRef} autoPlay playsInline muted />
+    </section>
+  );
+}
 
 const DEFAULT_DOSE_ML = 250;
 const DOSE_OPTIONS_ML = [50, 100, 150, 200, 250, 300, 350, 400];
@@ -196,12 +222,18 @@ function ScheduleCard({ schedule, isFirst, isLast, busy, onToggle, onSave, onDel
 
 export default function WatererPage() {
   const {
+    client,
+    cameras,
     watererName,
     loading: connectionLoading,
     detectingFeatures,
     pendingProbes,
     waterer: w,
   } = useOutletContext();
+  const watererCamera = useMemo(
+    () => (cameras || []).find(c => c.name === CAMERA_NAME) || null,
+    [cameras],
+  );
   const watererStillProbing = !watererName && pendingProbes && pendingProbes.generic > 0;
   const {
     mlPerSecond,
@@ -290,6 +322,8 @@ export default function WatererPage() {
   return (
     <div className="feeder-page">
       {error && <p className="feeder-error feeder-error--banner">{error}</p>}
+
+      <WatererCamera client={client} camera={watererCamera} />
 
       <section className="feeder-card thermostat-readings">
         <button
