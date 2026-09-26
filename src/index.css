@@ -1075,10 +1075,44 @@ code {
   color: #fca5a5;
 }
 
+.inventory-section__title {
+  margin: 14px 0 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .inventory-row {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.inventory-row__drag {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: grab;
+  padding: 0;
+  user-select: none;
+  touch-action: none;
+}
+
+.inventory-row__drag:active {
+  cursor: grabbing;
+}
+
+.inventory-row--header .inventory-row__drag {
+  cursor: default;
 }
 
 .inventory-row--header {
