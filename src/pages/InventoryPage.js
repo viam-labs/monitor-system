@@ -1,5 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import BarcodeScanner from '../components/BarcodeScanner';
 
 function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
@@ -245,12 +259,16 @@ function ThresholdEditor({ threshold, busy, onCommit, name }) {
   );
 }
 
-function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSetThreshold, onSave, onDelete }) {
+function ItemRow({
+  item, busy, dragHandle,
+  onIncrement, onDecrement, onSetQuantity, onSetThreshold, onSave, onDelete,
+}) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="automation-card">
       <div className="automation-card__header inventory-row">
+        {dragHandle}
         <button
           type="button"
           className="automation-card__disclose inventory-row__name"
@@ -325,6 +343,34 @@ function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSetThr
   );
 }
 
+function SortableItemRow({ item, ...rowProps }) {
+  const {
+    attributes, listeners, setNodeRef, transform, transition, isDragging,
+  } = useSortable({ id: item.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  const dragHandle = (
+    <button
+      type="button"
+      className="inventory-row__drag"
+      aria-label={`Reorder ${item.name}`}
+      title="Drag to reorder"
+      {...attributes}
+      {...listeners}
+    >
+      ⋮⋮
+    </button>
+  );
+  return (
+    <div ref={setNodeRef} style={style}>
+      <ItemRow item={item} dragHandle={dragHandle} {...rowProps} />
+    </div>
+  );
+}
+
 export default function InventoryPage() {
   const {
     inventoryName,
@@ -341,6 +387,9 @@ export default function InventoryPage() {
   const [addInitial, setAddInitial] = useState({});
   const [scanOpen, setScanOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -418,9 +467,22 @@ export default function InventoryPage() {
     try { await inv.deleteItem(id); } catch { /* surfaced */ }
   };
 
-  const sortedItems = [...items].sort((a, b) =>
-    (a.name || '').localeCompare(b.name || ''),
-  );
+  const onDeck = [...items]
+    .filter((i) => i.deck_slot != null && (i.deck_page ?? 0) === 0)
+    .sort((a, b) => (a.deck_slot ?? 0) - (b.deck_slot ?? 0));
+  const offDeck = [...items]
+    .filter((i) => i.deck_slot == null)
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = onDeck.findIndex((i) => i.id === active.id);
+    const newIndex = onDeck.findIndex((i) => i.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const nextOrder = arrayMove(onDeck, oldIndex, newIndex).map((i) => i.id);
+    try { await inv.reorderDeck(nextOrder); } catch { /* surfaced */ }
+  };
 
   return (
     <div className="feeder-page">
@@ -440,7 +502,7 @@ export default function InventoryPage() {
 
       <section className="feeder-card">
         <div className="feeder-card__header">
-          <h2 className="feeder-card__title">Items ({sortedItems.length})</h2>
+          <h2 className="feeder-card__title">Items ({items.length})</h2>
           <div className="inventory-header-actions">
             <button
               type="button"
@@ -463,31 +525,69 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {sortedItems.length === 0 && !addOpen && (
+        {items.length === 0 && !addOpen && (
           <p className="feeder-meta">No items yet.</p>
         )}
 
-        {sortedItems.length > 0 && (
-          <div className="inventory-row inventory-row--header">
-            <span className="inventory-row__name">Item</span>
-            <span className="inventory-row__qty">Count</span>
-            <span className="inventory-row__threshold">Threshold</span>
-          </div>
+        {onDeck.length > 0 && (
+          <>
+            <h3 className="inventory-section__title">On deck</h3>
+            <div className="inventory-row inventory-row--header inventory-row--sortable">
+              <span className="inventory-row__drag" aria-hidden="true" />
+              <span className="inventory-row__name">Item</span>
+              <span className="inventory-row__qty">Count</span>
+              <span className="inventory-row__threshold">Threshold</span>
+            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={onDeck.map((i) => i.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {onDeck.map((item) => (
+                  <SortableItemRow
+                    key={item.id}
+                    item={item}
+                    busy={busy}
+                    onIncrement={inv.increment}
+                    onDecrement={inv.decrement}
+                    onSetQuantity={inv.setQuantity}
+                    onSetThreshold={handleSetThreshold}
+                    onSave={handleSave}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          </>
         )}
 
-        {sortedItems.map((item) => (
-          <ItemRow
-            key={item.id}
-            item={item}
-            busy={busy}
-            onIncrement={inv.increment}
-            onDecrement={inv.decrement}
-            onSetQuantity={inv.setQuantity}
-            onSetThreshold={handleSetThreshold}
-            onSave={handleSave}
-            onDelete={handleDelete}
-          />
-        ))}
+        {offDeck.length > 0 && (
+          <>
+            <h3 className="inventory-section__title">Off deck</h3>
+            <div className="inventory-row inventory-row--header">
+              <span className="inventory-row__name">Item</span>
+              <span className="inventory-row__qty">Count</span>
+              <span className="inventory-row__threshold">Threshold</span>
+            </div>
+            {offDeck.map((item) => (
+              <ItemRow
+                key={item.id}
+                item={item}
+                busy={busy}
+                onIncrement={inv.increment}
+                onDecrement={inv.decrement}
+                onSetQuantity={inv.setQuantity}
+                onSetThreshold={handleSetThreshold}
+                onSave={handleSave}
+                onDelete={handleDelete}
+              />
+            ))}
+          </>
+        )}
 
         {addOpen ? (
           <div className="automation-card automation-card--add">

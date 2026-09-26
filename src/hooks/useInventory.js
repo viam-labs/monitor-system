@@ -104,6 +104,10 @@ export function useInventory(client, trackerName, stateSensorName) {
     (barcode) => runCommand({ command: 'scan_barcode', barcode }),
     [runCommand],
   );
+  const reorderDeck = useCallback(
+    (order, page = 0) => runCommand({ command: 'reorder_deck', page, order }),
+    [runCommand],
+  );
 
   return {
     items,
@@ -119,5 +123,6 @@ export function useInventory(client, trackerName, stateSensorName) {
     decrement,
     setQuantity,
     scanBarcode,
+    reorderDeck,
   };
 }
