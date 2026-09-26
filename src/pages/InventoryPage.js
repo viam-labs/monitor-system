@@ -532,60 +532,64 @@ export default function InventoryPage() {
         {onDeck.length > 0 && (
           <>
             <h3 className="inventory-section__title">On deck</h3>
-            <div className="inventory-row inventory-row--header inventory-row--sortable">
-              <span className="inventory-row__drag" aria-hidden="true" />
-              <span className="inventory-row__name">Item</span>
-              <span className="inventory-row__qty">Count</span>
-              <span className="inventory-row__threshold">Threshold</span>
-            </div>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={onDeck.map((i) => i.id)}
-                strategy={verticalListSortingStrategy}
+            <div className="inventory-scroll">
+              <div className="inventory-row inventory-row--header inventory-row--sortable">
+                <span className="inventory-row__drag" aria-hidden="true" />
+                <span className="inventory-row__name">Item</span>
+                <span className="inventory-row__qty">Count</span>
+                <span className="inventory-row__threshold">Threshold</span>
+              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
               >
-                {onDeck.map((item) => (
-                  <SortableItemRow
-                    key={item.id}
-                    item={item}
-                    busy={busy}
-                    onIncrement={inv.increment}
-                    onDecrement={inv.decrement}
-                    onSetQuantity={inv.setQuantity}
-                    onSetThreshold={handleSetThreshold}
-                    onSave={handleSave}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
+                <SortableContext
+                  items={onDeck.map((i) => i.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {onDeck.map((item) => (
+                    <SortableItemRow
+                      key={item.id}
+                      item={item}
+                      busy={busy}
+                      onIncrement={inv.increment}
+                      onDecrement={inv.decrement}
+                      onSetQuantity={inv.setQuantity}
+                      onSetThreshold={handleSetThreshold}
+                      onSave={handleSave}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            </div>
           </>
         )}
 
         {offDeck.length > 0 && (
           <>
             <h3 className="inventory-section__title">Off deck</h3>
-            <div className="inventory-row inventory-row--header">
-              <span className="inventory-row__name">Item</span>
-              <span className="inventory-row__qty">Count</span>
-              <span className="inventory-row__threshold">Threshold</span>
+            <div className="inventory-scroll">
+              <div className="inventory-row inventory-row--header">
+                <span className="inventory-row__name">Item</span>
+                <span className="inventory-row__qty">Count</span>
+                <span className="inventory-row__threshold">Threshold</span>
+              </div>
+              {offDeck.map((item) => (
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  busy={busy}
+                  onIncrement={inv.increment}
+                  onDecrement={inv.decrement}
+                  onSetQuantity={inv.setQuantity}
+                  onSetThreshold={handleSetThreshold}
+                  onSave={handleSave}
+                  onDelete={handleDelete}
+                />
+              ))}
             </div>
-            {offDeck.map((item) => (
-              <ItemRow
-                key={item.id}
-                item={item}
-                busy={busy}
-                onIncrement={inv.increment}
-                onDecrement={inv.decrement}
-                onSetQuantity={inv.setQuantity}
-                onSetThreshold={handleSetThreshold}
-                onSave={handleSave}
-                onDelete={handleDelete}
-              />
-            ))}
           </>
         )}
 

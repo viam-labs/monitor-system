@@ -1084,10 +1084,20 @@ code {
   letter-spacing: 0.06em;
 }
 
+.inventory-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* let horizontal pans scroll; vertical still bubbles up. Also stops dnd-kit
+     PointerSensor from swallowing horizontal swipes on the row body — only
+     the drag handle itself has touch-action: none. */
+  touch-action: pan-x pan-y;
+}
+
 .inventory-row {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 380px;
 }
 
 .inventory-row__drag {
