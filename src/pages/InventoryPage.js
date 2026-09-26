@@ -4,7 +4,6 @@ import BarcodeScanner from '../components/BarcodeScanner';
 
 function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
   const [name, setName] = useState(initial.name || '');
-  const [icon, setIcon] = useState(initial.icon || '');
   const [packageQty, setPackageQty] = useState(
     initial.package_qty != null ? String(initial.package_qty) : '1',
   );
@@ -16,14 +15,12 @@ function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
   const submit = (e) => {
     e.preventDefault();
     const trimmedName = name.trim();
-    const trimmedIcon = icon.trim();
     const trimmedBarcode = barcode.trim();
-    if (!trimmedName || !trimmedIcon) return;
+    if (!trimmedName) return;
     const pkg = Number(packageQty);
     if (!Number.isInteger(pkg) || pkg <= 0) return;
     const payload = {
       name: trimmedName,
-      icon: trimmedIcon,
       package_qty: pkg,
       barcode: trimmedBarcode || null,
     };
@@ -42,31 +39,17 @@ function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
 
   return (
     <form className="automation-card__form" onSubmit={submit}>
-      <div className="automation-form__row">
-        <label className="automation-form__field">
-          <span className="automation-form__label">Name</span>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            disabled={busy}
-            maxLength={60}
-            required
-          />
-        </label>
-        <label className="automation-form__field">
-          <span className="automation-form__label">Icon (emoji)</span>
-          <input
-            type="text"
-            value={icon}
-            onChange={e => setIcon(e.target.value)}
-            disabled={busy}
-            maxLength={8}
-            required
-            placeholder="🥚"
-          />
-        </label>
-      </div>
+      <label className="automation-form__field">
+        <span className="automation-form__label">Name</span>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          disabled={busy}
+          maxLength={60}
+          required
+        />
+      </label>
 
       <div className="automation-form__row">
         <label className="automation-form__field">
@@ -206,10 +189,7 @@ function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSave, 
           aria-expanded={expanded}
         >
           <span className={'automation-card__chevron' + (expanded ? ' automation-card__chevron--open' : '')}>›</span>
-          <span className="automation-card__name">
-            <span aria-hidden="true">{item.icon} </span>
-            {item.name}
-          </span>
+          <span className="automation-card__name">{item.name}</span>
         </button>
         <div className="inventory-row__qty">
           <button
