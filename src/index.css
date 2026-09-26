@@ -1075,10 +1075,48 @@ code {
   color: #fca5a5;
 }
 
+.inventory-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inventory-row--header {
+  padding: 6px 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px;
+}
+
+.inventory-row__name {
+  flex: 1;
+  min-width: 0;
+}
+
 .inventory-row__qty {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  width: 120px;
+}
+
+.inventory-row__threshold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+}
+
+/* Header labels don't need the button/flex behavior — override with block. */
+.inventory-row--header .inventory-row__qty,
+.inventory-row--header .inventory-row__threshold {
+  display: block;
+  text-align: center;
 }
 
 .inventory-row__count {
