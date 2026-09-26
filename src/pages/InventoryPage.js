@@ -176,15 +176,84 @@ function CountEditor({ quantity, busy, onCommit, name }) {
   );
 }
 
-function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSave, onDelete }) {
+function ThresholdEditor({ threshold, busy, onCommit, name }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(threshold == null ? '' : String(threshold));
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!editing) setDraft(threshold == null ? '' : String(threshold));
+  }, [threshold, editing]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed === '') {
+      if (threshold != null) onCommit(null);
+    } else {
+      const n = Number(trimmed);
+      if (Number.isInteger(n) && n >= 0 && n !== threshold) onCommit(n);
+    }
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setDraft(threshold == null ? '' : String(threshold));
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="number"
+        min="0"
+        step="1"
+        inputMode="numeric"
+        className="inventory-row__count inventory-row__count--input"
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+        }}
+        disabled={busy}
+        placeholder="—"
+        aria-label={`Set threshold for ${name}`}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="inventory-row__count inventory-row__count--button"
+      onClick={() => setEditing(true)}
+      disabled={busy}
+      aria-label={`Edit threshold for ${name} (currently ${threshold ?? 'unset'})`}
+      title="Edit threshold"
+    >
+      {threshold == null ? '—' : threshold}
+    </button>
+  );
+}
+
+function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSetThreshold, onSave, onDelete }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="automation-card">
-      <div className="automation-card__header">
+      <div className="automation-card__header inventory-row">
         <button
           type="button"
-          className="automation-card__disclose"
+          className="automation-card__disclose inventory-row__name"
           onClick={() => setExpanded(v => !v)}
           aria-expanded={expanded}
         >
@@ -218,6 +287,14 @@ function ItemRow({ item, busy, onIncrement, onDecrement, onSetQuantity, onSave, 
           >
             +
           </button>
+        </div>
+        <div className="inventory-row__threshold">
+          <ThresholdEditor
+            threshold={item.threshold ?? null}
+            busy={busy}
+            onCommit={(v) => onSetThreshold(item.id, v)}
+            name={item.name}
+          />
         </div>
       </div>
 
@@ -332,6 +409,10 @@ export default function InventoryPage() {
     try { await inv.editItem(payload); } catch { /* surfaced */ }
   };
 
+  const handleSetThreshold = async (id, value) => {
+    try { await inv.editItem({ id, threshold: value }); } catch { /* surfaced */ }
+  };
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete ${name}?`)) return;
     try { await inv.deleteItem(id); } catch { /* surfaced */ }
@@ -386,6 +467,14 @@ export default function InventoryPage() {
           <p className="feeder-meta">No items yet.</p>
         )}
 
+        {sortedItems.length > 0 && (
+          <div className="inventory-row inventory-row--header">
+            <span className="inventory-row__name">Item</span>
+            <span className="inventory-row__qty">Count</span>
+            <span className="inventory-row__threshold">Threshold</span>
+          </div>
+        )}
+
         {sortedItems.map((item) => (
           <ItemRow
             key={item.id}
@@ -394,6 +483,7 @@ export default function InventoryPage() {
             onIncrement={inv.increment}
             onDecrement={inv.decrement}
             onSetQuantity={inv.setQuantity}
+            onSetThreshold={handleSetThreshold}
             onSave={handleSave}
             onDelete={handleDelete}
           />
