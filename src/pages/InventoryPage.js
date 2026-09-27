@@ -260,64 +260,69 @@ function ThresholdEditor({ threshold, busy, onCommit, name }) {
 }
 
 function ItemRow({
-  item, busy, dragHandle,
+  item, busy, dragHandle, wrapperRef, wrapperStyle,
   onIncrement, onDecrement, onSetQuantity, onSetThreshold, onSave, onDelete,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const hasDrag = dragHandle !== undefined;
 
   return (
-    <div className="automation-card">
-      <div className="automation-card__header inventory-row">
-        {dragHandle}
+    <div
+      ref={wrapperRef}
+      style={wrapperStyle}
+      className={'inventory-grid__card' + (hasDrag ? ' inventory-grid__card--with-drag' : '')}
+    >
+      {hasDrag && (
+        <div className="inventory-grid__cell inventory-grid__cell--drag">{dragHandle}</div>
+      )}
+      <button
+        type="button"
+        className="inventory-grid__cell inventory-grid__cell--name inventory-grid__disclose"
+        onClick={() => setExpanded(v => !v)}
+        aria-expanded={expanded}
+      >
+        <span className={'automation-card__chevron' + (expanded ? ' automation-card__chevron--open' : '')}>›</span>
+        <span className="inventory-grid__name-text">{item.name}</span>
+      </button>
+      <div className="inventory-grid__cell inventory-grid__cell--qty">
         <button
           type="button"
-          className="automation-card__disclose inventory-row__name"
-          onClick={() => setExpanded(v => !v)}
-          aria-expanded={expanded}
+          className="feeder-icon-button"
+          onClick={() => onDecrement(item.id)}
+          disabled={busy || item.quantity === 0}
+          aria-label={`Decrement ${item.name}`}
+          title="−1"
         >
-          <span className={'automation-card__chevron' + (expanded ? ' automation-card__chevron--open' : '')}>›</span>
-          <span className="automation-card__name">{item.name}</span>
+          −
         </button>
-        <div className="inventory-row__qty">
-          <button
-            type="button"
-            className="feeder-icon-button"
-            onClick={() => onDecrement(item.id)}
-            disabled={busy || item.quantity === 0}
-            aria-label={`Decrement ${item.name}`}
-            title="−1"
-          >
-            −
-          </button>
-          <CountEditor
-            quantity={item.quantity}
-            busy={busy}
-            onCommit={(q) => onSetQuantity(item.id, q)}
-            name={item.name}
-          />
-          <button
-            type="button"
-            className="feeder-icon-button"
-            onClick={() => onIncrement(item.id)}
-            disabled={busy}
-            aria-label={`Increment ${item.name}`}
-            title="+1"
-          >
-            +
-          </button>
-        </div>
-        <div className="inventory-row__threshold">
-          <ThresholdEditor
-            threshold={item.threshold ?? null}
-            busy={busy}
-            onCommit={(v) => onSetThreshold(item.id, v)}
-            name={item.name}
-          />
-        </div>
+        <CountEditor
+          quantity={item.quantity}
+          busy={busy}
+          onCommit={(q) => onSetQuantity(item.id, q)}
+          name={item.name}
+        />
+        <button
+          type="button"
+          className="feeder-icon-button"
+          onClick={() => onIncrement(item.id)}
+          disabled={busy}
+          aria-label={`Increment ${item.name}`}
+          title="+1"
+        >
+          +
+        </button>
+      </div>
+      <div className="inventory-grid__cell inventory-grid__cell--threshold">
+        <ThresholdEditor
+          threshold={item.threshold ?? null}
+          busy={busy}
+          onCommit={(v) => onSetThreshold(item.id, v)}
+          name={item.name}
+        />
       </div>
 
       {expanded && (
-        <>
+        <div className="inventory-grid__expanded">
           <ItemForm
             initial={item}
             busy={busy}
@@ -337,7 +342,7 @@ function ItemRow({
               ✕
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
@@ -355,7 +360,7 @@ function SortableItemRow({ item, ...rowProps }) {
   const dragHandle = (
     <button
       type="button"
-      className="inventory-row__drag"
+      className="inventory-grid__drag"
       aria-label={`Reorder ${item.name}`}
       title="Drag to reorder"
       {...attributes}
@@ -365,9 +370,13 @@ function SortableItemRow({ item, ...rowProps }) {
     </button>
   );
   return (
-    <div ref={setNodeRef} style={style} className="inventory-sortable-wrap">
-      <ItemRow item={item} dragHandle={dragHandle} {...rowProps} />
-    </div>
+    <ItemRow
+      item={item}
+      dragHandle={dragHandle}
+      wrapperRef={setNodeRef}
+      wrapperStyle={style}
+      {...rowProps}
+    />
   );
 }
 
@@ -532,13 +541,12 @@ export default function InventoryPage() {
         {onDeck.length > 0 && (
           <>
             <h3 className="inventory-section__title">On deck</h3>
-            <div className="inventory-scroll">
-              <div className="inventory-row inventory-row--header inventory-row--sortable">
-                <span className="inventory-row__drag" aria-hidden="true" />
-                <span className="inventory-row__name">Item</span>
-                <span className="inventory-row__qty">Count</span>
-                <span className="inventory-row__threshold">Threshold</span>
-              </div>
+            <div className="inventory-grid inventory-grid--with-drag">
+              <span className="inventory-grid__head" aria-hidden="true" />
+              <span className="inventory-grid__head">Item</span>
+              <span className="inventory-grid__head">Count</span>
+              <span className="inventory-grid__head">Threshold</span>
+              <div className="inventory-grid__hr" />
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -570,12 +578,11 @@ export default function InventoryPage() {
         {offDeck.length > 0 && (
           <>
             <h3 className="inventory-section__title">Off deck</h3>
-            <div className="inventory-scroll">
-              <div className="inventory-row inventory-row--header">
-                <span className="inventory-row__name">Item</span>
-                <span className="inventory-row__qty">Count</span>
-                <span className="inventory-row__threshold">Threshold</span>
-              </div>
+            <div className="inventory-grid">
+              <span className="inventory-grid__head">Item</span>
+              <span className="inventory-grid__head">Count</span>
+              <span className="inventory-grid__head">Threshold</span>
+              <div className="inventory-grid__hr" />
               {offDeck.map((item) => (
                 <ItemRow
                   key={item.id}
