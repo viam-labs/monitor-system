@@ -1084,57 +1084,94 @@ code {
   letter-spacing: 0.06em;
 }
 
-.inventory-scroll {
+/* CSS Grid + subgrid: shared column tracks across the header and all cards
+   so every column starts at the same x position, sized to the widest
+   content in that column. Cards are grid items that span all cols and use
+   grid-template-columns: subgrid so their internal cells align. Wrapping
+   in overflow-x: auto keeps the whole grid horizontally pannable on
+   narrow viewports without breaking the alignment. */
+.inventory-grid {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  column-gap: 32px;
+  row-gap: 8px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  /* let horizontal pans scroll; vertical still bubbles up. Also stops dnd-kit
-     PointerSensor from swallowing horizontal swipes on the row body — only
-     the drag handle itself has touch-action: none. */
   touch-action: pan-x pan-y;
+  padding-bottom: 2px;
+}
+
+.inventory-grid--with-drag {
+  grid-template-columns: auto auto auto auto;
+}
+
+.inventory-grid__head {
+  padding: 6px 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.inventory-grid__hr {
+  grid-column: 1 / -1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+}
+
+.inventory-grid__card {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  row-gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.inventory-grid__cell {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.inventory-grid__cell--drag {
+  justify-content: center;
+}
+
+.inventory-grid__cell--qty {
+  justify-content: center;
   gap: 8px;
 }
 
-/* Cards inside the scroll container must grow with the row so borders
-   wrap the whole content — otherwise the threshold column visually spills
-   outside the card boundary on narrow viewports. */
-.inventory-scroll > .automation-card,
-.inventory-scroll > .inventory-sortable-wrap,
-.inventory-scroll > .inventory-row--header {
-  width: max-content;
-  min-width: 100%;
-}
-.inventory-sortable-wrap > .automation-card {
-  width: 100%;
+.inventory-grid__cell--threshold {
+  justify-content: center;
 }
 
-.inventory-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 550px;
+.inventory-grid__disclose {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  gap: 8px;
+  text-align: left;
 }
 
-/* Fixed name column width so every row lines up with the header. Long
-   names truncate with ellipsis; the full name is visible when the card
-   is expanded. */
-.inventory-row .automation-card__disclose,
-.inventory-row__name {
-  flex: 0 0 240px;
-  width: 240px;
-  min-width: 240px;
-}
-.inventory-row .automation-card__name {
-  flex: 1 1 auto;
-  min-width: 0;
+.inventory-grid__name-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.inventory-row__drag {
-  flex: 0 0 auto;
+.inventory-grid__drag {
   width: 20px;
   height: 24px;
   display: inline-flex;
@@ -1150,56 +1187,16 @@ code {
   touch-action: none;
 }
 
-.inventory-row__drag:active {
+.inventory-grid__drag:active {
   cursor: grabbing;
 }
 
-.inventory-row--header .inventory-row__drag {
-  cursor: default;
-}
-
-.inventory-row--header {
-  padding: 6px 0;
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 4px;
-}
-
-.inventory-row__name {
-  flex: 1;
-  min-width: 0;
-}
-
-.inventory-row__qty {
+.inventory-grid__expanded {
+  grid-column: 1 / -1;
+  padding-top: 8px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  width: 130px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  padding-left: 12px;
-}
-
-.inventory-row__threshold {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 100px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  padding-left: 12px;
-}
-
-/* Header labels don't need the button/flex behavior — override with block. */
-.inventory-row--header .inventory-row__qty,
-.inventory-row--header .inventory-row__threshold {
-  display: block;
-  text-align: center;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .inventory-row__count {
