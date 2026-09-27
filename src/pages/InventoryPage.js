@@ -365,7 +365,7 @@ function SortableItemRow({ item, ...rowProps }) {
     </button>
   );
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="inventory-sortable-wrap">
       <ItemRow item={item} dragHandle={dragHandle} {...rowProps} />
     </div>
   );

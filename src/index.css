@@ -1091,6 +1091,22 @@ code {
      PointerSensor from swallowing horizontal swipes on the row body — only
      the drag handle itself has touch-action: none. */
   touch-action: pan-x pan-y;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Cards inside the scroll container must grow with the row so borders
+   wrap the whole content — otherwise the threshold column visually spills
+   outside the card boundary on narrow viewports. */
+.inventory-scroll > .automation-card,
+.inventory-scroll > .inventory-sortable-wrap,
+.inventory-scroll > .inventory-row--header {
+  width: max-content;
+  min-width: 100%;
+}
+.inventory-sortable-wrap > .automation-card {
+  width: 100%;
 }
 
 .inventory-row {
@@ -1159,6 +1175,8 @@ code {
   gap: 8px;
   flex: 0 0 auto;
   width: 130px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  padding-left: 12px;
 }
 
 .inventory-row__threshold {
@@ -1167,6 +1185,8 @@ code {
   justify-content: center;
   flex: 0 0 auto;
   width: 100px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  padding-left: 12px;
 }
 
 /* Header labels don't need the button/flex behavior — override with block. */
