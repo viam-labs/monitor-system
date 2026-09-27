@@ -1113,18 +1113,24 @@ code {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 400px;
+  min-width: 550px;
 }
 
-/* Show item names in full — no ellipsis. The row's parent has overflow-x
-   auto, so long names just make the row wider and the user pans. */
-.inventory-row .automation-card__disclose {
-  flex: 1 0 auto;
-  min-width: 0;
+/* Fixed name column width so every row lines up with the header. Long
+   names truncate with ellipsis; the full name is visible when the card
+   is expanded. */
+.inventory-row .automation-card__disclose,
+.inventory-row__name {
+  flex: 0 0 240px;
+  width: 240px;
+  min-width: 240px;
 }
 .inventory-row .automation-card__name {
-  overflow: visible;
-  text-overflow: clip;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .inventory-row__drag {
