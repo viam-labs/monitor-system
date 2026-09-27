@@ -1097,7 +1097,18 @@ code {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 380px;
+  min-width: 400px;
+}
+
+/* Show item names in full — no ellipsis. The row's parent has overflow-x
+   auto, so long names just make the row wider and the user pans. */
+.inventory-row .automation-card__disclose {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+.inventory-row .automation-card__name {
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .inventory-row__drag {
@@ -1146,14 +1157,16 @@ code {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 120px;
+  flex: 0 0 auto;
+  width: 130px;
 }
 
 .inventory-row__threshold {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
+  flex: 0 0 auto;
+  width: 100px;
 }
 
 /* Header labels don't need the button/flex behavior — override with block. */
