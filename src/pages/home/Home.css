@@ -317,7 +317,9 @@
   }
 
   .home__body {
-    padding: 16px 16px 84px;
+    padding: calc(env(safe-area-inset-top) + 16px)
+             16px
+             calc(env(safe-area-inset-bottom) + 84px);
   }
 
   .home__cams {
