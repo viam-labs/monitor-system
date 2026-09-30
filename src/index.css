@@ -237,11 +237,15 @@ code {
   z-index: 0;
 }
 
-/* No paw--tr — the hamburger nav sits in the top-right corner and
-   would cover it. */
-.paw--tl { top: var(--paw-offset); left: var(--paw-offset); transform: rotate(-25deg); }
+.paw--tr { top: var(--paw-offset); right: var(--paw-offset); transform: rotate(25deg); }
 .paw--bl { bottom: var(--paw-offset); left: var(--paw-offset); transform: rotate(-155deg); }
 .paw--br { bottom: var(--paw-offset); right: var(--paw-offset); transform: rotate(155deg); }
+
+/* On mobile the hamburger sits in the top-right; hide the paw there
+   so it doesn't sit behind the button. */
+@media (max-width: 899px) {
+  .paw--tr { display: none; }
+}
 
 .page {
   position: relative;
@@ -278,6 +282,42 @@ code {
   top: 24px;
   right: 24px;
   z-index: 20;
+}
+
+/* Desktop: always-visible horizontal nav in the top-left. Hides the
+   hamburger button; the .nav-menu__list itself becomes the nav bar. */
+@media (min-width: 900px) {
+  .nav-menu {
+    top: 16px;
+    left: 16px;
+    right: auto;
+  }
+  .nav-menu__button {
+    display: none;
+  }
+  .nav-menu__list {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    position: static;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding: 0;
+    min-width: 0;
+    gap: 2px;
+  }
+  .nav-menu__link {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+  }
+  /* Reserve top space on desktop so page content doesn't slide under
+     the nav bar (~44px + 16px top offset + a little breathing room). */
+  .page {
+    padding-top: 64px;
+  }
 }
 
 .connection-banner {
@@ -349,6 +389,7 @@ code {
 }
 
 .nav-menu__list {
+  display: none;
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
@@ -361,6 +402,10 @@ code {
   border-radius: 10px;
   backdrop-filter: blur(4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.nav-menu__list--open {
+  display: block;
 }
 
 .nav-menu__link {
