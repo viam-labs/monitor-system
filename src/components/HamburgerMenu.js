@@ -43,6 +43,8 @@ export default function HamburgerMenu({
   watererLoading,
   showInventory,
   inventoryLoading,
+  showBark,
+  barkLoading,
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -107,6 +109,9 @@ export default function HamburgerMenu({
           )}
           {(showWaterer || watererLoading) && (
             <FeatureLink to="/waterer" label="Waterer" loading={!showWaterer && watererLoading} onClick={close} />
+          )}
+          {(showBark || barkLoading) && (
+            <FeatureLink to="/bark" label="Bark detection" loading={!showBark && barkLoading} onClick={close} />
           )}
         </ul>
       )}
