@@ -1252,6 +1252,39 @@ code {
   border-radius: 6px;
 }
 
+.inventory-row__count--placeholder {
+  color: var(--text-muted);
+}
+
+.inventory-row__routine {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.inventory-row__routine--due {
+  background: rgba(74, 222, 128, 0.16);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: #86efac;
+}
+
+.inventory-row__routine--done {
+  color: var(--text-muted);
+}
+
+.item-form__capability {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
 .inventory-row__count--button {
   background: transparent;
   border: 1px solid transparent;
