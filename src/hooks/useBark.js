@@ -98,7 +98,22 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
       // Newest-first so if we ever DO hit the limit, we lose the oldest.
       const resp = await dc.tabularDataByFilter(filter, 500, ORDER_DESCENDING);
       const rows = Array.isArray(resp?.data) ? resp.data : [];
+      console.log('[useBark] filter used:', JSON.stringify(filter));
+      console.log('[useBark] resp:', resp);
       console.log('[useBark] tabularDataByFilter rows:', rows.length, rows.slice(0, 3));
+
+      // If the filtered query returns nothing, try a bare query so we can see
+      // whether ANY tabular data is reachable with these creds (auth/scope
+      // diagnosis) and inspect a real row's shape.
+      if (rows.length === 0) {
+        try {
+          const probe = await dc.tabularDataByFilter({}, 5, ORDER_DESCENDING);
+          const probeRows = Array.isArray(probe?.data) ? probe.data : [];
+          console.log('[useBark] bare-query probe rows:', probeRows.length, probeRows.slice(0, 3));
+        } catch (e) {
+          console.log('[useBark] bare-query probe failed:', e);
+        }
+      }
       const barks = rows
         .map((row) => {
           const readings = row?.data?.readings || row?.data || {};
