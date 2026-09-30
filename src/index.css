@@ -372,10 +372,10 @@ code {
   display: block;
 }
 
-/* Desktop: always-visible horizontal nav in the top-left. Hides the
-   hamburger button; the .nav-menu__list itself becomes the nav bar.
-   Placed AFTER the base rules so it wins on source order (same
-   specificity — @media doesn't add any). */
+/* Desktop: pin the same vertical dropdown card in the top-left,
+   always visible; hide the hamburger button. Placed AFTER the base
+   rules so it wins on source order (same specificity — @media doesn't
+   add any). */
 @media (min-width: 900px) {
   .nav-menu {
     top: 16px;
@@ -386,27 +386,15 @@ code {
     display: none;
   }
   .nav-menu__list {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
+    display: block;
     position: static;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    backdrop-filter: none;
-    padding: 0;
-    min-width: 0;
-    gap: 2px;
   }
-  .nav-menu__link {
-    padding: 6px 10px;
-    font-size: 0.9rem;
-  }
-  /* Reserve top space on desktop so page content doesn't slide under
-     the nav bar (~44px + 16px top offset + a little breathing room). */
+  /* Reserve left space on desktop so wide pages (bark chart, etc.)
+     don't slide under the fixed nav. Narrow centered pages already
+     clear it because they're max-width 520px, but this keeps
+     everything visually to the right of the nav regardless of page. */
   .page {
-    padding-top: 64px;
+    padding-left: 200px;
   }
 }
 
