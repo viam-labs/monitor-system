@@ -1,30 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
-
-const CAMERA_NAME = 'waterer';
-
-function WatererCamera({ stream, hasCamera }) {
-  const videoRef = useRef(null);
-
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el || !stream) return;
-    el.muted = true;
-    el.srcObject = stream;
-    el.play().catch(() => {});
-  }, [stream]);
-
-  if (!hasCamera) return null;
-
-  return (
-    <section className="feeder-card waterer-camera">
-      <video ref={videoRef} autoPlay playsInline muted />
-    </section>
-  );
-}
+import PageCamera from '../components/PageCamera';
+import { PAGE_CAMERAS } from '../appConfig';
 
 const DEFAULT_DOSE_ML = 250;
 const DOSE_OPTIONS_ML = [50, 100, 150, 200, 250, 300, 350, 400];
@@ -218,7 +198,6 @@ function ScheduleCard({ schedule, isFirst, isLast, busy, onToggle, onSave, onDel
 
 export default function WatererPage() {
   const {
-    client,
     cameras,
     streams,
     watererName,
@@ -227,11 +206,6 @@ export default function WatererPage() {
     pendingProbes,
     waterer: w,
   } = useOutletContext();
-  const watererCamera = useMemo(
-    () => (cameras || []).find(c => c.name === CAMERA_NAME) || null,
-    [cameras],
-  );
-  const watererStream = streams ? streams[CAMERA_NAME] : null;
   const watererStillProbing = !watererName && pendingProbes && pendingProbes.generic > 0;
   const {
     mlPerSecond,
@@ -425,7 +399,11 @@ export default function WatererPage() {
         </button>
       </section>
 
-      <WatererCamera stream={watererStream} hasCamera={!!watererCamera} />
+      <PageCamera
+        cameras={cameras}
+        streams={streams}
+        cameraName={PAGE_CAMERAS.waterer}
+      />
     </div>
   );
 }

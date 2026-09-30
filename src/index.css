@@ -1787,14 +1787,18 @@ code {
   min-height: 32px;
 }
 
-.waterer-camera {
+.page-camera {
   padding: 0;
   overflow: hidden;
   aspect-ratio: 16 / 9;
   background: #000;
+  /* .feeder-page is a flex column with overflow-y: auto; without this
+     the camera gets shrunk when total page content exceeds the
+     viewport instead of the page scrolling. */
+  flex-shrink: 0;
 }
 
-.waterer-camera video {
+.page-camera video {
   width: 100%;
   height: 100%;
   object-fit: cover;

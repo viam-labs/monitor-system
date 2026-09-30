@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import PageCamera from '../components/PageCamera';
+import { PAGE_CAMERAS } from '../appConfig';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
@@ -292,6 +294,8 @@ function VacationForm({ saving, onSubmit, onCancel }) {
 
 export default function FeederPage() {
   const {
+    cameras,
+    streams,
     feederName,
     loading: connectionLoading,
     detectingFeatures,
@@ -741,6 +745,12 @@ export default function FeederPage() {
         <p className="feeder-hero__caption">{feedNowCaption}</p>
         {lastFedLine && <p className="feeder-hero__last-fed">{lastFedLine}</p>}
       </section>
+
+      <PageCamera
+        cameras={cameras}
+        streams={streams}
+        cameraName={PAGE_CAMERAS.feeder}
+      />
     </div>
   );
 }
