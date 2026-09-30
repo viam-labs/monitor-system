@@ -88,6 +88,13 @@ function MachinePage() {
 
   const chromeless = ['/', '/more', '/cameras'].includes(location.pathname);
 
+  useEffect(() => {
+    const bg = chromeless ? '#f5f5f7' : '#0f0f10';
+    document.body.style.setProperty('--body-bg', bg);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', bg);
+  }, [chromeless]);
+
   return (
     <>
       {!chromeless && (
