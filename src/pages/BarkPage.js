@@ -54,7 +54,7 @@ export default function BarkPage() {
   // All hooks must be called unconditionally per React rules-of-hooks.
   // bark may be undefined here on first render; guard with defaults.
   const {
-    lastBarkAt = '', sessionCount = 0, history = [], historyLoading = false,
+    lastBarkAt = '', history = [], historyLoading = false,
     rangeHours = 24, setRangeHours = () => {}, refreshHistory = () => {},
   } = bark || {};
 
@@ -90,43 +90,36 @@ export default function BarkPage() {
   return (
     <div className="feeder-page feeder-page--wide">
       <section className="feeder-card">
-        <div className="feeder-card__header">
-          <h2 className="feeder-card__title">Barks in the last {activeRange.label}</h2>
-          <div className="bark-range-select">
-            {RANGES.map((r) => (
-              <button
-                key={r.label}
-                type="button"
-                className={
-                  'feeder-secondary-button feeder-secondary-button--sm'
-                  + (r.hours === rangeHours ? ' feeder-secondary-button--active' : '')
-                }
-                onClick={() => setRangeHours(r.hours)}
-              >
-                {r.label}
-              </button>
-            ))}
+        <div className="bark-range-select">
+          {RANGES.map((r) => (
             <button
+              key={r.label}
               type="button"
-              className="feeder-icon-button"
-              onClick={refreshHistory}
-              disabled={historyLoading}
-              aria-label="Refresh"
-              title="Refresh"
+              className={
+                'feeder-secondary-button feeder-secondary-button--sm'
+                + (r.hours === rangeHours ? ' feeder-secondary-button--active' : '')
+              }
+              onClick={() => setRangeHours(r.hours)}
             >
-              ↻
+              {r.label}
             </button>
-          </div>
+          ))}
+          <button
+            type="button"
+            className="feeder-icon-button"
+            onClick={refreshHistory}
+            disabled={historyLoading}
+            aria-label="Refresh"
+            title="Refresh"
+          >
+            ↻
+          </button>
         </div>
 
         <div className="bark-stats">
           <div className="bark-stat">
             <span className="bark-stat__value">{totalInRange}</span>
             <span className="bark-stat__label">in {activeRange.label}</span>
-          </div>
-          <div className="bark-stat">
-            <span className="bark-stat__value">{sessionCount}</span>
-            <span className="bark-stat__label">since page load</span>
           </div>
           <div className="bark-stat">
             <span className="bark-stat__value">{formatRelative(lastBarkAt) ?? 'never'}</span>
@@ -138,8 +131,13 @@ export default function BarkPage() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-              <XAxis dataKey="label" stroke="var(--text-muted)" fontSize={11} />
-              <YAxis allowDecimals={false} stroke="var(--text-muted)" fontSize={11} />
+              <XAxis
+                dataKey="label"
+                stroke="var(--text-muted)"
+                fontSize={11}
+                minTickGap={30}
+              />
+              <YAxis allowDecimals={false} stroke="var(--text-muted)" fontSize={11} width={28} />
               <Tooltip
                 contentStyle={{
                   background: 'var(--bg)',
