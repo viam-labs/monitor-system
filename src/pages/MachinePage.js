@@ -15,6 +15,7 @@ import { subscribeConnectionHealth } from '../lib/connectionHealth';
 
 const PAGE_TITLES = {
   '/': 'Home',
+  '/cameras': 'Cameras',
   '/feeder': 'Feeder',
   '/thermostat': 'Thermostat',
   '/curtain': 'Curtain',
@@ -85,31 +86,37 @@ function MachinePage() {
 
   useEffect(() => subscribeConnectionHealth(setConnectionLost), []);
 
+  const isHome = location.pathname === '/';
+
   return (
     <>
-      <Paw className="paw--tr" />
-      <Paw className="paw--bl" />
-      <Paw className="paw--br" />
-      <HamburgerMenu
-        showFeeder={!!connection.feederName}
-        feederLoading={!connection.feederName && connection.pendingProbes.generic > 0}
-        showThermostat={!!(connection.acBotName && connection.roomMeterName)}
-        thermostatLoading={
-          !!connection.acBotName
-          && !connection.roomMeterName
-          && connection.pendingProbes.sensor > 0
-        }
-        showCurtain={!!connection.curtainName}
-        curtainLoading={!connection.curtainName && connection.pendingProbes.generic > 0}
-        showDoor={!!connection.doorUnlockName}
-        doorLoading={!connection.doorUnlockName && connection.pendingProbes.generic > 0}
-        showWaterer={!!connection.watererName}
-        watererLoading={!connection.watererName && connection.pendingProbes.generic > 0}
-        showInventory={!!(connection.inventoryName && connection.inventoryStateSensorName)}
-        inventoryLoading={!connection.inventoryName && connection.pendingProbes.generic > 0}
-        showBark={!!connection.barkName}
-        barkLoading={!connection.barkName && connection.pendingProbes.sensor > 0}
-      />
+      {!isHome && (
+        <>
+          <Paw className="paw--tr" />
+          <Paw className="paw--bl" />
+          <Paw className="paw--br" />
+          <HamburgerMenu
+            showFeeder={!!connection.feederName}
+            feederLoading={!connection.feederName && connection.pendingProbes.generic > 0}
+            showThermostat={!!(connection.acBotName && connection.roomMeterName)}
+            thermostatLoading={
+              !!connection.acBotName
+              && !connection.roomMeterName
+              && connection.pendingProbes.sensor > 0
+            }
+            showCurtain={!!connection.curtainName}
+            curtainLoading={!connection.curtainName && connection.pendingProbes.generic > 0}
+            showDoor={!!connection.doorUnlockName}
+            doorLoading={!connection.doorUnlockName && connection.pendingProbes.generic > 0}
+            showWaterer={!!connection.watererName}
+            watererLoading={!connection.watererName && connection.pendingProbes.generic > 0}
+            showInventory={!!(connection.inventoryName && connection.inventoryStateSensorName)}
+            inventoryLoading={!connection.inventoryName && connection.pendingProbes.generic > 0}
+            showBark={!!connection.barkName}
+            barkLoading={!connection.barkName && connection.pendingProbes.sensor > 0}
+          />
+        </>
+      )}
       {connectionLost && (
         <div className="connection-banner" role="alert">
           <span className="connection-banner__text">
@@ -124,7 +131,7 @@ function MachinePage() {
           </button>
         </div>
       )}
-      <div className="page">
+      <div className={'page' + (isHome ? ' page--home' : '')}>
         <Outlet context={outletContext} />
       </div>
     </>

@@ -304,6 +304,10 @@ code {
   box-sizing: border-box;
 }
 
+.page--home {
+  padding: 0;
+}
+
 /* Tight chrome on small viewports — hide the machine-name title and
    shrink padding + gap so the grid gets more of the screen. Broad
    breakpoints so all phones and small tablets are covered in every
