@@ -1,16 +1,16 @@
 :root {
-  --bg: #1a1614;
-  --surface: #2a2320;
-  --text: #f5efe6;
-  --text-muted: #a89b8f;
-  --text-subtle: #6f645a;
+  --bg: #0f0f10;
+  --surface: #1c1c1e;
+  --text: #f2f2f7;
+  --text-muted: #8e8e93;
+  --text-subtle: #636366;
   --accent: #f4a261;
   --accent-dim: rgba(244, 162, 97, 0.16);
   --success: #9db068;
   --success-bg: rgba(157, 176, 104, 0.16);
   --danger: #d97757;
   --danger-bg: rgba(217, 119, 87, 0.16);
-  --border: #3a322c;
+  --border: #38383a;
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-strong: rgba(255, 255, 255, 0.15);
   --tint-hover: rgba(255, 255, 255, 0.05);
@@ -142,7 +142,7 @@ code {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #4ade80;
+  background: var(--success);
   box-shadow: 0 0 8px rgba(157, 176, 104, 0.6);
   animation: pulse 2s ease-in-out infinite;
   flex-shrink: 0;
@@ -570,7 +570,7 @@ code {
 }
 
 .battery-pill--low {
-  color: #fbbf24;
+  color: var(--accent);
   font-weight: var(--weight-semibold);
 }
 
