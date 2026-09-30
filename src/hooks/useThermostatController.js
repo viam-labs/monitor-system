@@ -4,9 +4,8 @@ import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
 
-// Talks to a viam:switchbot:thermostat generic component's do_command
-// surface. Separate from useThermostat (which drives the Bot + Meter
-// directly for manual control) — this one only touches the controller.
+// Separate from useThermostat: that one drives Bot+Meter for manual
+// control; this one only touches the controller component.
 export function useThermostatController(client, thermostatName) {
   const controller = useMemo(
     () => (client && thermostatName ? new GenericComponentClient(client, thermostatName) : null),

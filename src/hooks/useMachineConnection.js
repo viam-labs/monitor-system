@@ -18,8 +18,7 @@ async function createClient() {
 
 const PROBE_TIMEOUT_MS = 5000;
 const RETRY_INTERVAL_MS = 15000;
-// Cap the retry loop so a permanently-broken component stops
-// showing "loading" forever. 4 rounds × 15s ≈ 1 minute of retries.
+// ~1 minute total before we stop retrying a permanently-broken component.
 const MAX_RETRY_ROUNDS = 4;
 
 class ProbeTimeout extends Error {
@@ -37,8 +36,6 @@ function probeWithTimeout(fn, name, ms) {
   return Promise.race([fn(), timeout]).finally(() => clearTimeout(timer));
 }
 
-// Match a generic-component status response to one of our known models
-// by shape, and set the corresponding name into `into`.
 function matchGeneric(name, status, into) {
   if (!status || typeof status !== 'object') return;
   if (status.kind === 'clicker') {
@@ -96,11 +93,9 @@ async function probeSensor(c, name, timeoutMs) {
   );
 }
 
-// The JS SDK's resourceNames() returns name + subtype but NOT model,
-// so we can't filter by model. Detect by capability instead. Each
-// probe races a 5s timeout; anything that times out gets returned in
-// `pendingRetry` for background retry so a slow cloud API doesn't
-// permanently hide a healthy component.
+// SDK's resourceNames() gives name+subtype but not model, so we detect
+// by capability. Slow probes get retried in the background so a healthy
+// component isn't permanently hidden by a laggy first response.
 async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
   const detected = {
     feederName: null,
@@ -138,9 +133,7 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
     }
   }));
 
-  // If the thermostat status told us which switch is the bot, honor it.
-  // Otherwise, fall back to the first switch — only safe when there's one
-  // (older thermostat versions don't expose bot_name).
+  // Older thermostat versions don't expose bot_name; fall back only when unambiguous.
   if (!detected.acBotName && switches.length === 1) {
     detected.acBotName = switches[0].name;
   }
@@ -177,7 +170,6 @@ function scheduleRetries(c, initialPending, applyDetected, onPendingChange, isCa
         if (!isCancelled()) applyDetected(partial);
       } catch (e) {
         if (e?.isTimeout && round < MAX_RETRY_ROUNDS) stillPending.push(entry);
-        // Non-timeout, or past the retry cap → drop from the list.
       }
     }
     remaining = stillPending;
@@ -233,10 +225,8 @@ export function useMachineConnection() {
       try {
         const c = await createClient();
         if (cancelled) return;
-        // Wait for the first RPC to succeed before exposing the client.
-        // On slower networks the WebRTC data channel isn't ready the
-        // instant createRobotClient returns; resourceNames doubles as
-        // a readiness probe.
+        // WebRTC data channel isn't ready when createRobotClient returns
+        // on slower networks; use resourceNames as a readiness probe.
         const resources = await c.resourceNames();
         if (cancelled) return;
         setClient(c);

@@ -4,9 +4,7 @@ import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
 
-// Talks to a viam:switchbot:curtain generic component's do_command.
-// Position is 0-100 where 0 = fully open, 100 = fully closed
-// (matches SwitchBot's slidePosition semantics).
+// SwitchBot slidePosition semantics: 0 = fully open, 100 = fully closed.
 export function useCurtain(client, curtainName) {
   const curtain = useMemo(
     () => (client && curtainName ? new GenericComponentClient(client, curtainName) : null),
