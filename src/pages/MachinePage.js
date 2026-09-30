@@ -86,9 +86,7 @@ function MachinePage() {
 
   useEffect(() => subscribeConnectionHealth(setConnectionLost), []);
 
-  const isHome = location.pathname === '/';
-  const isMore = location.pathname === '/more';
-  const chromeless = isHome || isMore;
+  const chromeless = ['/', '/more', '/cameras'].includes(location.pathname);
 
   return (
     <>
