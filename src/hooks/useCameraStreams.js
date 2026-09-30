@@ -5,17 +5,12 @@ const MAX_RESTART_ATTEMPTS = 5;
 const MUTE_GRACE_MS = 3000;
 const MAX_BACKOFF_MS = 32000;
 
-// Seconds since page load; same origin for every log across cameras and
-// components so gaps between related events are read at a glance.
 const ts = () => `+${(performance.now() / 1000).toFixed(2)}s`;
 const log = (name, msg, ...rest) => console.log(`[camera:${name}] ${ts()}`, msg, ...rest);
 const warn = (name, msg, ...rest) => console.warn(`[camera:${name}] ${ts()}`, msg, ...rest);
 
-// Connection-transport errors mean the whole machine WebRTC pipe is
-// down and the SDK is reconnecting on its own schedule. We retry
-// getStream indefinitely (capped at MAX_BACKOFF_MS) for these because
-// giving up mid-outage leaves tiles black forever after the SDK
-// recovers.
+// Retry indefinitely on transport errors — giving up mid-outage leaves
+// tiles black forever after the SDK's own reconnect finishes.
 function isTransportError(e) {
   if (!e) return false;
   const name = e.name || '';
@@ -28,12 +23,8 @@ function isTransportError(e) {
   );
 }
 
-// Starts WebRTC video streams on mount and stops them on unmount.
-// Also monitors track health: if a track goes silent (onmute for more
-// than MUTE_GRACE_MS) or ends, we tear it down and re-request the
-// stream. WebRTC tracks can go quiet mid-session without the peer
-// connection dropping, which the SDK doesn't surface — the result
-// there is a video element frozen on its last frame or black.
+// WebRTC tracks can go quiet mid-session without the peer connection dropping;
+// the SDK doesn't surface this, so we watch for onmute/onended and restart.
 export function useCameraStreams(client, cameras) {
   const [streams, setStreams] = useState({});
 

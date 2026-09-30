@@ -4,10 +4,8 @@ import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
 
-// Talks to the viam:petsafe:smart-feed module's Generic component via
-// do_command. The module caches PetSafe reads for 5 minutes on its
-// side, so refresh calls that land within that window come back
-// instantly with `cached: true`.
+// Module caches PetSafe reads server-side for 5 min; rapid refresh
+// calls return {cached: true} instead of hitting PetSafe.
 export function useFeeder(client, feederName) {
   const feederClient = useMemo(() => {
     if (!client || !feederName) return null;
@@ -22,9 +20,7 @@ export function useFeeder(client, feederName) {
   const [feeding, setFeeding] = useState(false);
   const [pausing, setPausing] = useState(false);
   const [mutating, setMutating] = useState(false);
-  // Module doesn't expose schedule-pause state yet, so we track the
-  // user's last-known intent locally. Reload = unknown until we can
-  // query it.
+  // Module doesn't expose schedule-pause state; track intent locally.
   const [schedulePaused, setSchedulePaused] = useState(false);
   const [lastFedAt, setLastFedAt] = useState(null);
 
@@ -140,10 +136,7 @@ export function useFeeder(client, feederName) {
   );
 
   const feedNow = useCallback(async () => {
-    // PetSafe's server + our module's 5-minute read cache both lag a
-    // fresh feeding, so seed the "Last fed at" line locally the moment
-    // the button succeeds — extractLastFedTimestamp already takes the
-    // max of the local timestamp and PetSafe's history.
+    // Seed lastFedAt locally — PetSafe + our 5-min cache lag fresh feedings.
     await runMutation({ command: 'feed_now' });
     setLastFedAt(Date.now());
   }, [runMutation]);

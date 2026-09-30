@@ -4,11 +4,8 @@ import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
 
-// Reads the room meter and controls the A/C bot. All state (current
-// position, last set time, direction) lives server-side on the Pi —
-// the Bot component persists it via its `state` do_command. The
-// frontend just displays whatever the server returns, so multiple
-// devices stay in sync.
+// State lives server-side on the Bot's `state` do_command so multiple
+// devices stay in sync. Frontend just displays what the server returns.
 export function useThermostat(client, botName, meterName) {
   const bot = useMemo(
     () => (client && botName ? new SwitchClient(client, botName) : null),
@@ -99,8 +96,6 @@ export function useThermostat(client, botName, meterName) {
       setError(null);
       try {
         await bot.setPosition(target);
-        // Server now has fresh state — pull it back so lastSetAt is
-        // authoritative.
         try {
           const state = await bot.doCommand({ command: 'state' });
           applyState(state);
