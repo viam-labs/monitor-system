@@ -37,20 +37,26 @@ function fmtTime(date) {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-function feederRow({ feeder }, navigate) {
+function feederRow({ feeder }, navigate, mobile) {
   const next = nextScheduled(feeder?.schedules);
-  const parts = [];
+  let subtitle = null;
   if (next) {
-    parts.push(`next meal ${fmtTime(next.fireAt)}`);
-    if (typeof next.cups === 'number') parts.push(`${next.cups} cups`);
+    const timeStr = fmtTime(next.fireAt);
+    if (mobile) {
+      subtitle = `next ${timeStr}`;
+    } else {
+      const parts = [`next meal ${timeStr}`];
+      if (typeof next.cups === 'number') parts.push(`${next.cups} cups`);
+      subtitle = parts.join(' · ');
+    }
   } else if (feeder?.lastFedAt) {
-    parts.push(`fed ${formatRelative(feeder.lastFedAt)}`);
+    subtitle = `fed ${formatRelative(feeder.lastFedAt)}`;
   }
   return {
     key: 'feeder',
     icon: 'feeder',
     name: 'Feeder',
-    subtitle: parts.join(' · ') || null,
+    subtitle,
     action: feeder?.feedNow ? {
       label: 'Feed',
       onClick: () => feeder.feedNow(),
@@ -60,17 +66,24 @@ function feederRow({ feeder }, navigate) {
   };
 }
 
-function watererRow({ waterer }, navigate) {
-  const parts = [];
+function watererRow({ waterer }, navigate, mobile) {
   const daily = waterer?.dailyTotal?.ml;
-  if (typeof daily === 'number') parts.push(`${Math.round(daily)} ml today`);
   const lastAt = waterer?.lastDispense?.at;
-  if (lastAt) parts.push(`last ${formatRelative(lastAt)}`);
+  let subtitle = null;
+  if (mobile) {
+    if (typeof daily === 'number') subtitle = `${Math.round(daily)} ml today`;
+    else if (lastAt) subtitle = `last ${formatRelative(lastAt)}`;
+  } else {
+    const parts = [];
+    if (typeof daily === 'number') parts.push(`${Math.round(daily)} ml today`);
+    if (lastAt) parts.push(`last ${formatRelative(lastAt)}`);
+    subtitle = parts.join(' · ') || null;
+  }
   return {
     key: 'waterer',
     icon: 'waterer',
     name: 'Water',
-    subtitle: parts.join(' · ') || null,
+    subtitle,
     action: waterer?.dispenseMl ? {
       label: 'Dispense',
       onClick: () => waterer.dispenseMl(WATERER_DEFAULT_ML),
@@ -80,14 +93,14 @@ function watererRow({ waterer }, navigate) {
   };
 }
 
-function thermostatRow({ thermostat, thermostatController }, navigate) {
+function thermostatRow({ thermostat, thermostatController }, navigate, mobile) {
   const on = thermostatController?.position === 1;
   const tempC = pickTemperature(thermostat?.readings);
   const humidity = pickHumidity(thermostat?.readings);
-  const parts = [];
   const tempF = celsiusToF(tempC);
+  const parts = [];
   if (tempF != null) parts.push(`${Math.round(tempF)}°F`);
-  if (humidity != null) parts.push(`${Math.round(humidity)}% humidity`);
+  if (!mobile && humidity != null) parts.push(`${Math.round(humidity)}% humidity`);
   parts.push(on ? 'cooling' : 'off');
   return {
     key: 'thermostat',
@@ -182,14 +195,16 @@ function doorRow({ door }, navigate) {
   };
 }
 
-export function buildRows(ctx, navigate) {
+export function buildRows(ctx, navigate, mobile = false) {
   const rows = [];
-  if (ctx.feederName) rows.push(feederRow(ctx, navigate));
-  if (ctx.watererName) rows.push(watererRow(ctx, navigate));
-  if (ctx.acBotName && ctx.roomMeterName) rows.push(thermostatRow(ctx, navigate));
-  if (ctx.curtainName) rows.push(curtainRow(ctx, navigate));
-  if (ctx.inventoryName && ctx.inventoryStateSensorName) rows.push(inventoryRow(ctx, navigate));
-  if (ctx.barkName) rows.push(barkRow(ctx, navigate));
+  if (ctx.feederName) rows.push(feederRow(ctx, navigate, mobile));
+  if (ctx.watererName) rows.push(watererRow(ctx, navigate, mobile));
+  if (ctx.acBotName && ctx.roomMeterName) rows.push(thermostatRow(ctx, navigate, mobile));
+  if (!mobile && ctx.curtainName) rows.push(curtainRow(ctx, navigate));
+  if (!mobile && ctx.inventoryName && ctx.inventoryStateSensorName) {
+    rows.push(inventoryRow(ctx, navigate));
+  }
+  if (!mobile && ctx.barkName) rows.push(barkRow(ctx, navigate));
   if (ctx.doorUnlockName) rows.push(doorRow(ctx, navigate));
   return rows;
 }

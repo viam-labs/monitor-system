@@ -87,10 +87,12 @@ function MachinePage() {
   useEffect(() => subscribeConnectionHealth(setConnectionLost), []);
 
   const isHome = location.pathname === '/';
+  const isMore = location.pathname === '/more';
+  const chromeless = isHome || isMore;
 
   return (
     <>
-      {!isHome && (
+      {!chromeless && (
         <>
           <Paw className="paw--tr" />
           <Paw className="paw--bl" />
@@ -131,7 +133,7 @@ function MachinePage() {
           </button>
         </div>
       )}
-      <div className={'page' + (isHome ? ' page--home' : '')}>
+      <div className={'page' + (chromeless ? ' page--home' : '')}>
         <Outlet context={outletContext} />
       </div>
     </>
