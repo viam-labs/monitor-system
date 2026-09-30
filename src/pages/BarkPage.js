@@ -8,7 +8,7 @@ import { formatRelative } from '../lib/format';
 const RANGES = [
   { label: '1h', hours: 1, bucketMinutes: 5 },
   { label: '24h', hours: 24, bucketMinutes: 60 },
-  { label: '7d', hours: 24 * 7, bucketMinutes: 60 * 6 },
+  { label: '7d', hours: 24 * 7, bucketMinutes: 60 * 24 },
 ];
 
 function bucketBarks(events, hours, bucketMinutes) {
