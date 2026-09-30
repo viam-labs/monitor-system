@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
-import DayPicker, { summarizeDays } from '../components/DayPicker';
+import { summarizeDays } from '../components/DayPicker';
+import ScheduleFormShell from '../components/ScheduleFormShell';
 import { formatClock } from '../lib/format';
 
 const LOW_BATTERY_THRESHOLD = 20;
@@ -39,67 +40,33 @@ function ScheduleForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
   };
 
   return (
-    <form className="automation-card__form" onSubmit={submit}>
+    <ScheduleFormShell
+      name={name}
+      onNameChange={setName}
+      days={days}
+      onDaysChange={setDays}
+      busy={busy}
+      submitLabel={submitLabel}
+      onSubmit={submit}
+      onCancel={onCancel}
+    >
       <label className="automation-form__field">
-        <span className="automation-form__label">Name</span>
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          disabled={busy}
-          maxLength={40}
-        />
-      </label>
-
-      <div className="automation-form__row">
-        <label className="automation-form__field">
-          <span className="automation-form__label">Action</span>
-          <select
-            className="cups-select"
-            value={action}
-            onChange={e => setAction(e.target.value)}
-            disabled={busy}
-          >
-            <option value="open">Open</option>
-            <option value="close">Close</option>
-          </select>
-        </label>
-        <label className="automation-form__field">
-          <span className="automation-form__label">Time</span>
-          <TimeSelect
-            value={time}
-            onChange={setTime}
-            disabled={busy}
-          />
-        </label>
-      </div>
-
-      <div className="automation-form__field">
-        <span className="automation-form__label">Days ({summarizeDays(days)})</span>
-        <DayPicker value={days} onChange={setDays} disabled={busy} />
-      </div>
-
-      <div className="automation-card__actions">
-        {onCancel && (
-          <button
-            type="button"
-            className="feeder-secondary-button"
-            onClick={onCancel}
-            disabled={busy}
-          >
-            Cancel
-          </button>
-        )}
-        <span className="automation-card__spacer" />
-        <button
-          type="submit"
-          className="feeder-primary-button feeder-primary-button--sm"
+        <span className="automation-form__label">Action</span>
+        <select
+          className="cups-select"
+          value={action}
+          onChange={e => setAction(e.target.value)}
           disabled={busy}
         >
-          {busy ? 'Saving…' : submitLabel}
-        </button>
-      </div>
-    </form>
+          <option value="open">Open</option>
+          <option value="close">Close</option>
+        </select>
+      </label>
+      <label className="automation-form__field">
+        <span className="automation-form__label">Time</span>
+        <TimeSelect value={time} onChange={setTime} disabled={busy} />
+      </label>
+    </ScheduleFormShell>
   );
 }
 
