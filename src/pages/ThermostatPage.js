@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
+import { formatClock, formatTime } from '../lib/format';
 
 function celsiusToF(c) {
   if (c == null || Number.isNaN(c)) return null;
@@ -12,21 +13,6 @@ function celsiusToF(c) {
 function fToC(f) {
   if (f == null || Number.isNaN(f)) return null;
   return ((f - 32) * 5) / 9;
-}
-
-function formatTime(input) {
-  if (input == null) return null;
-  const ms = typeof input === 'string' ? Date.parse(input) : input;
-  if (Number.isNaN(ms)) return null;
-  return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
-
-function formatClock(hhmm) {
-  if (!hhmm) return '';
-  const [h, m] = hhmm.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
 // Common house-temperature range in Fahrenheit — covers cooling

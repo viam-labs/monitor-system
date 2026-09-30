@@ -5,6 +5,7 @@ import { PAGE_CAMERAS } from '../appConfig';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
+import { formatTime } from '../lib/format';
 
 // Fraction labels for common cup amounts. Anything not in this map is
 // rendered as the decimal (e.g., 3.125 -> "3.125 cups").
@@ -57,13 +58,6 @@ function CupsSelect({ value, onChange, disabled, id, ariaLabel }) {
       ))}
     </select>
   );
-}
-
-function formatTime(input) {
-  if (input == null) return null;
-  const ms = typeof input === 'string' ? Date.parse(input) : input;
-  if (Number.isNaN(ms)) return null;
-  return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
 function formatScheduleTime(hhmm) {

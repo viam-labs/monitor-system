@@ -5,31 +5,10 @@ import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
 import PageCamera from '../components/PageCamera';
 import { PAGE_CAMERAS } from '../appConfig';
+import { formatClock, formatRelative } from '../lib/format';
 
 const DEFAULT_DOSE_ML = 250;
 const DOSE_OPTIONS_ML = [50, 100, 150, 200, 250, 300, 350, 400];
-
-function formatClock(hhmm) {
-  if (!hhmm) return '';
-  const [h, m] = hhmm.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
-
-function formatRelative(iso) {
-  if (!iso) return null;
-  const ms = Date.parse(iso);
-  if (Number.isNaN(ms)) return null;
-  const diffSec = Math.max(0, Math.round((Date.now() - ms) / 1000));
-  if (diffSec < 60) return 'just now';
-  const min = Math.round(diffSec / 60);
-  if (min < 60) return `${min} min ago`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr} hr ago`;
-  const day = Math.round(hr / 24);
-  return `${day} day${day === 1 ? '' : 's'} ago`;
-}
 
 function ScheduleForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
   const [name, setName] = useState(initial.name || 'Dispense');

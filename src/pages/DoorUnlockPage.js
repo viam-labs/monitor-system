@@ -1,21 +1,8 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { formatRelative } from '../lib/format';
 
 const LOW_BATTERY_THRESHOLD = 20;
-
-function formatRelative(iso) {
-  if (!iso) return null;
-  const ms = Date.parse(iso);
-  if (Number.isNaN(ms)) return null;
-  const diffSec = Math.max(0, Math.round((Date.now() - ms) / 1000));
-  if (diffSec < 60) return 'just now';
-  const min = Math.round(diffSec / 60);
-  if (min < 60) return `${min} min ago`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr} hr ago`;
-  const day = Math.round(hr / 24);
-  return `${day} day${day === 1 ? '' : 's'} ago`;
-}
 
 function formatAbsolute(iso) {
   if (!iso) return null;
