@@ -4,7 +4,6 @@ import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
 
-// Talks to a viam:waterer:pump generic component's do_command.
 export function useWaterer(client, watererName) {
   const waterer = useMemo(
     () => (client && watererName ? new GenericComponentClient(client, watererName) : null),
