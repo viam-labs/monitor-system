@@ -112,16 +112,19 @@ function thermostatRow({ thermostat, thermostatController }, navigate, mobile) {
       onChange: (v) => thermostatController?.setAcOn?.(v),
       disabled: thermostatController?.busy,
     },
+    hideChevron: mobile,
     onClick: () => navigate('/thermostat'),
   };
 }
 
-function curtainRow({ curtain }, navigate) {
+function curtainRow({ curtain }, navigate, mobile) {
   const pos = curtain?.position;
   const isOpen = pos != null && pos > 5;
   const parts = [];
   if (pos != null) parts.push(isOpen ? 'open' : 'closed');
-  if (typeof curtain?.battery === 'number') parts.push(`${Math.round(curtain.battery)}% battery`);
+  if (typeof curtain?.battery === 'number') {
+    parts.push(mobile ? `${Math.round(curtain.battery)}%` : `${Math.round(curtain.battery)}% battery`);
+  }
   return {
     key: 'curtain',
     icon: 'curtain',
@@ -132,11 +135,12 @@ function curtainRow({ curtain }, navigate) {
       onChange: (v) => (v ? curtain?.open?.() : curtain?.close?.()),
       disabled: curtain?.busy,
     },
+    hideChevron: mobile,
     onClick: () => navigate('/curtain'),
   };
 }
 
-function inventoryRow({ inventory }, navigate) {
+function inventoryRow({ inventory }, navigate, mobile) {
   const items = inventory?.items || [];
   const out = items.filter((i) => i.quantity === 0).length;
   const low = items.filter(
@@ -146,6 +150,9 @@ function inventoryRow({ inventory }, navigate) {
   if (items.length > 0) {
     if (out === 0 && low === 0) {
       parts.push(`${items.length} items`);
+    } else if (mobile) {
+      if (out > 0) parts.push(`${out} out`);
+      if (low > 0) parts.push(`${low} low`);
     } else {
       if (out > 0) parts.push(`${out} item${out === 1 ? '' : 's'} out`);
       if (low > 0) parts.push(`${low} low`);
@@ -177,20 +184,21 @@ function barkRow({ bark }, navigate) {
   };
 }
 
-function doorRow({ door }, navigate) {
+function doorRow({ door }, navigate, mobile) {
   const offline = !!door?.error && !door?.lastOpenedAt;
   const rel = door?.lastOpenedAt ? formatRelative(door.lastOpenedAt) : null;
+  const action = !mobile && door?.unlock ? {
+    label: 'Open',
+    onClick: () => door.unlock(),
+    disabled: offline || door.busy,
+  } : null;
   return {
     key: 'door',
     icon: 'door',
     name: 'Building door',
     subtitle: offline ? 'offline' : (rel ? `last opened ${rel}` : null),
     dead: offline,
-    action: door?.unlock ? {
-      label: 'Open',
-      onClick: () => door.unlock(),
-      disabled: offline || door.busy,
-    } : null,
+    action,
     onClick: () => navigate('/door'),
   };
 }
@@ -200,11 +208,11 @@ export function buildRows(ctx, navigate, mobile = false) {
   if (ctx.feederName) rows.push(feederRow(ctx, navigate, mobile));
   if (ctx.watererName) rows.push(watererRow(ctx, navigate, mobile));
   if (ctx.acBotName && ctx.roomMeterName) rows.push(thermostatRow(ctx, navigate, mobile));
-  if (!mobile && ctx.curtainName) rows.push(curtainRow(ctx, navigate));
-  if (!mobile && ctx.inventoryName && ctx.inventoryStateSensorName) {
-    rows.push(inventoryRow(ctx, navigate));
+  if (ctx.curtainName) rows.push(curtainRow(ctx, navigate, mobile));
+  if (ctx.inventoryName && ctx.inventoryStateSensorName) {
+    rows.push(inventoryRow(ctx, navigate, mobile));
   }
-  if (!mobile && ctx.barkName) rows.push(barkRow(ctx, navigate));
-  if (ctx.doorUnlockName) rows.push(doorRow(ctx, navigate));
+  if (ctx.barkName) rows.push(barkRow(ctx, navigate));
+  if (ctx.doorUnlockName) rows.push(doorRow(ctx, navigate, mobile));
   return rows;
 }

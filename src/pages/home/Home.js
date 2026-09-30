@@ -69,7 +69,9 @@ function HomeRow({ row }) {
       </div>
       {row.action && <ActionLink {...row.action} />}
       {row.toggle && <IosToggle {...row.toggle} />}
-      {clickable && <ChevronRight className="home-row__chev" size={15} strokeWidth={2} />}
+      {clickable && !row.hideChevron && (
+        <ChevronRight className="home-row__chev" size={15} strokeWidth={2} />
+      )}
     </div>
   );
 }
