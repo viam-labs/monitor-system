@@ -7,7 +7,7 @@ import ThermostatPage from './pages/thermostat';
 import CurtainPage from './pages/CurtainPage';
 import DoorUnlockPage from './pages/DoorUnlockPage';
 import WatererPage from './pages/WatererPage';
-import InventoryPage from './pages/InventoryPage';
+import InventoryPage from './pages/inventory';
 import BarkPage from './pages/BarkPage';
 
 // HashRouter (not BrowserRouter) because Viam Applications' static
