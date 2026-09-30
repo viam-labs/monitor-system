@@ -86,7 +86,7 @@ function MachinePage() {
 
   useEffect(() => subscribeConnectionHealth(setConnectionLost), []);
 
-  const chromeless = ['/', '/more', '/cameras', '/feeder', '/waterer', '/thermostat', '/curtain', '/inventory'].includes(location.pathname);
+  const chromeless = ['/', '/more', '/cameras', '/feeder', '/waterer', '/thermostat', '/curtain', '/inventory', '/bark', '/door'].includes(location.pathname);
 
   useEffect(() => {
     const bg = chromeless ? '#f5f5f7' : '#0f0f10';
