@@ -102,14 +102,18 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
       console.log('[useBark] resp:', resp);
       console.log('[useBark] tabularDataByFilter rows:', rows.length, rows.slice(0, 3));
 
-      // If the filtered query returns nothing, try a bare query so we can see
-      // whether ANY tabular data is reachable with these creds (auth/scope
-      // diagnosis) and inspect a real row's shape.
       if (rows.length === 0) {
         try {
-          const probe = await dc.tabularDataByFilter({}, 5, ORDER_DESCENDING);
+          const probe = await dc.tabularDataByFilter({}, 20, ORDER_DESCENDING);
           const probeRows = Array.isArray(probe?.data) ? probe.data : [];
-          console.log('[useBark] bare-query probe rows:', probeRows.length, probeRows.slice(0, 3));
+          const probeMeta = Array.isArray(probe?.metadata) ? probe.metadata : [];
+          console.log('[useBark] bare-query row keys:', probeRows[0] ? Object.keys(probeRows[0]) : 'no rows');
+          console.log('[useBark] bare-query metadata:', probeMeta);
+          probeRows.forEach((r, i) => {
+            const d = r?.data;
+            const dKeys = d && typeof d === 'object' ? Object.keys(d) : `<${typeof d}>`;
+            console.log(`[useBark] row ${i}: metadataIndex=${r?.metadataIndex} dataKeys=${JSON.stringify(dKeys)} data=`, d);
+          });
         } catch (e) {
           console.log('[useBark] bare-query probe failed:', e);
         }
