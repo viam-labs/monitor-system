@@ -148,7 +148,7 @@ export default function BarkPage() {
         </div>
 
         <div className="bark-chart">
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
               <XAxis dataKey="label" stroke="var(--text-muted)" fontSize={11} />

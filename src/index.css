@@ -2025,6 +2025,13 @@ code {
 
 .bark-chart {
   padding-top: 4px;
+  height: 260px;
+}
+
+@media (min-width: 900px) {
+  .bark-chart {
+    height: 520px;
+  }
 }
 
 @media (max-width: 480px) {
