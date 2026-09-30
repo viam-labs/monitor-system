@@ -3,14 +3,10 @@ import { useOutletContext } from 'react-router-dom';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
-import { useCameraStreams } from '../hooks/useCameraStreams';
 
 const CAMERA_NAME = 'waterer';
 
-function WatererCamera({ client, camera }) {
-  const cameras = useMemo(() => (camera ? [camera] : []), [camera]);
-  const streams = useCameraStreams(client, cameras);
-  const stream = camera ? streams[camera.name] : null;
+function WatererCamera({ stream, hasCamera }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -21,7 +17,7 @@ function WatererCamera({ client, camera }) {
     el.play().catch(() => {});
   }, [stream]);
 
-  if (!camera) return null;
+  if (!hasCamera) return null;
 
   return (
     <section className="feeder-card waterer-camera">
@@ -224,6 +220,7 @@ export default function WatererPage() {
   const {
     client,
     cameras,
+    streams,
     watererName,
     loading: connectionLoading,
     detectingFeatures,
@@ -234,6 +231,7 @@ export default function WatererPage() {
     () => (cameras || []).find(c => c.name === CAMERA_NAME) || null,
     [cameras],
   );
+  const watererStream = streams ? streams[CAMERA_NAME] : null;
   const watererStillProbing = !watererName && pendingProbes && pendingProbes.generic > 0;
   const {
     mlPerSecond,
@@ -427,7 +425,7 @@ export default function WatererPage() {
         </button>
       </section>
 
-      <WatererCamera client={client} camera={watererCamera} />
+      <WatererCamera stream={watererStream} hasCamera={!!watererCamera} />
     </div>
   );
 }

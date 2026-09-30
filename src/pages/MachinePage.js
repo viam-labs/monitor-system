@@ -10,6 +10,7 @@ import { useDoorUnlock } from '../hooks/useDoorUnlock';
 import { useWaterer } from '../hooks/useWaterer';
 import { useInventory } from '../hooks/useInventory';
 import { useBark } from '../hooks/useBark';
+import { useCameraStreams } from '../hooks/useCameraStreams';
 import { subscribeConnectionHealth } from '../lib/connectionHealth';
 
 const PAGE_TITLES = {
@@ -64,12 +65,18 @@ function MachinePage() {
     connection.client, connection.inventoryName, connection.inventoryStateSensorName,
   );
   const bark = useBark(connection.client, connection.barkName);
+  // Hoisted so all camera streams open once and stay warm across
+  // route changes. Previously each page (CameraViewer, WatererPage's
+  // WatererCamera) called useCameraStreams itself, which caused
+  // "stream already active" collisions when both mounted the same
+  // camera — Viam server allows one stream per camera per connection.
+  const streams = useCameraStreams(connection.client, connection.cameras);
 
   const outletContext = useMemo(
     () => ({
-      ...connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark,
+      ...connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, streams,
     }),
-    [connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark],
+    [connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, streams],
   );
 
   useEffect(() => {
