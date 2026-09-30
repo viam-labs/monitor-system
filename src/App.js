@@ -2,6 +2,7 @@ import React from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import MachinePage from './pages/MachinePage';
 import Home from './pages/home/Home';
+import More from './pages/more/More';
 import CamerasPage from './pages/CamerasPage';
 import FeederPage from './pages/feeder';
 import ThermostatPage from './pages/thermostat';
@@ -22,6 +23,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MachinePage />}>
           <Route index element={<Home />} />
+          <Route path="more" element={<More />} />
           <Route path="cameras" element={<CamerasPage />} />
           <Route path="feeder" element={<FeederPage />} />
           <Route path="thermostat" element={<ThermostatPage />} />
