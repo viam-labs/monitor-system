@@ -1985,3 +1985,50 @@ code {
     grid-template-columns: 1fr;
   }
 }
+
+/* Bark detection page */
+.bark-range-select {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.bark-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 12px;
+}
+
+.bark-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.bark-stat__value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.bark-stat__label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.bark-chart {
+  padding-top: 4px;
+}
+
+@media (max-width: 480px) {
+  .bark-stats {
+    grid-template-columns: 1fr;
+  }
+}

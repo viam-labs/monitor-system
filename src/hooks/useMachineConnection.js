@@ -72,8 +72,11 @@ function matchGeneric(name, status, into) {
 }
 
 function matchSensor(name, readings, into) {
-  if (readings && typeof readings === 'object' && 'temperature_c' in readings) {
+  if (!readings || typeof readings !== 'object') return;
+  if ('temperature_c' in readings) {
     into.roomMeterName = name;
+  } else if (readings.kind === 'bark_detector') {
+    into.barkName = name;
   }
 }
 
@@ -109,6 +112,7 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
     inventoryStateSensorName: null,
     acBotName: null,
     roomMeterName: null,
+    barkName: null,
   };
   const pendingRetry = [];
 
@@ -202,6 +206,7 @@ export function useMachineConnection() {
   const [inventoryStateSensorName, setInventoryStateSensorName] = useState(null);
   const [acBotName, setAcBotName] = useState(null);
   const [roomMeterName, setRoomMeterName] = useState(null);
+  const [barkName, setBarkName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detectingFeatures, setDetectingFeatures] = useState(true);
   const [pendingProbes, setPendingProbes] = useState({ generic: 0, sensor: 0 });
@@ -221,6 +226,7 @@ export function useMachineConnection() {
       if (d.inventoryStateSensorName) setInventoryStateSensorName(d.inventoryStateSensorName);
       if (d.acBotName) setAcBotName(d.acBotName);
       if (d.roomMeterName) setRoomMeterName(d.roomMeterName);
+      if (d.barkName) setBarkName(d.barkName);
     };
 
     async function init() {
@@ -294,6 +300,7 @@ export function useMachineConnection() {
     inventoryStateSensorName,
     acBotName,
     roomMeterName,
+    barkName,
     loading,
     detectingFeatures,
     pendingProbes,
