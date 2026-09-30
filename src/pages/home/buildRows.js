@@ -93,8 +93,8 @@ function watererRow({ waterer }, navigate, mobile) {
   };
 }
 
-function thermostatRow({ thermostat, thermostatController }, navigate, mobile) {
-  const on = thermostatController?.position === 1;
+function thermostatRow({ thermostat }, navigate, mobile) {
+  const on = thermostat?.position === 1;
   const tempC = pickTemperature(thermostat?.readings);
   const humidity = pickHumidity(thermostat?.readings);
   const tempF = celsiusToF(tempC);
@@ -109,8 +109,8 @@ function thermostatRow({ thermostat, thermostatController }, navigate, mobile) {
     subtitle: parts.join(' · '),
     toggle: {
       on,
-      onChange: (v) => thermostatController?.setAcOn?.(v),
-      disabled: thermostatController?.busy,
+      onChange: (v) => thermostat?.setAcOn?.(v),
+      disabled: thermostat?.busy,
     },
     hideChevron: mobile,
     onClick: () => navigate('/thermostat'),
