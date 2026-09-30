@@ -2044,7 +2044,7 @@ code {
 
 .bark-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   padding: 12px 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -2092,5 +2092,9 @@ code {
 @media (max-width: 480px) {
   .bark-stats {
     grid-template-columns: 1fr;
+  }
+  /* Fatter bars + more room per label on narrow screens. */
+  .bark-chart {
+    height: 320px;
   }
 }
