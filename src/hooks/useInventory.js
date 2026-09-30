@@ -102,7 +102,19 @@ export function useInventory(client, trackerName, stateSensorName) {
     [runCommand],
   );
   const reorderDeck = useCallback(
-    (order, page = 0) => runCommand({ command: 'reorder_deck', page, order }),
+    (order, device = 'kitchen') => runCommand({ command: 'reorder_deck', device, order }),
+    [runCommand],
+  );
+  const setRoutine = useCallback(
+    (id, routine) => runCommand({ command: 'set_routine', id, routine }),
+    [runCommand],
+  );
+  const clearRoutine = useCallback(
+    (id) => runCommand({ command: 'clear_routine', id }),
+    [runCommand],
+  );
+  const markRoutineDone = useCallback(
+    (id) => runCommand({ command: 'mark_routine_done', id }),
     [runCommand],
   );
 
@@ -121,5 +133,8 @@ export function useInventory(client, trackerName, stateSensorName) {
     setQuantity,
     scanBarcode,
     reorderDeck,
+    setRoutine,
+    clearRoutine,
+    markRoutineDone,
   };
 }

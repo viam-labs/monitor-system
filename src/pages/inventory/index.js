@@ -113,21 +113,34 @@ export default function InventoryPage() {
     try { await inv.deleteItem(id); } catch { /* surfaced */ }
   };
 
-  const onDeck = [...items]
-    .filter((i) => i.deck_slot != null && (i.deck_page ?? 0) === 0)
-    .sort((a, b) => (a.deck_slot ?? 0) - (b.deck_slot ?? 0));
-  const offDeck = [...items]
-    .filter((i) => i.deck_slot == null)
-    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  const groupsByDevice = new Map();
+  const unassigned = [];
+  for (const it of items) {
+    const dev = it.button?.device;
+    if (!dev) unassigned.push(it);
+    else {
+      if (!groupsByDevice.has(dev)) groupsByDevice.set(dev, []);
+      groupsByDevice.get(dev).push(it);
+    }
+  }
+  for (const list of groupsByDevice.values()) {
+    list.sort((a, b) => (a.button?.slot ?? 0) - (b.button?.slot ?? 0));
+  }
+  unassigned.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-  const handleDragEnd = async (event) => {
+  const handleDragEnd = (device) => async (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = onDeck.findIndex((i) => i.id === active.id);
-    const newIndex = onDeck.findIndex((i) => i.id === over.id);
+    const list = groupsByDevice.get(device) || [];
+    const oldIndex = list.findIndex((i) => i.id === active.id);
+    const newIndex = list.findIndex((i) => i.id === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
-    const nextOrder = arrayMove(onDeck, oldIndex, newIndex).map((i) => i.id);
-    try { await inv.reorderDeck(nextOrder); } catch { /* surfaced */ }
+    const nextOrder = arrayMove(list, oldIndex, newIndex).map((i) => i.id);
+    try { await inv.reorderDeck(nextOrder, device); } catch { /* surfaced */ }
+  };
+
+  const handleMarkDone = async (id) => {
+    try { await inv.markRoutineDone(id); } catch { /* surfaced */ }
   };
 
   return (
@@ -147,53 +160,50 @@ export default function InventoryPage() {
       />
 
       <section className="feeder-card">
-        <div className="feeder-card__header">
-          <h2 className="feeder-card__title">Items ({items.length})</h2>
-          <div className="inventory-header-actions">
-            <button
-              type="button"
-              className="feeder-secondary-button feeder-secondary-button--sm"
-              onClick={() => setScanOpen(true)}
-              disabled={busy}
-            >
-              Scan
-            </button>
-            <button
-              type="button"
-              className="feeder-icon-button"
-              onClick={inv.refresh}
-              disabled={loading || busy}
-              aria-label="Refresh"
-              title="Refresh"
-            >
-              ↻
-            </button>
-          </div>
+        <div className="inventory-header-actions">
+          <button
+            type="button"
+            className="feeder-secondary-button feeder-secondary-button--sm"
+            onClick={() => setScanOpen(true)}
+            disabled={busy}
+          >
+            Scan
+          </button>
+          <button
+            type="button"
+            className="feeder-icon-button"
+            onClick={inv.refresh}
+            disabled={loading || busy}
+            aria-label="Refresh"
+            title="Refresh"
+          >
+            ↻
+          </button>
         </div>
 
         {items.length === 0 && !addOpen && (
           <p className="feeder-meta">No items yet.</p>
         )}
 
-        {onDeck.length > 0 && (
-          <>
-            <h3 className="inventory-section__title">On deck</h3>
+        {[...groupsByDevice.entries()].map(([device, list]) => (
+          <div key={device}>
+            <h3 className="inventory-section__title">{device}</h3>
             <div className="inventory-grid inventory-grid--with-drag">
               <span className="inventory-grid__head" aria-hidden="true" />
               <span className="inventory-grid__head">Item</span>
               <span className="inventory-grid__head">Count</span>
-              <span className="inventory-grid__head">Threshold</span>
+              <span className="inventory-grid__head">Threshold / Due</span>
               <div className="inventory-grid__hr" />
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
+                onDragEnd={handleDragEnd(device)}
               >
                 <SortableContext
-                  items={onDeck.map((i) => i.id)}
+                  items={list.map((i) => i.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  {onDeck.map((item) => (
+                  {list.map((item) => (
                     <SortableItemRow
                       key={item.id}
                       item={item}
@@ -204,23 +214,24 @@ export default function InventoryPage() {
                       onSetThreshold={handleSetThreshold}
                       onSave={handleSave}
                       onDelete={handleDelete}
+                      onMarkRoutineDone={handleMarkDone}
                     />
                   ))}
                 </SortableContext>
               </DndContext>
             </div>
-          </>
-        )}
+          </div>
+        ))}
 
-        {offDeck.length > 0 && (
-          <>
-            <h3 className="inventory-section__title">Off deck</h3>
+        {unassigned.length > 0 && (
+          <div>
+            <h3 className="inventory-section__title">Unassigned</h3>
             <div className="inventory-grid">
               <span className="inventory-grid__head">Item</span>
               <span className="inventory-grid__head">Count</span>
-              <span className="inventory-grid__head">Threshold</span>
+              <span className="inventory-grid__head">Threshold / Due</span>
               <div className="inventory-grid__hr" />
-              {offDeck.map((item) => (
+              {unassigned.map((item) => (
                 <ItemRow
                   key={item.id}
                   item={item}
@@ -231,10 +242,11 @@ export default function InventoryPage() {
                   onSetThreshold={handleSetThreshold}
                   onSave={handleSave}
                   onDelete={handleDelete}
+                  onMarkRoutineDone={handleMarkDone}
                 />
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {addOpen ? (
