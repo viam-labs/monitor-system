@@ -1,0 +1,232 @@
+.curtain {
+  --bg: #f5f5f7;
+  --panel: #ffffff;
+  --raise: #f0f0f2;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --dim: #aeaeb2;
+  --accent: #0071e3;
+  --on-accent: #ffffff;
+  --danger: #d70015;
+  --line: rgba(0, 0, 0, 0.1);
+  --r: 9px;
+
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+}
+
+.curtain__body { padding: 26px 30px 60px; }
+
+.curtain__one {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.curtain__back {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 15px;
+  padding: 0;
+  cursor: pointer;
+  margin: 2px 0 6px;
+}
+
+.curtain__title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.curtain__lede {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 3px 0 22px;
+}
+
+.curtain__lede--low { color: var(--danger); }
+
+.curtain__block { margin-bottom: 26px; }
+
+.curtain__sect {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 6px;
+  font-weight: 400;
+}
+
+.curtain__hint {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 7px 0 0;
+}
+
+.curtain__primary {
+  width: 100%;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: var(--r);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 11px 16px;
+  cursor: pointer;
+}
+
+.curtain__primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.curtain__banner {
+  padding: 12px 14px;
+  border-radius: var(--r);
+  font-size: 13.5px;
+  margin: 0 0 16px;
+  background: rgba(215, 0, 21, 0.08);
+  color: var(--danger);
+}
+
+.curtain-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 0;
+  border-bottom: 0.5px solid var(--line);
+}
+
+.curtain-row:last-child { border-bottom: none; }
+
+.curtain-row__tx { flex: 1; min-width: 0; }
+
+.curtain-row__nm {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.curtain-row__nm--dim { color: var(--dim); }
+
+.curtain-row__sb {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.curtain-row__act--add {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.curtain-row__act--add:disabled { color: var(--dim); cursor: not-allowed; }
+
+.curtain-row__act--danger {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+}
+
+.curtain-row__expanded {
+  padding: 8px 0 16px;
+  border-bottom: 0.5px solid var(--line);
+}
+
+.curtain-sw {
+  width: 42px;
+  height: 25px;
+  border-radius: 99px;
+  background: var(--accent);
+  border: none;
+  padding: 0;
+  position: relative;
+  cursor: pointer;
+  flex: none;
+  transition: background 160ms ease;
+}
+
+.curtain-sw::after {
+  content: "";
+  position: absolute;
+  top: 2.5px;
+  right: 2.5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: right 160ms ease, left 160ms ease;
+}
+
+.curtain-sw--off { background: var(--dim); }
+.curtain-sw--off::after { right: auto; left: 2.5px; }
+.curtain-sw:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.curtain-empty {
+  padding: 20px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.curtain-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  gap: 20px;
+  font-size: 2.75rem;
+  letter-spacing: -0.02em;
+}
+
+.curtain-stub {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+@media (max-width: 700px) {
+  .curtain { --r: 10px; }
+  .curtain__body {
+    padding: calc(env(safe-area-inset-top) + 16px)
+             16px
+             calc(env(safe-area-inset-bottom) + 84px);
+  }
+  .curtain__back { display: inline-flex; }
+  .curtain__title {
+    font-size: 27px;
+    letter-spacing: -0.025em;
+    margin: 4px 0 0;
+  }
+  .curtain__lede { font-size: 13px; margin: 2px 0 16px; }
+  .curtain__primary { font-size: 16px; padding: 14px; }
+  .curtain-row { min-height: 52px; padding: 8px 0; gap: 12px; }
+  .curtain-row__nm { font-size: 16px; }
+  .curtain-sw { width: 48px; height: 29px; }
+  .curtain-sw::after { width: 24px; height: 24px; }
+}
