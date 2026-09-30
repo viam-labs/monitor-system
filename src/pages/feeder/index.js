@@ -1,9 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import PageCamera from '../../components/PageCamera';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useOutletContext, useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
+import TopNav from '../../components/TopNav';
+import BottomTabBar from '../../components/BottomTabBar';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { PAGE_CAMERAS } from '../../appConfig';
 import { formatTime } from '../../lib/format';
-import ScheduleCard from './ScheduleCard';
+import { summarizeDays } from '../../components/DayPicker';
 import ScheduleForm from './ScheduleForm';
 import VacationForm from './VacationForm';
 import {
@@ -12,8 +15,102 @@ import {
   formatVacationUntil,
   labelForCups,
 } from './helpers';
+import './Feeder.css';
+
+function fmtDateTime(ms) {
+  const d = new Date(ms);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const y = new Date(today); y.setDate(y.getDate() - 1);
+  const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  if (d >= today) return `Today ${time}`;
+  if (d >= y) return `Yesterday ${time}`;
+  return `${d.toLocaleDateString([], { weekday: 'short' })} ${time}`;
+}
+
+function CamPreview({ cameras, streams, name }) {
+  const videoRef = useRef(null);
+  const cam = cameras?.find((c) => c.name === name);
+  const stream = cam ? streams?.[cam.name] : null;
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !stream) return undefined;
+    el.muted = true;
+    el.srcObject = stream;
+    el.play().catch(() => {});
+    return undefined;
+  }, [stream]);
+
+  if (!cam) return null;
+  return (
+    <div className="feeder-cam">
+      <video ref={videoRef} autoPlay playsInline muted />
+      <span className="feeder-cam__tag">{cam.name}</span>
+    </div>
+  );
+}
+
+function ScheduleRow({ schedule, busy, onSave, onDelete, onToggleEnabled }) {
+  const [expanded, setExpanded] = useState(false);
+  const enabled = schedule.enabled !== false;
+  const days = summarizeDays(schedule.days_of_week);
+  const summary = `${formatScheduleTime(schedule.time)} · ${labelForCups(schedule.cups)}${days ? ` · ${days}` : ''}`;
+  const skipping = !!schedule.skip_next_fire;
+  return (
+    <>
+      <div className="feeder-row">
+        <button
+          type="button"
+          className="feeder-row__act feeder-row__act--add"
+          onClick={() => setExpanded((v) => !v)}
+          style={{ background: 'none', color: 'inherit' }}
+        >
+          <div className="feeder-row__tx">
+            <div className={'feeder-row__nm' + (enabled ? '' : ' feeder-row__nm--dim')}>
+              {schedule.name || `Feed ${schedule.time}`}
+              {skipping && <span className="feeder-row__badge">skip next</span>}
+            </div>
+            <div className="feeder-row__sb">{summary}</div>
+          </div>
+        </button>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          disabled={busy}
+          className={'feeder-sw' + (enabled ? '' : ' feeder-sw--off')}
+          onClick={(e) => { e.stopPropagation(); onToggleEnabled(schedule.id, !enabled); }}
+          aria-label={`Enable ${schedule.name || schedule.time}`}
+        />
+      </div>
+      {expanded && (
+        <div className="feeder-row__expanded">
+          <ScheduleForm
+            initial={schedule}
+            submitLabel="Save"
+            saving={busy}
+            onSave={onSave}
+          />
+          <div style={{ marginTop: 12, textAlign: 'right' }}>
+            <button
+              type="button"
+              className="feeder-row__act feeder-row__act--danger"
+              onClick={() => onDelete(schedule.id)}
+              disabled={busy}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default function FeederPage() {
+  const ctx = useOutletContext();
+  const navigate = useNavigate();
+  const mobile = useMediaQuery('(max-width: 700px)');
   const {
     cameras,
     streams,
@@ -22,18 +119,11 @@ export default function FeederPage() {
     detectingFeatures,
     pendingProbes,
     feeder,
-  } = useOutletContext();
+  } = ctx;
   const feederStillProbing = !feederName && pendingProbes && pendingProbes.generic > 0;
   const {
-    status,
-    schedules,
-    lastFeeding,
-    loading,
-    error,
-    feeding,
-    pausing,
-    mutating,
-    lastFedAt,
+    status, schedules, lastFeeding, history,
+    loading, error, feeding, pausing, mutating, lastFedAt,
   } = feeder;
 
   const target = status?.target_meal_cups ?? null;
@@ -45,7 +135,7 @@ export default function FeederPage() {
 
   const sortedSchedules = useMemo(
     () => (schedules || []).slice().sort((a, b) => (a.time || '').localeCompare(b.time || '')),
-    [schedules]
+    [schedules],
   );
 
   const nextScheduled = useMemo(() => {
@@ -78,9 +168,8 @@ export default function FeederPage() {
     if (!schedules) return [];
     const nowMs = Date.now();
     const today = new Date();
-    // Backend uses Mon=0..Sun=6; JS getDay() is Sun=0..Sat=6.
     const todayDow = (today.getDay() + 6) % 7;
-    return schedules.filter(s => {
+    return schedules.filter((s) => {
       if (s.enabled === false) return false;
       if (!s.time || !s.time.includes(':')) return false;
       const dows = s.days_of_week || [];
@@ -90,55 +179,71 @@ export default function FeederPage() {
       fireToday.setHours(h, m, 0, 0);
       if (fireToday.getTime() > nowMs) return false;
       const lastFiredMs = s.last_fired_at ? Date.parse(s.last_fired_at) : NaN;
-      if (!Number.isNaN(lastFiredMs) && lastFiredMs >= fireToday.getTime()) {
-        return false;
-      }
+      if (!Number.isNaN(lastFiredMs) && lastFiredMs >= fireToday.getTime()) return false;
       return nowMs - fireToday.getTime() > 30 * 60 * 1000;
     });
   }, [schedules]);
 
+  const availability = {
+    '/feeder': !!ctx.feederName,
+    '/waterer': !!ctx.watererName,
+    '/thermostat': !!(ctx.acBotName && ctx.roomMeterName),
+    '/curtain': !!ctx.curtainName,
+    '/inventory': !!(ctx.inventoryName && ctx.inventoryStateSensorName),
+    '/bark': !!ctx.barkName,
+    '/door': !!ctx.doorUnlockName,
+  };
+
   if (connectionLoading || detectingFeatures || feederStillProbing) {
     return (
-      <div className="paw-loader" aria-label="Connecting">
-        <span>🐾</span>
-        <span>🐾</span>
-        <span>🐾</span>
+      <div className="feeder">
+        <TopNav availability={availability} />
+        <div className="feeder__body">
+          <div className="feeder-loader">🐾 🐾 🐾</div>
+        </div>
+        <BottomTabBar />
       </div>
     );
   }
 
   if (!feederName) {
     return (
-      <div className="stub-page">
-        <h1>Feeder</h1>
-        <p>No feeder is configured on this machine.</p>
+      <div className="feeder">
+        <TopNav availability={availability} />
+        <div className="feeder__body">
+          <div className="feeder-stub">
+            <h1 className="feeder__title">Feeder</h1>
+            <p>No feeder is configured on this machine.</p>
+          </div>
+        </div>
+        <BottomTabBar />
       </div>
     );
   }
 
-  const foodStateClass = status
-    ? `feeder-status__pill feeder-status__pill--${status.food_state}`
-    : 'feeder-status__pill';
-
   const scheduleEmpty = !schedules || schedules.length === 0;
   const paused = !!status?.pause_until;
-  // pause_until year 2099+ = indefinite pause (from Pause button). Show
-  // the vacation banner only for a real date the user picked.
-  const isVacation = !!status?.pause_until &&
-    new Date(status.pause_until).getFullYear() < 2099;
+  const isVacation = !!status?.pause_until && new Date(status.pause_until).getFullYear() < 2099;
   const pauseUntilLocal = isVacation ? formatVacationUntil(status.pause_until) : null;
 
   const lastFedTs = extractLastFedTimestamp(lastFeeding, lastFedAt);
-  const lastFedLine = lastFedTs
-    ? `Last fed at ${formatTime(lastFedTs)}`
-    : null;
+  const lastFedLine = lastFedTs ? `Last fed at ${formatTime(lastFedTs)}` : null;
 
-  const feedNowCaption = nextScheduled
-    ? `Feeds ${labelForCups(nextScheduled.cups)} now and skips the ${formatScheduleTime(nextScheduled.time)} feeding.`
-    : target != null
-      ? `Feeds ${labelForCups(target)} now. No scheduled feedings to skip.`
-      : 'Add a scheduled feeding or set target_meal_cups in your config first.';
+  const feedNowCups = nextScheduled?.cups ?? target;
+  const feedNowLabel = feedNowCups != null
+    ? `Feed ${labelForCups(feedNowCups)} now`
+    : 'Feed now';
   const canFeedNow = !!(nextScheduled || target != null);
+
+  const ledeParts = [];
+  if (nextScheduled) {
+    ledeParts.push(`next meal ${formatScheduleTime(nextScheduled.time)}`);
+    if (typeof nextScheduled.cups === 'number') ledeParts.push(labelForCups(nextScheduled.cups));
+  }
+  if (typeof status?.hopper_cups === 'number') {
+    ledeParts.push(`hopper ${status.hopper_cups} cups`);
+  }
+  const lede = ledeParts.join(' · ') || (feederName ? 'ready' : '');
 
   const moveTotalHours = Number(delayHours) + Number(delayMinutes) / 60;
   const shiftedLater = nextScheduled
@@ -150,17 +255,6 @@ export default function FeederPage() {
   const nowMs = Date.now();
   const canMoveEarlier = !!shiftedEarlier && shiftedEarlier.getTime() > nowMs;
   const canMoveLater = !!shiftedLater;
-  const movePreviewLines = (() => {
-    if (!nextScheduled) return ['No upcoming feedings to move.'];
-    if (moveTotalHours <= 0) return ['Enter an amount above.'];
-    const origLabel = formatScheduleTime(nextScheduled.time);
-    const laterLine = `Later: ${origLabel} → ${formatTime(shiftedLater.getTime())}.`;
-    if (canMoveEarlier) {
-      const earlierLine = `Earlier: ${origLabel} → ${formatTime(shiftedEarlier.getTime())}.`;
-      return [earlierLine, laterLine];
-    }
-    return [laterLine, '(Earlier would land in the past.)'];
-  })();
 
   const handleAdd = async (payload) => {
     try { await feeder.addSchedule(payload); setAddOpen(false); } catch { /* stay open */ }
@@ -175,17 +269,14 @@ export default function FeederPage() {
   const handleToggleEnabled = async (id, enabled) => {
     try { await feeder.setScheduleEnabled(id, enabled); } catch { /* surfaced */ }
   };
-  const handleSetSkip = async (id, skip) => {
-    try { await feeder.setSkipNext(id, skip); } catch { /* surfaced */ }
-  };
   const handleFeedNow = async () => {
     if (!canFeedNow) return;
-    try { await feeder.feedNow(); } catch { /* surfaced */ }
+    try { await feeder.feedNow(); feeder.refreshHistory?.(); } catch { /* surfaced */ }
   };
   const handleSkipNext = async () => {
     if (!nextScheduled) return;
     if (!window.confirm(
-      `Skip the ${formatScheduleTime(nextScheduled.time)} feeding? It will restore automatically after that time passes.`
+      `Skip the ${formatScheduleTime(nextScheduled.time)} feeding? It will restore automatically after that time passes.`,
     )) return;
     try { await feeder.skipNext(); } catch { /* surfaced */ }
   };
@@ -194,284 +285,266 @@ export default function FeederPage() {
     const hours = direction === 'earlier' ? -moveTotalHours : moveTotalHours;
     try {
       await feeder.delayNext(hours);
-      setDelayHours(0);
-      setDelayMinutes(30);
-      setMoveOpen(false);
+      setDelayHours(0); setDelayMinutes(30); setMoveOpen(false);
     } catch { /* surfaced */ }
   };
   const handleVacation = async (until) => {
     try { await feeder.pauseUntil(until); setVacationOpen(false); } catch { /* stay open */ }
   };
 
+  const recent = (history || []).slice().reverse();
+
   return (
-    <div className="feeder-page">
-      <div className="feeder-topbar">
-        {status ? (
-          <span className={foodStateClass}>Food {status.food_state}</span>
-        ) : (
-          loading && <span className="feeder-meta">Loading…</span>
-        )}
-        <div className="feeder-topbar__actions">
-          {status?.cached && <span className="feeder-topbar__cached">cached</span>}
-          <button
-            type="button"
-            className="feeder-icon-button"
-            onClick={feeder.refresh}
-            disabled={loading || feeding || mutating}
-            aria-label="Refresh"
-            title="Refresh. Server caches for 5 minutes — rapid clicks return the cached value, they don't hammer PetSafe."
-          >
-            ↻
-          </button>
-        </div>
-      </div>
+    <div className="feeder">
+      <TopNav availability={availability} />
+      <div className="feeder__body">
+        <div className="feeder__wide">
+          {mobile && (
+            <button
+              type="button"
+              className="feeder__back"
+              onClick={() => navigate('/')}
+              aria-label="Back to Home"
+            >
+              <ChevronLeft />
+              Home
+            </button>
+          )}
+          <h1 className="feeder__title">Feeder</h1>
+          <p className="feeder__lede">{lede}</p>
 
-      {error && <p className="feeder-error feeder-error--banner">{error}</p>}
-
-      {pauseUntilLocal && (
-        <div className="feeder-banner feeder-banner--vacation">
-          <span>🌴 Paused until {pauseUntilLocal}</span>
-          <button
-            type="button"
-            className="feeder-secondary-button"
-            onClick={() => feeder.pauseSchedule(false)}
-            disabled={pausing}
-          >
-            Resume now
-          </button>
-        </div>
-      )}
-
-      {missedFeeds.length > 0 && (
-        <div className="feeder-banner feeder-banner--missed">
-          Missed {missedFeeds.length} scheduled feed{missedFeeds.length === 1 ? '' : 's'} today
-          {missedFeeds.map(s => ` (${formatScheduleTime(s.time)})`).join('')}
-          . Pi may have been offline at fire time.
-        </div>
-      )}
-
-      <section className="feeder-card">
-        <div className="feeder-card__header">
-          <h2 className="feeder-card__title">Schedule</h2>
-        </div>
-
-        {loading && !schedules && <p className="feeder-status__loading">Loading…</p>}
-        {schedules && (
-          <>
-            {scheduleEmpty && !addOpen && (
-              <p className="feeder-meta">No scheduled feedings yet.</p>
-            )}
-            {sortedSchedules.map(s => (
-              <ScheduleCard
-                key={s.id || s.time}
-                schedule={s}
-                busy={mutating}
-                onSave={handleModify}
-                onDelete={handleDelete}
-                onToggleEnabled={handleToggleEnabled}
-                onSetSkip={handleSetSkip}
-              />
-            ))}
-
-            {addOpen ? (
-              <div className="automation-card automation-card--add">
-                <ScheduleForm
-                  initial={{ time: '07:00', cups: target ?? 1, days_of_week: [] }}
-                  submitLabel="Add"
-                  saving={mutating}
-                  onSave={handleAdd}
-                  onCancel={() => setAddOpen(false)}
-                />
-              </div>
-            ) : (
+          {error && <div className="feeder__banner feeder__banner--missed">{error}</div>}
+          {pauseUntilLocal && (
+            <div className="feeder__banner feeder__banner--vacation">
+              <span>Paused until {pauseUntilLocal}</span>
               <button
                 type="button"
-                className="feeder-secondary-button feeder-secondary-button--full"
-                onClick={() => setAddOpen(true)}
-                disabled={mutating}
+                className="feeder__secondary"
+                onClick={() => feeder.pauseSchedule(false)}
+                disabled={pausing}
+                style={{ width: 'auto' }}
               >
-                + Add feeding
+                Resume
               </button>
-            )}
-          </>
-        )}
-      </section>
+            </div>
+          )}
+          {missedFeeds.length > 0 && (
+            <div className="feeder__banner feeder__banner--missed">
+              Missed {missedFeeds.length} scheduled feed{missedFeeds.length === 1 ? '' : 's'} today
+              {missedFeeds.map((s) => ` (${formatScheduleTime(s.time)})`).join('')}
+              . Pi may have been offline at fire time.
+            </div>
+          )}
 
-      {schedules && !scheduleEmpty && (
-        <section className="feeder-card">
-          <div className="feeder-card__header">
-            <h2 className="feeder-card__title">Pause</h2>
-          </div>
-          <div className="feeder-action">
-            <button
-              type="button"
-              className={
-                'feeder-secondary-button feeder-secondary-button--full' +
-                (paused ? ' feeder-secondary-button--active' : '')
-              }
-              onClick={() => feeder.pauseSchedule(!paused)}
-              disabled={pausing || isVacation}
-              title={
-                isVacation
-                  ? 'Vacation pause is active — use Resume in the banner above.'
-                  : undefined
-              }
-            >
-              {paused ? 'Resume schedule' : 'Pause schedule'}
-            </button>
-            <p className="feeder-action__desc">
-              Stop all scheduled feedings until you manually resume.
-            </p>
-          </div>
-          <div className="feeder-action">
-            {!vacationOpen ? (
-              <>
+          <div className="feeder__cols">
+            <div className="feeder__col">
+              <div className="feeder__block">
                 <button
                   type="button"
-                  className="feeder-secondary-button feeder-secondary-button--full"
-                  onClick={() => setVacationOpen(true)}
-                  disabled={mutating}
+                  className="feeder__primary"
+                  onClick={handleFeedNow}
+                  disabled={feeding || mutating || !canFeedNow}
                 >
-                  Vacation…
+                  {feeding || mutating ? 'Feeding…' : feedNowLabel}
                 </button>
-                <p className="feeder-action__desc">
-                  Pause automatically until a specific date and time.
-                </p>
-              </>
-            ) : (
-              <VacationForm
-                saving={mutating}
-                onSubmit={handleVacation}
-                onCancel={() => setVacationOpen(false)}
-              />
-            )}
-          </div>
-        </section>
-      )}
-
-      {schedules && !scheduleEmpty && (
-        <section className="feeder-card">
-          <div className="feeder-card__header">
-            <h2 className="feeder-card__title">Next feeding</h2>
-          </div>
-          <div className="feeder-action">
-            <button
-              type="button"
-              className="feeder-secondary-button feeder-secondary-button--full"
-              onClick={handleSkipNext}
-              disabled={mutating || !nextScheduled}
-            >
-              Skip next feeding
-            </button>
-            <p className="feeder-action__desc">
-              Skip only the very next scheduled feeding. Later feedings still fire normally.
-            </p>
-          </div>
-          <div className="feeder-action">
-            {!moveOpen ? (
-              <>
-                <button
-                  type="button"
-                  className="feeder-secondary-button feeder-secondary-button--full"
-                  onClick={() => setMoveOpen(true)}
-                  disabled={mutating || !nextScheduled}
-                >
-                  Move next by…
-                </button>
-                <p className="feeder-action__desc">
-                  Delay or advance the next scheduled feeding by hours.
-                </p>
-              </>
-            ) : (
-              <div className="delay-row">
-                <div className="delay-row__header">
-                  <span className="delay-row__label">Move next by</span>
-                  <button
-                    type="button"
-                    className="feeder-icon-button"
-                    onClick={() => setMoveOpen(false)}
-                    aria-label="Cancel"
-                    title="Cancel"
-                    disabled={mutating}
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="delay-row__inputs">
-                  <input
-                    type="number"
-                    min="0"
-                    max="23"
-                    value={delayHours}
-                    onChange={e => setDelayHours(Math.max(0, Math.min(23, Number(e.target.value) || 0)))}
-                    aria-label="Hours"
-                    disabled={mutating}
-                  />
-                  <span className="delay-row__unit">hr</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={delayMinutes}
-                    onChange={e => setDelayMinutes(Math.max(0, Math.min(59, Number(e.target.value) || 0)))}
-                    aria-label="Minutes"
-                    disabled={mutating}
-                  />
-                  <span className="delay-row__unit">min</span>
-                </div>
-                <div className="delay-row__buttons">
-                  <button
-                    type="button"
-                    className="move-button"
-                    onClick={() => moveNext('earlier')}
-                    disabled={mutating || moveTotalHours <= 0 || !canMoveEarlier}
-                    title={
-                      !canMoveEarlier && nextScheduled && moveTotalHours > 0
-                        ? 'Moving earlier by that much would land in the past.'
-                        : undefined
-                    }
-                  >
-                    ← Earlier
-                  </button>
-                  <button
-                    type="button"
-                    className="move-button"
-                    onClick={() => moveNext('later')}
-                    disabled={mutating || moveTotalHours <= 0 || !canMoveLater}
-                  >
-                    Later →
-                  </button>
-                </div>
-                <div className="move-preview">
-                  {movePreviewLines.map((line, i) => (
-                    <p key={i} className="feeder-meta">{line}</p>
-                  ))}
-                </div>
+                {lastFedLine && <p className="feeder__hint">{lastFedLine}</p>}
               </div>
-            )}
+
+              <div className="feeder__block">
+                <p className="feeder__sect">Schedule</p>
+                {loading && !schedules && <p className="feeder-empty">Loading…</p>}
+                {scheduleEmpty && !addOpen && (
+                  <p className="feeder-empty">No scheduled feedings yet.</p>
+                )}
+                {sortedSchedules.map((s) => (
+                  <ScheduleRow
+                    key={s.id || s.time}
+                    schedule={s}
+                    busy={mutating}
+                    onSave={handleModify}
+                    onDelete={handleDelete}
+                    onToggleEnabled={handleToggleEnabled}
+                  />
+                ))}
+                {addOpen ? (
+                  <div className="feeder-row__expanded">
+                    <ScheduleForm
+                      initial={{ time: '07:00', cups: target ?? 1, days_of_week: [] }}
+                      submitLabel="Add"
+                      saving={mutating}
+                      onSave={handleAdd}
+                      onCancel={() => setAddOpen(false)}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="feeder-row__act feeder-row__act--add"
+                    onClick={() => setAddOpen(true)}
+                    disabled={mutating}
+                  >
+                    + Add feeding
+                  </button>
+                )}
+              </div>
+
+              {schedules && !scheduleEmpty && (
+                <div className="feeder__block">
+                  <p className="feeder__sect">Next feeding</p>
+                  <div className="feeder-row">
+                    <div className="feeder-row__tx">
+                      <div className="feeder-row__nm">Skip next</div>
+                      <div className="feeder-row__sb">later feedings still fire</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="feeder-row__act"
+                      onClick={handleSkipNext}
+                      disabled={mutating || !nextScheduled}
+                    >
+                      Skip
+                    </button>
+                  </div>
+                  {!moveOpen ? (
+                    <div className="feeder-row">
+                      <div className="feeder-row__tx">
+                        <div className="feeder-row__nm">Move next</div>
+                        <div className="feeder-row__sb">delay or advance by hours</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="feeder-row__act"
+                        onClick={() => setMoveOpen(true)}
+                        disabled={mutating || !nextScheduled}
+                      >
+                        Move
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="feeder-move">
+                      <div className="feeder-row__nm">Move next by</div>
+                      <div className="feeder-move__inputs">
+                        <input
+                          type="number" min="0" max="23"
+                          value={delayHours}
+                          onChange={(e) => setDelayHours(Math.max(0, Math.min(23, Number(e.target.value) || 0)))}
+                          aria-label="Hours"
+                          disabled={mutating}
+                        />
+                        <span>hr</span>
+                        <input
+                          type="number" min="0" max="59"
+                          value={delayMinutes}
+                          onChange={(e) => setDelayMinutes(Math.max(0, Math.min(59, Number(e.target.value) || 0)))}
+                          aria-label="Minutes"
+                          disabled={mutating}
+                        />
+                        <span>min</span>
+                      </div>
+                      <div className="feeder-move__buttons">
+                        <button
+                          type="button"
+                          onClick={() => moveNext('earlier')}
+                          disabled={mutating || moveTotalHours <= 0 || !canMoveEarlier}
+                        >
+                          ← Earlier
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveNext('later')}
+                          disabled={mutating || moveTotalHours <= 0 || !canMoveLater}
+                        >
+                          Later →
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMoveOpen(false)}
+                          disabled={mutating}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {schedules && !scheduleEmpty && (
+                <div className="feeder__block">
+                  <p className="feeder__sect">Pause</p>
+                  <div className="feeder-row">
+                    <div className="feeder-row__tx">
+                      <div className="feeder-row__nm">Pause schedule</div>
+                      <div className="feeder-row__sb">until you resume manually</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="feeder-row__act"
+                      onClick={() => feeder.pauseSchedule(!paused)}
+                      disabled={pausing || isVacation}
+                    >
+                      {paused && !isVacation ? 'Resume' : 'Pause'}
+                    </button>
+                  </div>
+                  {!vacationOpen ? (
+                    <div className="feeder-row">
+                      <div className="feeder-row__tx">
+                        <div className="feeder-row__nm">Vacation</div>
+                        <div className="feeder-row__sb">pause until a set date</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="feeder-row__act"
+                        onClick={() => setVacationOpen(true)}
+                        disabled={mutating}
+                      >
+                        Set
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="feeder-row__expanded">
+                      <VacationForm
+                        saving={mutating}
+                        onSubmit={handleVacation}
+                        onCancel={() => setVacationOpen(false)}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="feeder__col">
+              <CamPreview
+                cameras={cameras}
+                streams={streams}
+                name={PAGE_CAMERAS.feeder}
+              />
+              <div className="feeder__block">
+                <p className="feeder__sect">Recent</p>
+                {recent.length === 0 ? (
+                  <p className="feeder-empty">No feedings recorded yet.</p>
+                ) : (
+                  recent.map((h, i) => {
+                    const ms = h.at ? Date.parse(h.at) : NaN;
+                    const when = Number.isNaN(ms) ? h.at : fmtDateTime(ms);
+                    const cups = typeof h.cups === 'number' ? labelForCups(h.cups) : '';
+                    return (
+                      <div key={`${h.at}-${i}`} className="feeder-row">
+                        <div className="feeder-row__tx">
+                          <div className="feeder-row__nm">{when}</div>
+                        </div>
+                        <span className="feeder-row__amt">{cups}</span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
-        </section>
-      )}
-
-      <section className="feeder-card feeder-card--hero">
-        <button
-          type="button"
-          className="feeder-hero__button"
-          onClick={handleFeedNow}
-          disabled={feeding || mutating || !canFeedNow}
-        >
-          <span aria-hidden="true" className="feeder-hero__emoji">🐶</span>
-          <span>{mutating || feeding ? 'Feeding…' : 'Feed Now'}</span>
-        </button>
-        <p className="feeder-hero__caption">{feedNowCaption}</p>
-        {lastFedLine && <p className="feeder-hero__last-fed">{lastFedLine}</p>}
-      </section>
-
-      <PageCamera
-        cameras={cameras}
-        streams={streams}
-        cameraName={PAGE_CAMERAS.feeder}
-      />
+        </div>
+      </div>
+      <BottomTabBar />
     </div>
   );
 }
