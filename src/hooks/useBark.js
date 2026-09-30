@@ -1,14 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { SensorClient, createViamClient } from '@viamrobotics/sdk';
-import Cookies from 'js-cookie';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { SensorClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
 
-// viam.app.data.v1.Order.DESCENDING; enum isn't re-exported from the SDK entry.
-const ORDER_DESCENDING = 1;
-
-export function useBark(client, barkName, eventsSensorName = 'events') {
+export function useBark(client, barkName) {
   const bark = useMemo(
     () => (client && barkName ? new SensorClient(client, barkName) : null),
     [client, barkName],
@@ -25,7 +21,6 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [rangeHours, setRangeHours] = useState(24);
-  const dataClientRef = useRef(null);
 
   const refreshLive = useCallback(async () => {
     if (!bark) return;
@@ -56,52 +51,28 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
 
   usePolling(refreshLive, { enabled: !!bark });
 
-  const ensureDataClient = useCallback(async () => {
-    if (dataClientRef.current) return dataClientRef.current;
-    const cookieKey = window.location.pathname.split('/')[2];
-    const { apiKey: { id, key } } = JSON.parse(Cookies.get(cookieKey));
-    const vc = await createViamClient({
-      credentials: { type: 'api-key', payload: key, authEntity: id },
-    });
-    dataClientRef.current = vc.dataClient;
-    return vc.dataClient;
-  }, []);
-
   const refreshHistory = useCallback(async () => {
-    if (!eventsSensorName) return;
+    if (!bark) return;
     setHistoryLoading(true);
     try {
-      const dc = await ensureDataClient();
-      const end = new Date();
-      const start = new Date(end.getTime() - rangeHours * 60 * 60 * 1000);
-      const filter = {
-        componentName: eventsSensorName,
-        interval: { start, end },
-      };
-      const resp = await dc.tabularDataByFilter(filter, 5000, ORDER_DESCENDING);
-      const rows = Array.isArray(resp?.data) ? resp.data : [];
-      console.log('[useBark] filter:', JSON.stringify(filter), 'rows:', rows.length);
-      if (rows[0]) console.log('[useBark] first row:', rows[0]);
-      const barks = rows
-        .map((row) => {
-          const readings = row?.data?.readings || row?.data || {};
-          if (readings?.event_type !== 'bark_detected') return null;
-          return {
-            at: new Date(row.timeReceived || row.timeRequested || readings.at),
-            score: Number(readings.score) || 0,
-            topClass: String(readings.top_class || ''),
-          };
-        })
-        .filter(Boolean)
+      const resp = await callWithRetry(() => bark.doCommand({ command: 'get_history' }));
+      const entries = Array.isArray(resp?.history) ? resp.history : [];
+      const cutoff = Date.now() - rangeHours * 60 * 60 * 1000;
+      const barks = entries
+        .map((e) => ({
+          at: new Date(e.at),
+          score: Number(e.score) || 0,
+          topClass: String(e.top_class || ''),
+        }))
+        .filter((e) => !Number.isNaN(e.at.getTime()) && e.at.getTime() >= cutoff)
         .sort((a, b) => a.at - b.at);
-      console.log('[useBark] parsed bark events:', barks.length, barks.slice(0, 3));
       setHistory(barks);
     } catch (e) {
       if (!handleRpcError(e)) setError(e.message || String(e));
     } finally {
       setHistoryLoading(false);
     }
-  }, [eventsSensorName, rangeHours, ensureDataClient]);
+  }, [bark, rangeHours]);
 
   useEffect(() => { refreshHistory(); }, [refreshHistory]);
 
