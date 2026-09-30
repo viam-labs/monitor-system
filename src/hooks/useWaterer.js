@@ -16,6 +16,7 @@ export function useWaterer(client, watererName) {
   const [dailyTotal, setDailyTotal] = useState(null);
   const [lastDispense, setLastDispense] = useState(null);
   const [schedules, setSchedules] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -53,6 +54,19 @@ export function useWaterer(client, watererName) {
   }, [waterer, refresh]);
 
   usePolling(refresh, { enabled: !!waterer });
+
+  const refreshHistory = useCallback(async () => {
+    if (!waterer) return;
+    try {
+      const resp = await callWithRetry(() => waterer.doCommand({ command: 'get_history' }));
+      const entries = Array.isArray(resp?.history) ? resp.history : [];
+      setHistory(entries);
+    } catch {
+      setHistory([]);
+    }
+  }, [waterer]);
+
+  useEffect(() => { refreshHistory(); }, [refreshHistory]);
 
   const runCommand = useCallback(
     async (command) => {
@@ -111,6 +125,8 @@ export function useWaterer(client, watererName) {
     dailyTotal,
     lastDispense,
     schedules,
+    history,
+    refreshHistory,
     loading,
     error,
     busy,

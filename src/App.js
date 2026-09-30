@@ -8,7 +8,7 @@ import FeederPage from './pages/feeder';
 import ThermostatPage from './pages/thermostat';
 import CurtainPage from './pages/CurtainPage';
 import DoorUnlockPage from './pages/DoorUnlockPage';
-import WatererPage from './pages/WatererPage';
+import WatererPage from './pages/waterer/Waterer';
 import InventoryPage from './pages/inventory';
 import BarkPage from './pages/BarkPage';
 
