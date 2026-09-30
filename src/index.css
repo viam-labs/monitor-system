@@ -389,16 +389,21 @@ code {
     display: block;
     position: static;
   }
-  /* Reserve left space so pages don't slide under the fixed nav.
-     The right/bottom paws only get covered by pages that stretch to
-     those edges — narrow centered pages (waterer/feeder/…) fit inside
-     max-width 520px and don't touch the corners, so those pages don't
-     need the extra padding (which just eats scroll space). */
+  /* All pages: reserve left space for the fixed nav. */
   .page {
     padding-left: 200px;
   }
+  /* Pages that use .feeder-page (waterer, feeder, bark, thermostat…):
+     mirror the left padding on the right so the max-width-520
+     centered content actually reads as viewport-centered instead of
+     biased right of center. Cameras page skips this — it uses
+     .camera-grid and wants the extra width. */
+  .page:has(.feeder-page) {
+    padding-right: 200px;
+  }
+  /* Wide pages (bark chart) also need bottom clearance so the tall
+     card doesn't slide under the bottom-right paw. */
   .page:has(.feeder-page--wide) {
-    padding-right: 120px;
     padding-bottom: 120px;
   }
 }
