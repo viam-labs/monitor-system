@@ -5,20 +5,15 @@ import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
 
-// From viam.app.data.v1.Order: 1 = DESCENDING. Not re-exported from
-// the SDK entry point so we use the numeric value directly.
+// viam.app.data.v1.Order.DESCENDING; enum isn't re-exported from the SDK entry.
 const ORDER_DESCENDING = 1;
 
-// Read live state from the bark_detector sensor + historical bark_detected
-// events from Viam Data. The historical query uses the DataClient (cloud
-// API), separate from the machine's WebRTC connection.
 export function useBark(client, barkName, eventsSensorName = 'events') {
   const bark = useMemo(
     () => (client && barkName ? new SensorClient(client, barkName) : null),
     [client, barkName],
   );
 
-  // Live state (from the sensor's Readings)
   const [lastBarkAt, setLastBarkAt] = useState('');
   const [lastDogScore, setLastDogScore] = useState(0);
   const [sessionCount, setSessionCount] = useState(0);
@@ -27,13 +22,11 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Historical events (from DataClient)
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [rangeHours, setRangeHours] = useState(24);
   const dataClientRef = useRef(null);
 
-  // Live readings poll
   const refreshLive = useCallback(async () => {
     if (!bark) return;
     setError(null);
@@ -63,9 +56,6 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
 
   usePolling(refreshLive, { enabled: !!bark });
 
-  // Lazy-create the ViamClient for DataClient queries. The credentials
-  // come from the same cookie createRobotClient uses in
-  // useMachineConnection, so no additional auth handoff.
   const ensureDataClient = useCallback(async () => {
     if (dataClientRef.current) return dataClientRef.current;
     const cookieKey = window.location.pathname.split('/')[2];
@@ -84,8 +74,6 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
       const dc = await ensureDataClient();
       const end = new Date();
       const start = new Date(end.getTime() - rangeHours * 60 * 60 * 1000);
-      // Broad filter: just componentName + interval, no method. Let
-      // event_type filtering happen client-side.
       const filter = {
         componentName: eventsSensorName,
         interval: { start, end },
@@ -118,10 +106,8 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
   useEffect(() => { refreshHistory(); }, [refreshHistory]);
 
   return {
-    // live
     lastBarkAt, lastDogScore, sessionCount, classScores, threshold,
     loading, error, refreshLive,
-    // history
     history, historyLoading, refreshHistory,
     rangeHours, setRangeHours,
   };

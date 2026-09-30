@@ -1,9 +1,7 @@
 import { useEffect } from 'react';
 
-// Fires `fn` every `intervalMs` while the tab is visible. When the
-// tab becomes visible after being hidden, fires once immediately so
-// stale data catches up without waiting a full interval. Skips ticks
-// while `fn` is still resolving from the previous call.
+// Pauses when tab is hidden; fires once immediately on visible-again to
+// catch up. Overlapping ticks are skipped.
 export function usePolling(fn, { intervalMs = 60_000, enabled = true } = {}) {
   useEffect(() => {
     if (!enabled || typeof fn !== 'function') return;
@@ -18,8 +16,7 @@ export function usePolling(fn, { intervalMs = 60_000, enabled = true } = {}) {
       try {
         await fn();
       } catch {
-        // Swallow — background polling errors are reported via
-        // connectionHealth; no need to explode here.
+        // Reported via connectionHealth by the wrapped call.
       } finally {
         inFlight = false;
       }

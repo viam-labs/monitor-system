@@ -4,11 +4,8 @@ import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
 
-// Talks to a joseph:inventory:tracker via DoCommand for mutations, and
-// reads the current item list from the paired state sensor (a
-// viam:event-queue:sensor at queue_capacity: 1). Reads don't hit the
-// tracker directly — the state sensor always holds the newest snapshot
-// non-destructively.
+// Reads go through the state sensor (queue_capacity:1 holds the newest
+// snapshot non-destructively). Mutations go through the tracker directly.
 export function useInventory(client, trackerName, stateSensorName) {
   const tracker = useMemo(
     () => (client && trackerName ? new GenericComponentClient(client, trackerName) : null),
