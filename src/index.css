@@ -1039,13 +1039,6 @@ code {
   min-height: 0;
 }
 
-/* Vertically center the stack of cards when total content is shorter
-   than the container. Auto margins on first/last child collapse to 0
-   when content overflows, so scrolling still works normally instead
-   of clipping the top (the classic flex-center + overflow-y bug). */
-.feeder-page > :first-child { margin-top: auto; }
-.feeder-page > :last-child { margin-bottom: auto; }
-
 .feeder-card {
   background: var(--surface);
   border: 1px solid var(--border);
