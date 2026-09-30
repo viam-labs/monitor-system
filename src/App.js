@@ -6,7 +6,7 @@ import More from './pages/more/More';
 import CamerasPage from './pages/cameras/Cameras';
 import FeederPage from './pages/feeder';
 import ThermostatPage from './pages/thermostat';
-import CurtainPage from './pages/CurtainPage';
+import CurtainPage from './pages/curtain/Curtain';
 import DoorUnlockPage from './pages/DoorUnlockPage';
 import WatererPage from './pages/waterer/Waterer';
 import InventoryPage from './pages/inventory';
