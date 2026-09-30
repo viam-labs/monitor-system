@@ -389,12 +389,15 @@ code {
     display: block;
     position: static;
   }
-  /* Reserve left space on desktop so wide pages (bark chart, etc.)
-     don't slide under the fixed nav. Narrow centered pages already
-     clear it because they're max-width 520px, but this keeps
-     everything visually to the right of the nav regardless of page. */
+  /* Reserve space around the fixed decorations so wide pages don't
+     slide under them: 200px on the left for the nav, ~120px on the
+     right and bottom for the corner paws (96px paw + 16px offset +
+     breathing room). Narrow centered pages already clear all of this
+     because they're max-width 520px. */
   .page {
     padding-left: 200px;
+    padding-right: 120px;
+    padding-bottom: 120px;
   }
 }
 
@@ -2075,7 +2078,7 @@ code {
     max-width: min(1800px, 96vw);
   }
   .bark-chart {
-    height: 520px;
+    height: 400px;
   }
 }
 
