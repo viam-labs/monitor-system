@@ -1,4 +1,3 @@
-// Format an "HH:MM" 24-hour string as the locale's 12-hour clock form.
 export function formatClock(hhmm) {
   if (!hhmm) return '';
   const [h, m] = hhmm.split(':').map(Number);
@@ -7,8 +6,7 @@ export function formatClock(hhmm) {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-// Format an ISO string or epoch ms as the locale's 12-hour clock form.
-// Returns null for missing / unparseable input so callers can skip rendering.
+// Returns null on missing/unparseable input — callers use `?? placeholder`.
 export function formatTime(input) {
   if (input == null) return null;
   const ms = typeof input === 'string' ? Date.parse(input) : input;
@@ -16,8 +14,7 @@ export function formatTime(input) {
   return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-// Format an ISO timestamp as a coarse "N min/hr/day ago". Returns null for
-// missing / unparseable input; callers pick their own placeholder ("never", etc).
+// Returns null on missing/unparseable input — callers use `?? placeholder`.
 export function formatRelative(iso) {
   if (!iso) return null;
   const ms = Date.parse(iso);

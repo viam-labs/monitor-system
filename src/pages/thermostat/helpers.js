@@ -2,7 +2,6 @@ export const LOW_BATTERY_THRESHOLD = 20;
 
 const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
-// Common house-temperature range in °F for setpoint dropdowns.
 export const TEMP_OPTIONS_F = (() => {
   const out = [];
   for (let f = 55; f <= 95; f++) out.push(f);
@@ -52,9 +51,7 @@ function daysIntersect(a, b) {
   return bs.some(d => setA.has(d));
 }
 
-// Returns { level: 'block'|'warn', other } when candidate collides with
-// another enabled scheduled automation on same time + overlapping days.
-// Opposite action blocks, same action warns. null when no clash.
+// Opposite-action collision blocks, same-action collision warns.
 export function findScheduledConflict(candidate, existing, ignoreId) {
   for (const other of existing || []) {
     if (!other || other.id === ignoreId) continue;
