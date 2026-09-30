@@ -3,16 +3,9 @@ import { useOutletContext } from 'react-router-dom';
 import Toggle from '../components/Toggle';
 import TimeSelect from '../components/TimeSelect';
 import DayPicker, { summarizeDays } from '../components/DayPicker';
+import { formatClock } from '../lib/format';
 
 const LOW_BATTERY_THRESHOLD = 20;
-
-function formatClock(hhmm) {
-  if (!hhmm) return '';
-  const [h, m] = hhmm.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
 
 function summarizeAction(schedule) {
   switch (schedule.action) {
