@@ -1,0 +1,306 @@
+.thermostat {
+  --bg: #f5f5f7;
+  --panel: #ffffff;
+  --raise: #f0f0f2;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --dim: #aeaeb2;
+  --accent: #0071e3;
+  --on-accent: #ffffff;
+  --danger: #d70015;
+  --line: rgba(0, 0, 0, 0.1);
+  --r: 9px;
+
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+}
+
+.thermostat__body { padding: 26px 30px 60px; }
+.thermostat__wide { max-width: 1240px; margin: 0 auto; }
+
+@media (min-width: 1300px) {
+  .thermostat__wide { max-width: 1400px; }
+}
+
+.thermostat__back {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 15px;
+  padding: 0;
+  cursor: pointer;
+  margin: 2px 0 6px;
+}
+
+.thermostat__title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.thermostat__lede {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 3px 0 22px;
+}
+
+.thermostat__cols {
+  display: grid;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .thermostat__cols { grid-template-columns: 300px 1fr; }
+}
+
+@media (min-width: 1300px) {
+  .thermostat__cols { gap: 44px; }
+}
+
+.thermostat__col { min-width: 0; }
+
+.thermostat__block { margin-bottom: 26px; }
+
+.thermostat__sect {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 6px;
+  font-weight: 400;
+}
+
+.thermostat__stat {
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.thermostat__stat small {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+  margin-left: 2px;
+}
+
+.thermostat__meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.thermostat__meta--low { color: var(--danger); }
+
+.thermostat__banner {
+  padding: 12px 14px;
+  border-radius: var(--r);
+  font-size: 13.5px;
+  margin: 0 0 16px;
+  background: rgba(215, 0, 21, 0.08);
+  color: var(--danger);
+}
+
+.thermo-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 0;
+  border-bottom: 0.5px solid var(--line);
+}
+
+.thermo-row:last-child { border-bottom: none; }
+
+.thermo-row__tx { flex: 1; min-width: 0; }
+
+.thermo-row__nm {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.thermo-row__nm--dim { color: var(--dim); }
+
+.thermo-row__sb {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.thermo-row__act {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.thermo-row__act:disabled { color: var(--dim); cursor: not-allowed; }
+
+.thermo-row__expanded {
+  padding: 8px 0 16px;
+  border-bottom: 0.5px solid var(--line);
+}
+
+.thermo-sw {
+  width: 42px;
+  height: 25px;
+  border-radius: 99px;
+  background: var(--accent);
+  border: none;
+  padding: 0;
+  position: relative;
+  cursor: pointer;
+  flex: none;
+  transition: background 160ms ease;
+}
+
+.thermo-sw::after {
+  content: "";
+  position: absolute;
+  top: 2.5px;
+  right: 2.5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: right 160ms ease, left 160ms ease;
+}
+
+.thermo-sw--off { background: var(--dim); }
+.thermo-sw--off::after { right: auto; left: 2.5px; }
+.thermo-sw:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.thermostat-empty {
+  padding: 20px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.thermostat-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  gap: 20px;
+  font-size: 2.75rem;
+  letter-spacing: -0.02em;
+}
+
+.thermostat-stub {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Light overrides for reused automation-card + form components.
+   Base rules live in index.css and target the dark shell. */
+.thermostat .automation-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.thermostat .automation-card--active {
+  background: rgba(0, 113, 227, 0.04);
+  border-color: rgba(0, 113, 227, 0.35);
+}
+
+.thermostat .automation-card--add {
+  background: rgba(0, 113, 227, 0.04);
+  border-color: rgba(0, 113, 227, 0.28);
+}
+
+.thermostat .automation-card__disclose { color: var(--text); }
+
+.thermostat .automation-card__summary,
+.thermostat .automation-form__label,
+.thermostat .feeder-meta,
+.thermostat .automation-last-action {
+  color: var(--muted);
+}
+
+.thermostat .automation-card__form input[type="text"],
+.thermostat .automation-card__form input[type="number"],
+.thermostat .cups-select {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.thermostat .automation-card__form input:focus,
+.thermostat .cups-select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.thermostat .feeder-primary-button,
+.thermostat .feeder-primary-button--sm {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+}
+
+.thermostat .feeder-secondary-button {
+  background: var(--raise);
+  color: var(--text);
+  border: none;
+}
+
+.thermostat .feeder-icon-button {
+  background: var(--raise);
+  color: var(--text);
+  border: none;
+}
+
+.thermostat .feeder-icon-button--danger {
+  color: var(--danger);
+}
+
+.thermostat .feeder-error--banner {
+  background: rgba(215, 0, 21, 0.08);
+  color: var(--danger);
+}
+
+@media (max-width: 700px) {
+  .thermostat { --r: 10px; }
+  .thermostat__body {
+    padding: calc(env(safe-area-inset-top) + 16px)
+             16px
+             calc(env(safe-area-inset-bottom) + 84px);
+  }
+  .thermostat__back { display: inline-flex; }
+  .thermostat__title {
+    font-size: 27px;
+    letter-spacing: -0.025em;
+    margin: 4px 0 0;
+  }
+  .thermostat__lede { font-size: 13px; margin: 2px 0 16px; }
+  .thermostat__cols { gap: 18px; }
+  .thermostat__stat { font-size: 44px; }
+  .thermo-row { min-height: 52px; padding: 8px 0; gap: 12px; }
+  .thermo-row__nm { font-size: 16px; }
+  .thermo-sw { width: 48px; height: 29px; }
+  .thermo-sw::after { width: 24px; height: 24px; }
+}
