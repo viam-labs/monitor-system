@@ -84,36 +84,16 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
       const dc = await ensureDataClient();
       const end = new Date();
       const start = new Date(end.getTime() - rangeHours * 60 * 60 * 1000);
-      // Filter by the events sensor's component name; further filter to
-      // event_type=bark_detected client-side (the sensor captures many
-      // event types on the same shape). API key scope constrains the
-      // query to this user's orgs, so no organizationIds filter needed.
+      // Broad filter: just componentName + interval, no method. Let
+      // event_type filtering happen client-side.
       const filter = {
         componentName: eventsSensorName,
-        method: 'Readings',
         interval: { start, end },
       };
-      // Default limit is 50 — too small if other event types (feeds,
-      // thermostat toggles, waterer schedules, door opens) fill the window.
-      // Newest-first so if we ever DO hit the limit, we lose the oldest.
-      const resp = await dc.tabularDataByFilter(filter, 500, ORDER_DESCENDING);
+      const resp = await dc.tabularDataByFilter(filter, 5000, ORDER_DESCENDING);
       const rows = Array.isArray(resp?.data) ? resp.data : [];
-      console.log('[useBark] filter used:', JSON.stringify(filter));
-      console.log('[useBark] resp:', resp);
-      console.log('[useBark] tabularDataByFilter rows:', rows.length, rows.slice(0, 3));
-
-      // If the filtered query returns nothing, try a bare query so we can see
-      // whether ANY tabular data is reachable with these creds (auth/scope
-      // diagnosis) and inspect a real row's shape.
-      if (rows.length === 0) {
-        try {
-          const probe = await dc.tabularDataByFilter({}, 5, ORDER_DESCENDING);
-          const probeRows = Array.isArray(probe?.data) ? probe.data : [];
-          console.log('[useBark] bare-query probe rows:', probeRows.length, probeRows.slice(0, 3));
-        } catch (e) {
-          console.log('[useBark] bare-query probe failed:', e);
-        }
-      }
+      console.log('[useBark] filter:', JSON.stringify(filter), 'rows:', rows.length);
+      if (rows[0]) console.log('[useBark] first row:', rows[0]);
       const barks = rows
         .map((row) => {
           const readings = row?.data?.readings || row?.data || {};
