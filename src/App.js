@@ -7,10 +7,10 @@ import CamerasPage from './pages/cameras/Cameras';
 import FeederPage from './pages/feeder';
 import ThermostatPage from './pages/thermostat';
 import CurtainPage from './pages/curtain/Curtain';
-import DoorUnlockPage from './pages/DoorUnlockPage';
+import DoorUnlockPage from './pages/door/Door';
 import WatererPage from './pages/waterer/Waterer';
 import InventoryPage from './pages/inventory';
-import BarkPage from './pages/BarkPage';
+import BarkPage from './pages/bark/Bark';
 
 // HashRouter (not BrowserRouter) because Viam Applications' static
 // hosting does not rewrite unknown paths back to index.html — a
