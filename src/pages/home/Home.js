@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import CameraHero from '../../components/CameraHero';
 import TopNav from '../../components/TopNav';
+import BottomTabBar from '../../components/BottomTabBar';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { buildRows } from './buildRows';
 import './Home.css';
 
@@ -75,7 +77,8 @@ function HomeRow({ row }) {
 export default function Home() {
   const ctx = useOutletContext();
   const navigate = useNavigate();
-  const rows = buildRows(ctx, navigate);
+  const mobile = useMediaQuery('(max-width: 700px)');
+  const rows = buildRows(ctx, navigate, mobile);
 
   const availability = {
     '/feeder': !!ctx.feederName,
@@ -91,19 +94,20 @@ export default function Home() {
     <div className="home">
       <TopNav availability={availability} />
       <div className="home__body">
-        <div className="home__cols">
-          <div className="home__col">
+        <div className="home__wide">
+          <section className="home__cams">
             <CameraHero
               cameras={ctx.cameras || []}
               streams={ctx.streams || {}}
               audioName={ctx.audioName}
             />
-          </div>
-          <div className="home__col">
+          </section>
+          <section className="home__rows">
             {rows.map((r) => <HomeRow key={r.key} row={r} />)}
-          </div>
+          </section>
         </div>
       </div>
+      <BottomTabBar />
     </div>
   );
 }
