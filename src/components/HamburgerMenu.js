@@ -11,25 +11,6 @@ function MiniPaws() {
   );
 }
 
-function FeatureLink({ to, label, loading, onClick }) {
-  return (
-    <li>
-      <NavLink
-        to={to}
-        onClick={onClick}
-        className={({ isActive }) =>
-          'nav-menu__link' +
-          (isActive ? ' nav-menu__link--active' : '') +
-          (loading ? ' nav-menu__link--loading' : '')
-        }
-      >
-        <span>{label}</span>
-        {loading && <MiniPaws />}
-      </NavLink>
-    </li>
-  );
-}
-
 export default function HamburgerMenu({
   showFeeder,
   feederLoading,
@@ -67,8 +48,22 @@ export default function HamburgerMenu({
 
   const close = () => setOpen(false);
 
+  const links = [
+    { to: '/', label: 'Cameras', alwaysShow: true, end: true },
+    { to: '/bark', label: 'Bark detection', show: showBark, loading: barkLoading },
+    { to: '/door', label: 'Building Door', show: showDoor, loading: doorLoading },
+    { to: '/curtain', label: 'Curtain', show: showCurtain, loading: curtainLoading },
+    { to: '/feeder', label: 'Feeder', show: showFeeder, loading: feederLoading },
+    { to: '/inventory', label: 'Inventory', show: showInventory, loading: inventoryLoading },
+    { to: '/thermostat', label: 'Thermostat', show: showThermostat, loading: thermostatLoading },
+    { to: '/waterer', label: 'Waterer', show: showWaterer, loading: watererLoading },
+  ];
+  const visible = links
+    .filter((l) => l.alwaysShow || l.show || l.loading)
+    .sort((a, b) => a.label.localeCompare(b.label));
+
   return (
-    <div className="nav-menu" ref={ref}>
+    <nav className="nav-menu" ref={ref}>
       <button
         type="button"
         className={`nav-menu__button${open ? ' nav-menu__button--open' : ''}`}
@@ -78,49 +73,31 @@ export default function HamburgerMenu({
       >
         <span /><span /><span />
       </button>
-      {open && (() => {
-        const links = [
-          { to: '/', label: 'Cameras', alwaysShow: true, end: true },
-          { to: '/bark', label: 'Bark detection', show: showBark, loading: barkLoading },
-          { to: '/door', label: 'Building Door', show: showDoor, loading: doorLoading },
-          { to: '/curtain', label: 'Curtain', show: showCurtain, loading: curtainLoading },
-          { to: '/feeder', label: 'Feeder', show: showFeeder, loading: feederLoading },
-          { to: '/inventory', label: 'Inventory', show: showInventory, loading: inventoryLoading },
-          { to: '/thermostat', label: 'Thermostat', show: showThermostat, loading: thermostatLoading },
-          { to: '/waterer', label: 'Waterer', show: showWaterer, loading: watererLoading },
-        ];
-        const visible = links
-          .filter((l) => l.alwaysShow || l.show || l.loading)
-          .sort((a, b) => a.label.localeCompare(b.label));
-        return (
-          <ul className="nav-menu__list" role="menu">
-            {visible.map((l) => (
-              l.end ? (
-                <li key={l.to}>
-                  <NavLink
-                    to={l.to}
-                    end
-                    onClick={close}
-                    className={({ isActive }) =>
-                      `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
-                    }
-                  >
-                    {l.label}
-                  </NavLink>
-                </li>
-              ) : (
-                <FeatureLink
-                  key={l.to}
-                  to={l.to}
-                  label={l.label}
-                  loading={!l.show && l.loading}
-                  onClick={close}
-                />
-              )
-            ))}
-          </ul>
-        );
-      })()}
-    </div>
+      <ul
+        className={`nav-menu__list${open ? ' nav-menu__list--open' : ''}`}
+        role="menu"
+      >
+        {visible.map((l) => {
+          const showLoading = !l.alwaysShow && !l.show && l.loading;
+          return (
+            <li key={l.to}>
+              <NavLink
+                to={l.to}
+                end={l.end || false}
+                onClick={close}
+                className={({ isActive }) =>
+                  'nav-menu__link'
+                  + (isActive ? ' nav-menu__link--active' : '')
+                  + (showLoading ? ' nav-menu__link--loading' : '')
+                }
+              >
+                <span>{l.label}</span>
+                {showLoading && <MiniPaws />}
+              </NavLink>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }

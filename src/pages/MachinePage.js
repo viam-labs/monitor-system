@@ -87,7 +87,7 @@ function MachinePage() {
 
   return (
     <>
-      <Paw className="paw--tl" />
+      <Paw className="paw--tr" />
       <Paw className="paw--bl" />
       <Paw className="paw--br" />
       <HamburgerMenu
