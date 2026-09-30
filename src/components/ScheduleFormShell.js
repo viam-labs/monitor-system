@@ -1,10 +1,6 @@
 import React from 'react';
 import DayPicker, { summarizeDays } from './DayPicker';
 
-// Shared structure for schedule forms: name field, a caller-supplied
-// row of extras (typically time + amount / action), days picker, and
-// cancel/save actions. Pages own their state and payload shape; this
-// component only owns the layout + wiring.
 export default function ScheduleFormShell({
   name, onNameChange, nameMaxLength = 40,
   days, onDaysChange,
