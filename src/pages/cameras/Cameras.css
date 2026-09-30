@@ -1,0 +1,117 @@
+.cameras {
+  --bg: #f5f5f7;
+  --panel: #ffffff;
+  --raise: #f0f0f2;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --dim: #aeaeb2;
+  --accent: #0071e3;
+  --line: rgba(0, 0, 0, 0.1);
+  --r: 9px;
+
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+}
+
+.cameras__body {
+  padding: 26px 30px 60px;
+}
+
+.cameras__wide {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.cameras__title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.cameras__lede {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 3px 0 22px;
+}
+
+.cameras__grid {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .cameras__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cameras__grid > .cam-tile:first-child {
+    grid-column: 1 / -1;
+    aspect-ratio: 21 / 8;
+  }
+}
+
+.cam-tile {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.cam-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cam-tile--bad video {
+  filter: grayscale(1) brightness(0.3);
+}
+
+.cam-tile__tag {
+  position: absolute;
+  left: 9px;
+  bottom: 8px;
+  font-size: 12px;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .cameras {
+    --r: 10px;
+  }
+  .cameras__body {
+    padding: 16px 16px 84px;
+  }
+  .cameras__title {
+    font-size: 27px;
+    letter-spacing: -0.025em;
+    margin: 4px 0 0;
+  }
+  .cameras__lede {
+    font-size: 13px;
+    margin: 2px 0 16px;
+  }
+  .cameras__grid {
+    gap: 10px;
+  }
+  .cameras .mic-button {
+    bottom: 88px;
+    width: 48px;
+    height: 48px;
+  }
+  .cameras .mic-button svg {
+    width: 20px;
+    height: 20px;
+  }
+}
