@@ -78,43 +78,49 @@ export default function HamburgerMenu({
       >
         <span /><span /><span />
       </button>
-      {open && (
-        <ul className="nav-menu__list" role="menu">
-          {(showDoor || doorLoading) && (
-            <FeatureLink to="/door" label="Building Door" loading={!showDoor && doorLoading} onClick={close} />
-          )}
-          <li>
-            <NavLink
-              to="/"
-              end
-              onClick={close}
-              className={({ isActive }) =>
-                `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
-              }
-            >
-              Cameras
-            </NavLink>
-          </li>
-          {(showCurtain || curtainLoading) && (
-            <FeatureLink to="/curtain" label="Curtain" loading={!showCurtain && curtainLoading} onClick={close} />
-          )}
-          {(showFeeder || feederLoading) && (
-            <FeatureLink to="/feeder" label="Feeder" loading={!showFeeder && feederLoading} onClick={close} />
-          )}
-          {(showInventory || inventoryLoading) && (
-            <FeatureLink to="/inventory" label="Inventory" loading={!showInventory && inventoryLoading} onClick={close} />
-          )}
-          {(showThermostat || thermostatLoading) && (
-            <FeatureLink to="/thermostat" label="Thermostat" loading={!showThermostat && thermostatLoading} onClick={close} />
-          )}
-          {(showWaterer || watererLoading) && (
-            <FeatureLink to="/waterer" label="Waterer" loading={!showWaterer && watererLoading} onClick={close} />
-          )}
-          {(showBark || barkLoading) && (
-            <FeatureLink to="/bark" label="Bark detection" loading={!showBark && barkLoading} onClick={close} />
-          )}
-        </ul>
-      )}
+      {open && (() => {
+        const links = [
+          { to: '/', label: 'Cameras', alwaysShow: true, end: true },
+          { to: '/bark', label: 'Bark detection', show: showBark, loading: barkLoading },
+          { to: '/door', label: 'Building Door', show: showDoor, loading: doorLoading },
+          { to: '/curtain', label: 'Curtain', show: showCurtain, loading: curtainLoading },
+          { to: '/feeder', label: 'Feeder', show: showFeeder, loading: feederLoading },
+          { to: '/inventory', label: 'Inventory', show: showInventory, loading: inventoryLoading },
+          { to: '/thermostat', label: 'Thermostat', show: showThermostat, loading: thermostatLoading },
+          { to: '/waterer', label: 'Waterer', show: showWaterer, loading: watererLoading },
+        ];
+        const visible = links
+          .filter((l) => l.alwaysShow || l.show || l.loading)
+          .sort((a, b) => a.label.localeCompare(b.label));
+        return (
+          <ul className="nav-menu__list" role="menu">
+            {visible.map((l) => (
+              l.end ? (
+                <li key={l.to}>
+                  <NavLink
+                    to={l.to}
+                    end
+                    onClick={close}
+                    className={({ isActive }) =>
+                      `nav-menu__link${isActive ? ' nav-menu__link--active' : ''}`
+                    }
+                  >
+                    {l.label}
+                  </NavLink>
+                </li>
+              ) : (
+                <FeatureLink
+                  key={l.to}
+                  to={l.to}
+                  label={l.label}
+                  loading={!l.show && l.loading}
+                  onClick={close}
+                />
+              )
+            ))}
+          </ul>
+        );
+      })()}
     </div>
   );
 }
