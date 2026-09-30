@@ -49,7 +49,8 @@ export default function HamburgerMenu({
   const close = () => setOpen(false);
 
   const links = [
-    { to: '/', label: 'Cameras', alwaysShow: true, end: true },
+    { to: '/', label: 'Home', alwaysShow: true, end: true },
+    { to: '/cameras', label: 'Cameras', alwaysShow: true },
     { to: '/bark', label: 'Bark detection', show: showBark, loading: barkLoading },
     { to: '/door', label: 'Building Door', show: showDoor, loading: doorLoading },
     { to: '/curtain', label: 'Curtain', show: showCurtain, loading: curtainLoading },
