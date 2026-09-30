@@ -3,7 +3,7 @@ import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import MachinePage from './pages/MachinePage';
 import CamerasPage from './pages/CamerasPage';
 import FeederPage from './pages/FeederPage';
-import ThermostatPage from './pages/ThermostatPage';
+import ThermostatPage from './pages/thermostat';
 import CurtainPage from './pages/CurtainPage';
 import DoorUnlockPage from './pages/DoorUnlockPage';
 import WatererPage from './pages/WatererPage';
