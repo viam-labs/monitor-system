@@ -101,7 +101,7 @@ export default function BarkPage() {
   const totalInRange = history.length;
 
   return (
-    <div className="feeder-page">
+    <div className="feeder-page feeder-page--wide">
       <section className="feeder-card">
         <div className="feeder-card__header">
           <h2 className="feeder-card__title">Barks in the last {activeRange.label}</h2>

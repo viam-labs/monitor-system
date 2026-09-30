@@ -2028,7 +2028,13 @@ code {
   height: 260px;
 }
 
+/* Applied to the .feeder-page root of pages that host a wide chart /
+   dashboard, so they can break out of the 520px mobile-form cap on
+   desktop viewports while still capping to mobile width below 900px. */
 @media (min-width: 900px) {
+  .feeder-page--wide {
+    max-width: min(1200px, 92vw);
+  }
   .bark-chart {
     height: 520px;
   }
