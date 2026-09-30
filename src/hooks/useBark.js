@@ -5,6 +5,10 @@ import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
 
+// From viam.app.data.v1.Order: 1 = DESCENDING. Not re-exported from
+// the SDK entry point so we use the numeric value directly.
+const ORDER_DESCENDING = 1;
+
 // Read live state from the bark_detector sensor + historical bark_detected
 // events from Viam Data. The historical query uses the DataClient (cloud
 // API), separate from the machine's WebRTC connection.
@@ -89,8 +93,12 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
         method: 'Readings',
         interval: { start, end },
       };
-      const resp = await dc.tabularDataByFilter(filter);
+      // Default limit is 50 — too small if other event types (feeds,
+      // thermostat toggles, waterer schedules, door opens) fill the window.
+      // Newest-first so if we ever DO hit the limit, we lose the oldest.
+      const resp = await dc.tabularDataByFilter(filter, 500, ORDER_DESCENDING);
       const rows = Array.isArray(resp?.data) ? resp.data : [];
+      console.log('[useBark] tabularDataByFilter rows:', rows.length, rows.slice(0, 3));
       const barks = rows
         .map((row) => {
           const readings = row?.data?.readings || row?.data || {};
@@ -103,6 +111,7 @@ export function useBark(client, barkName, eventsSensorName = 'events') {
         })
         .filter(Boolean)
         .sort((a, b) => a.at - b.at);
+      console.log('[useBark] parsed bark events:', barks.length, barks.slice(0, 3));
       setHistory(barks);
     } catch (e) {
       if (!handleRpcError(e)) setError(e.message || String(e));
