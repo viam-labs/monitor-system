@@ -15,6 +15,7 @@ export function useFeeder(client, feederName) {
   const [status, setStatus] = useState(null);
   const [schedules, setSchedules] = useState(null);
   const [lastFeeding, setLastFeeding] = useState(null);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [feeding, setFeeding] = useState(false);
@@ -55,6 +56,20 @@ export function useFeeder(client, feederName) {
   }, [feederClient, refresh]);
 
   usePolling(refresh, { enabled: !!feederClient });
+
+  const refreshHistory = useCallback(async () => {
+    if (!feederClient) return;
+    try {
+      const resp = await callWithRetry(() => feederClient.doCommand({ command: 'get_history' }));
+      const entries = Array.isArray(resp?.history) ? resp.history : [];
+      setHistory(entries);
+    } catch {
+      // History is best-effort; older module versions don't expose it.
+      setHistory([]);
+    }
+  }, [feederClient]);
+
+  useEffect(() => { refreshHistory(); }, [refreshHistory]);
 
   const feed = useCallback(
     async (cups, slow) => {
@@ -160,6 +175,8 @@ export function useFeeder(client, feederName) {
     status,
     schedules,
     lastFeeding,
+    history,
+    refreshHistory,
     loading,
     error,
     feeding,
