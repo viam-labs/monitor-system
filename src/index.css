@@ -93,7 +93,7 @@ code {
 .camera-tile {
   position: relative;
   background: #000;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--border);
   min-height: 0;
@@ -129,7 +129,7 @@ code {
   background: rgba(0, 0, 0, 0.6);
   color: var(--text);
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   text-transform: capitalize;
@@ -166,7 +166,7 @@ code {
   background: rgba(0, 0, 0, 0.6);
   color: var(--text);
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   font-family: inherit;
@@ -348,7 +348,7 @@ code {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 4px 12px;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
@@ -382,7 +382,7 @@ code {
   width: 18px;
   height: 2px;
   background: currentColor;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .nav-menu__button:hover,
@@ -401,7 +401,7 @@ code {
   list-style: none;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   backdrop-filter: blur(4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
@@ -452,7 +452,7 @@ code {
   justify-content: space-between;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text);
   text-decoration: none;
   font-size: var(--text-base);
@@ -501,7 +501,7 @@ code {
 .stub-page code {
   background: rgba(255, 255, 255, 0.06);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .thermostat-readings {
@@ -576,7 +576,7 @@ code {
 
 .thermostat-state {
   padding: 3px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   letter-spacing: 0.06em;
@@ -605,7 +605,7 @@ code {
   color: var(--text);
   border: 1px solid var(--border);
   padding: 16px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-family: inherit;
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
@@ -638,7 +638,7 @@ code {
   display: block;
   width: 100%;
   padding: 20px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid transparent;
   font-family: inherit;
   font-size: var(--text-lg);
@@ -714,7 +714,7 @@ code {
   position: relative;
   width: 40px;
   height: 24px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--bg);
   border: 1px solid var(--border);
   transition: background 0.15s, border-color 0.15s;
@@ -805,7 +805,7 @@ code {
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   transition: border-color 0.15s, background 0.15s;
@@ -865,7 +865,7 @@ code {
 
 .automation-card__badge {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -916,7 +916,7 @@ code {
   border: 1px solid var(--border);
   color: var(--text);
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: var(--text-base);
   width: 100%;
@@ -928,7 +928,7 @@ code {
   border: 1px solid var(--border);
   color: var(--text);
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: var(--text-base);
   color-scheme: dark;
@@ -946,7 +946,7 @@ code {
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -967,7 +967,7 @@ code {
   flex: 1 1 auto;
   min-width: 40px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-muted);
@@ -1010,7 +1010,7 @@ code {
   border: 1px solid var(--border);
   color: var(--text);
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: inherit;
   font-size: var(--text-base);
   color-scheme: dark;
@@ -1081,7 +1081,7 @@ code {
 .feeder-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -1132,7 +1132,7 @@ code {
   color: var(--text-muted);
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-family: inherit;
   font-size: var(--text-base);
@@ -1212,7 +1212,7 @@ code {
   align-items: center;
   row-gap: 6px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -1288,7 +1288,7 @@ code {
   font-size: var(--text-base);
   line-height: 1.4;
   padding: 2px 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .inventory-row__count--placeholder {
@@ -1302,7 +1302,7 @@ code {
   cursor: pointer;
   font: inherit;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   white-space: nowrap;
 }
 
@@ -1401,7 +1401,7 @@ code {
 
 .feeder-status__pill {
   padding: 3px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   text-transform: capitalize;
@@ -1444,7 +1444,7 @@ code {
   padding: 8px 12px;
   border: 1px solid rgba(248, 113, 113, 0.35);
   background: rgba(248, 113, 113, 0.08);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .feeder-banner {
@@ -1453,7 +1453,7 @@ code {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   color: var(--text);
@@ -1496,7 +1496,7 @@ code {
   color: var(--bg);
   border: none;
   padding: 16px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-family: inherit;
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
@@ -1549,7 +1549,7 @@ code {
 
 .schedule-list__badge {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1566,7 +1566,7 @@ code {
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -1603,7 +1603,7 @@ code {
   border: 1px solid var(--border);
   color: var(--text);
   padding: 8px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: var(--text-base);
   color-scheme: dark;
@@ -1635,7 +1635,7 @@ code {
   border: 1px solid var(--border);
   color: var(--text);
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-family: inherit;
   font-size: var(--text-base);
@@ -1665,7 +1665,7 @@ code {
   flex-direction: column;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: rgba(244, 162, 97, 0.06);
   border: 1px solid rgba(244, 162, 97, 0.28);
 }
@@ -1688,7 +1688,7 @@ code {
   border: 1px solid var(--border);
   color: var(--text);
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: var(--text-base);
   color-scheme: dark;
@@ -1710,7 +1710,7 @@ code {
   border: 1px solid var(--border);
   color: var(--text);
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-family: inherit;
   font-size: var(--text-base);
@@ -1750,7 +1750,7 @@ code {
   justify-content: space-between;
   gap: 12px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -1786,7 +1786,7 @@ code {
   flex-direction: column;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: rgba(244, 162, 97, 0.06);
   border: 1px solid rgba(244, 162, 97, 0.28);
 }
@@ -1815,7 +1815,7 @@ code {
   border: 1px solid var(--border);
   color: var(--text);
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: var(--text-base);
   color-scheme: dark;
@@ -1851,7 +1851,7 @@ code {
   border: 1px solid var(--border);
   color: var(--text);
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: inherit;
   font-size: var(--text-base);
   color-scheme: dark;
@@ -1898,7 +1898,7 @@ code {
   color: var(--bg);
   border: none;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-family: inherit;
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
@@ -1926,7 +1926,7 @@ code {
 .feeder-primary-button--sm {
   padding: 8px 14px;
   font-size: var(--text-base);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .feeder-secondary-button--full {
@@ -2046,7 +2046,7 @@ code {
   .feeder-card {
     padding: 16px;
     gap: 12px;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
   .feeder-card__title {
     font-size: var(--text-base);
@@ -2093,7 +2093,7 @@ code {
     padding: 12px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     gap: 10px;
   }
   .automation-form {
