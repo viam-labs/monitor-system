@@ -119,9 +119,10 @@ function thermostatRow({ thermostat }, navigate, mobile) {
 
 function curtainRow({ curtain }, navigate, mobile) {
   const pos = curtain?.position;
-  const isOpen = pos != null && pos > 5;
+  // SwitchBot slide_position: 0 = fully open, 100 = fully closed.
+  const isOpen = typeof pos === 'number' && pos < 50;
   const parts = [];
-  if (pos != null) parts.push(isOpen ? 'open' : 'closed');
+  if (typeof pos === 'number') parts.push(isOpen ? 'open' : 'closed');
   if (typeof curtain?.battery === 'number') {
     parts.push(mobile ? `${Math.round(curtain.battery)}%` : `${Math.round(curtain.battery)}% battery`);
   }
