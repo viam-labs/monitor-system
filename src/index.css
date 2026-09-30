@@ -2036,6 +2036,11 @@ code {
 }
 
 /* Bark detection page */
+.bark-card {
+  /* Anchor for the absolute-positioned refresh button. */
+  position: relative;
+}
+
 .bark-range-select {
   display: flex;
   gap: 6px;
@@ -2090,10 +2095,20 @@ code {
 }
 
 @media (max-width: 480px) {
-  .bark-stats {
-    grid-template-columns: 1fr;
+  /* Value + label on one row so both stats fit horizontally instead of
+     stacking value-over-label ×2. */
+  .bark-stat {
+    flex-direction: row;
+    justify-content: center;
+    gap: 6px;
+    align-items: baseline;
   }
-  /* Fatter bars + more room per label on narrow screens. */
+  .bark-stat__value {
+    font-size: 1.1rem;
+  }
+  .bark-stat__label {
+    font-size: 0.65rem;
+  }
   .bark-chart {
     height: 320px;
   }

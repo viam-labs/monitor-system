@@ -63,6 +63,10 @@ export default function BarkPage() {
     () => bucketBarks(history, activeRange.hours, activeRange.bucketMinutes),
     [history, activeRange],
   );
+  const ticks = useMemo(() => {
+    if (data.length < 3) return data.map((d) => d.label);
+    return [data[0].label, data[Math.floor(data.length / 2)].label, data[data.length - 1].label];
+  }, [data]);
 
   if (connectionLoading || detectingFeatures || stillProbing) {
     return (
@@ -89,7 +93,17 @@ export default function BarkPage() {
 
   return (
     <div className="feeder-page feeder-page--wide">
-      <section className="feeder-card">
+      <section className="feeder-card bark-card">
+        <button
+          type="button"
+          className="feeder-icon-button thermostat-readings__refresh"
+          onClick={refreshHistory}
+          disabled={historyLoading}
+          aria-label="Refresh"
+          title="Refresh"
+        >
+          ↻
+        </button>
         <div className="bark-range-select">
           {RANGES.map((r) => (
             <button
@@ -104,16 +118,6 @@ export default function BarkPage() {
               {r.label}
             </button>
           ))}
-          <button
-            type="button"
-            className="feeder-icon-button"
-            onClick={refreshHistory}
-            disabled={historyLoading}
-            aria-label="Refresh"
-            title="Refresh"
-          >
-            ↻
-          </button>
         </div>
 
         <div className="bark-stats">
@@ -135,7 +139,7 @@ export default function BarkPage() {
                 dataKey="label"
                 stroke="var(--text-muted)"
                 fontSize={11}
-                minTickGap={30}
+                ticks={ticks}
               />
               <YAxis allowDecimals={false} stroke="var(--text-muted)" fontSize={11} width={28} />
               <Tooltip
