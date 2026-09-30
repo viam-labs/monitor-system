@@ -32,11 +32,17 @@
 
   --text-xs: 0.7rem;
   --text-sm: 0.85rem;
-  --text-base: 0.95rem;
+  --text-base: 1.0625rem;
   --text-md: 1rem;
   --text-lg: 1.25rem;
   --text-xl: 1.5rem;
   --text-2xl: 2rem;
+  --text-3xl: 2.75rem;
+  --text-hero: 3.5rem;
+
+  --leading-tight: 1.15;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.02em;
 
   --weight-normal: 400;
   --weight-medium: 500;
@@ -64,6 +70,7 @@ body {
     sans-serif;
   font-size: var(--text-base);
   font-weight: var(--weight-normal);
+  line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -248,7 +255,8 @@ code {
   gap: 20px;
   flex: 1;
   min-height: 0;
-  font-size: 2.5rem;
+  font-size: var(--text-3xl);
+  letter-spacing: var(--tracking-tight);
 }
 
 .paw-loader span {
@@ -542,9 +550,10 @@ code {
 }
 
 .thermostat-temp__value {
-  font-size: 3.5rem;
+  font-size: var(--text-hero);
   font-weight: var(--weight-semibold);
   line-height: 1;
+  letter-spacing: var(--tracking-tight);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1068,11 +1077,11 @@ code {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  max-width: 520px;
+  gap: var(--space-6);
+  max-width: 560px;
   width: 100%;
   margin: 0 auto;
-  padding-top: var(--space-5);
+  padding-top: var(--space-7);
   overflow-y: auto;
   min-height: 0;
 }
@@ -1080,10 +1089,10 @@ code {
 .feeder-card {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
+  padding: 40px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .feeder-card__header {
@@ -2075,7 +2084,7 @@ code {
     padding: 20px 16px;
   }
   .thermostat-temp__value {
-    font-size: 2.8rem;
+    font-size: var(--text-3xl);
   }
   .thermostat-temp__unit {
     font-size: var(--text-lg);
