@@ -10,7 +10,7 @@ import CurtainPage from './pages/curtain/Curtain';
 import DoorUnlockPage from './pages/door/Door';
 import WatererPage from './pages/waterer/Waterer';
 import InventoryPage from './pages/inventory';
-import BarkPage from './pages/bark/Bark';
+import BarkPage from './pages/sounds/Sounds';
 
 // HashRouter (not BrowserRouter) because Viam Applications' static
 // hosting does not rewrite unknown paths back to index.html — a
