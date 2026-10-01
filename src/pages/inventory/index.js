@@ -10,6 +10,7 @@ import {
 import TopNav from '../../components/TopNav';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { formatRelative } from '../../lib/format';
 import ItemRow from './ItemRow';
 import SortableItemRow from './SortableItemRow';
 import NewItemSheet from './ItemForm';
@@ -276,6 +277,23 @@ export default function InventoryPage() {
             <div className="inventory-page__cols">
               <div className="inventory-page__col">{left.map(renderGroup)}</div>
               <div className="inventory-page__col">{right.map(renderGroup)}</div>
+            </div>
+          )}
+
+          {inv.buttonHistory && inv.buttonHistory.length > 0 && (
+            <div className="inv-activity">
+              <p className="inv-sect">Recent button presses</p>
+              {inv.buttonHistory.slice(0, 20).map((e, i) => (
+                <div key={`${e.at}-${i}`} className="inv-row">
+                  <div className="inv-nm">
+                    {e.source || 'button'}
+                    {e.action && e.action !== 'single' && (
+                      <span className="inv-activity__action"> · {e.action}</span>
+                    )}
+                  </div>
+                  <span className="inv-activity__when">{formatRelative(e.at) || ''}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>

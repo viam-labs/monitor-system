@@ -320,6 +320,10 @@
 .inv-toast--error { background: rgba(215, 0, 21, 0.08); color: var(--danger); }
 .inv-toast--info { background: rgba(0, 113, 227, 0.08); color: var(--accent); }
 
+.inv-activity { margin-top: 28px; max-width: 520px; }
+.inv-activity__when { color: var(--muted); font-size: 13px; flex: none; }
+.inv-activity__action { color: var(--muted); font-weight: 400; }
+
 .inventory-loader {
   display: flex;
   align-items: center;

@@ -3,6 +3,16 @@ import { GenericComponentClient, SensorClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
+import { getViamCloudClient, ORG_ID } from '../lib/viamCloud';
+
+const BUTTON_HISTORY_SQL = `SELECT
+  data.readings.at AS at,
+  data.readings.source AS source,
+  data.readings.action AS action
+FROM readings
+WHERE data.readings.event_type = 'button_pressed'
+ORDER BY time_received DESC
+LIMIT 100`;
 
 // Reads go through the state sensor (queue_capacity:1 holds the newest
 // snapshot non-destructively). Mutations go through the tracker directly.
@@ -21,6 +31,7 @@ export function useInventory(client, trackerName, stateSensorName) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [buttonHistory, setButtonHistory] = useState([]);
 
   const applySnapshot = useCallback((readings) => {
     if (!readings || typeof readings !== 'object') return;
@@ -53,6 +64,23 @@ export function useInventory(client, trackerName, stateSensorName) {
   }, [stateSensor, refresh]);
 
   usePolling(refresh, { enabled: !!stateSensor });
+
+  const refreshButtonHistory = useCallback(async () => {
+    try {
+      const vc = await getViamCloudClient();
+      const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, BUTTON_HISTORY_SQL);
+      const entries = (rows || []).map((r) => ({
+        at: String(r.at || ''),
+        source: String(r.source || ''),
+        action: String(r.action || ''),
+      }));
+      setButtonHistory(entries);
+    } catch {
+      setButtonHistory([]);
+    }
+  }, []);
+
+  useEffect(() => { refreshButtonHistory(); }, [refreshButtonHistory]);
 
   const runCommand = useCallback(
     async (command) => {
@@ -131,5 +159,7 @@ export function useInventory(client, trackerName, stateSensorName) {
     setRoutine,
     clearRoutine,
     markRoutineDone,
+    buttonHistory,
+    refreshButtonHistory,
   };
 }
