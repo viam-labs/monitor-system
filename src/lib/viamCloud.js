@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 
 export const ORG_ID = '9c9243cb-6d3a-4aee-914c-a49b43821463';
 
-const LOCATION_ID_RE = /main\.([^.]+)\.viam\.cloud/;
+const LOCATION_ID_RE = /\.([^.]+)\.viam\.cloud/;
 
 let clientPromise = null;
 let cachedLocationId = null;
