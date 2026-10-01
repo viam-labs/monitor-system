@@ -3,6 +3,18 @@ import { GenericComponentClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
+import { getViamCloudClient, ORG_ID } from '../lib/viamCloud';
+
+const WATER_HISTORY_SQL = `SELECT
+  data.readings.at AS at,
+  data.readings.ml AS ml,
+  data.readings.seconds AS seconds,
+  data.readings.cause AS cause
+FROM readings
+WHERE data.readings.event_type = 'water_dispensed'
+  AND data.readings.source = 'waterer_pump'
+ORDER BY time_received DESC
+LIMIT 500`;
 
 export function useWaterer(client, watererName) {
   const waterer = useMemo(
@@ -58,8 +70,14 @@ export function useWaterer(client, watererName) {
   const refreshHistory = useCallback(async () => {
     if (!waterer) return;
     try {
-      const resp = await callWithRetry(() => waterer.doCommand({ command: 'get_history' }));
-      const entries = Array.isArray(resp?.history) ? resp.history : [];
+      const vc = await getViamCloudClient();
+      const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, WATER_HISTORY_SQL);
+      const entries = (rows || []).map((r) => ({
+        at: String(r.at || ''),
+        ml: typeof r.ml === 'number' ? r.ml : Number(r.ml) || 0,
+        seconds: typeof r.seconds === 'number' ? r.seconds : Number(r.seconds) || 0,
+        cause: String(r.cause || ''),
+      }));
       setHistory(entries);
     } catch {
       setHistory([]);

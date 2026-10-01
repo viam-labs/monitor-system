@@ -3,6 +3,17 @@ import { GenericComponentClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
+import { getViamCloudClient, ORG_ID } from '../lib/viamCloud';
+
+const FEED_HISTORY_SQL = `SELECT
+  data.readings.at AS at,
+  data.readings.cups AS cups,
+  data.readings.cause AS cause
+FROM readings
+WHERE data.readings.event_type = 'feed_dispensed'
+  AND data.readings.source = 'feeder'
+ORDER BY time_received DESC
+LIMIT 500`;
 
 // Module caches PetSafe reads server-side for 5 min; rapid refresh
 // calls return {cached: true} instead of hitting PetSafe.
@@ -60,11 +71,15 @@ export function useFeeder(client, feederName) {
   const refreshHistory = useCallback(async () => {
     if (!feederClient) return;
     try {
-      const resp = await callWithRetry(() => feederClient.doCommand({ command: 'get_history' }));
-      const entries = Array.isArray(resp?.history) ? resp.history : [];
+      const vc = await getViamCloudClient();
+      const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, FEED_HISTORY_SQL);
+      const entries = (rows || []).map((r) => ({
+        at: String(r.at || ''),
+        cups: typeof r.cups === 'number' ? r.cups : Number(r.cups) || 0,
+        cause: String(r.cause || ''),
+      }));
       setHistory(entries);
     } catch {
-      // History is best-effort; older module versions don't expose it.
       setHistory([]);
     }
   }, [feederClient]);
