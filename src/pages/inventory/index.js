@@ -126,6 +126,10 @@ export default function InventoryPage() {
     try { await inv.editItem({ id, threshold: value }); } catch { /* surfaced */ }
   };
 
+  const handleSetName = async (id, name) => {
+    try { await inv.editItem({ id, name }); } catch { /* surfaced */ }
+  };
+
   const handleSetSlot = async (id, slot) => {
     const item = items.find((i) => i.id === id);
     const device = item?.button?.device ?? DEFAULT_GROUP;
@@ -171,6 +175,8 @@ export default function InventoryPage() {
             busy={busy}
             onIncrement={inv.increment}
             onDecrement={inv.decrement}
+            onSetQuantity={inv.setQuantity}
+            onSetName={handleSetName}
             onSetThreshold={handleSetThreshold}
             onSetSlot={handleSetSlot}
             onDelete={handleDelete}
@@ -193,6 +199,8 @@ export default function InventoryPage() {
                 busy={busy}
                 onIncrement={inv.increment}
                 onDecrement={inv.decrement}
+                onSetQuantity={inv.setQuantity}
+                onSetName={handleSetName}
                 onSetThreshold={handleSetThreshold}
                 onSetSlot={handleSetSlot}
                 onDelete={handleDelete}
