@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import {
@@ -52,10 +52,62 @@ function labelForBucket(d, hours) {
   return d.toLocaleDateString([], { weekday: 'short' });
 }
 
+function InfoSheet({ onClose }) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setOpen(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
+  const close = () => {
+    setOpen(false);
+    setTimeout(onClose, 180);
+  };
+
+  return (
+    <>
+      <div className={'sounds-info-scrim' + (open ? ' on' : '')} onClick={close} />
+      <div className={'sounds-info-sheet' + (open ? ' on' : '')} role="dialog" aria-modal="true">
+        <div className="sounds-info-sheet__grab" aria-hidden="true" />
+        <h2 className="sounds-info-sheet__title">How sounds are detected</h2>
+        <p>
+          A microphone in the crate feeds short audio clips through <b>YAMNet</b>,
+          a classifier Google trained on 500+ sound categories.
+        </p>
+        <p>
+          Any clip that scores above <b>0.5 confidence</b> on a dog-vocalization
+          class is logged. The top-scoring class per clip decides the bucket:
+        </p>
+        <p>
+          <b>Whines</b> — Whimper (dog).<br />
+          <b>Barks</b> — Bark, Yip, Bow-wow, Howl, Growling, or generic Dog.
+        </p>
+        <p>
+          A 2-second debounce prevents one long bark from logging multiple times.
+          Expect occasional false positives from TV, kids, or sirens.
+        </p>
+        <button type="button" className="sounds-info-sheet__close" onClick={close}>
+          Got it
+        </button>
+      </div>
+    </>
+  );
+}
+
 export default function SoundsPage() {
   const ctx = useOutletContext();
   const navigate = useNavigate();
   const mobile = useMediaQuery('(max-width: 700px)');
+  const [infoOpen, setInfoOpen] = useState(false);
   const {
     barkName, loading: connectionLoading, detectingFeatures, pendingProbes, bark,
   } = ctx;
@@ -180,8 +232,21 @@ export default function SoundsPage() {
           <div className="sounds__cols">
             <div className="sounds__col">
               <div className="sounds__legend">
-                <span><i className="k1" />Barks</span>
-                <span><i className="k2" />Whines</span>
+                <button type="button" onClick={() => setInfoOpen(true)}>
+                  <i className="k1" />Barks
+                </button>
+                <button type="button" onClick={() => setInfoOpen(true)}>
+                  <i className="k2" />Whines
+                </button>
+                <button
+                  type="button"
+                  className="sounds__info"
+                  onClick={() => setInfoOpen(true)}
+                  aria-label="How sounds are detected"
+                  title="How sounds are detected"
+                >
+                  ⓘ
+                </button>
               </div>
               {history.length === 0 ? (
                 <p className="sounds__empty">Quiet.</p>
@@ -268,6 +333,7 @@ export default function SoundsPage() {
         </div>
       </div>
       <BottomTabBar />
+      {infoOpen && <InfoSheet onClose={() => setInfoOpen(false)} />}
     </div>
   );
 }

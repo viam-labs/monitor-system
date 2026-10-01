@@ -99,24 +99,147 @@
 
 .sounds__legend {
   display: flex;
-  gap: 18px;
+  gap: 12px;
   align-items: center;
   font-size: 13px;
   color: var(--muted);
   margin: 4px 0 10px;
 }
 
+.sounds__legend button {
+  background: transparent;
+  border: none;
+  padding: 2px 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sounds__legend button:hover { color: var(--text); }
+
 .sounds__legend i {
   display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  margin-right: 6px;
-  vertical-align: -1px;
 }
 
 .sounds__legend .k1 { background: var(--k1); }
 .sounds__legend .k2 { background: var(--k2); }
+
+.sounds__info {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sounds-info-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s;
+}
+
+.sounds-info-scrim.on { opacity: 1; pointer-events: auto; }
+
+.sounds-info-sheet {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -46%) scale(0.97);
+  width: 360px;
+  background: #ffffff;
+  color: #1d1d1f;
+  border-radius: 18px;
+  padding: 22px 22px 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s, transform 0.18s;
+  z-index: 41;
+  text-align: left;
+  box-sizing: border-box;
+  font: 400 15px/1.45 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  letter-spacing: -0.005em;
+}
+
+.sounds-info-sheet.on {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.sounds-info-sheet__grab { display: none; }
+
+.sounds-info-sheet__title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 10px;
+}
+
+.sounds-info-sheet p {
+  font-size: 13px;
+  color: #6e6e73;
+  margin: 0 0 12px;
+}
+
+.sounds-info-sheet b { color: #1d1d1f; font-weight: 500; }
+
+.sounds-info-sheet__close {
+  width: 100%;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 9px;
+  background: #0071e3;
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+@media (max-width: 700px) {
+  .sounds-info-sheet {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: auto;
+    border-radius: 22px 22px 0 0;
+    padding: 10px 18px calc(env(safe-area-inset-bottom) + 22px);
+    transform: translateY(102%);
+    transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .sounds-info-sheet.on { transform: translateY(0); }
+  .sounds-info-sheet__grab {
+    display: block;
+    width: 36px;
+    height: 5px;
+    border-radius: 99px;
+    background: #aeaeb2;
+    opacity: 0.5;
+    margin: 0 auto 14px;
+  }
+  .sounds-info-sheet__close { font-size: 16px; padding: 14px; }
+}
 
 .sounds__chart {
   height: 220px;
