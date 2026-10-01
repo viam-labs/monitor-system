@@ -21,10 +21,12 @@ function fmtDateTime(ms) {
   const d = new Date(ms);
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const y = new Date(today); y.setDate(y.getDate() - 1);
+  const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 6);
   const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   if (d >= today) return `Today ${time}`;
   if (d >= y) return `Yesterday ${time}`;
-  return `${d.toLocaleDateString([], { weekday: 'short' })} ${time}`;
+  if (d >= weekAgo) return `${d.toLocaleDateString([], { weekday: 'short' })} ${time}`;
+  return `${d.toLocaleDateString([], { month: 'numeric', day: 'numeric' })} ${time}`;
 }
 
 function CamPreview({ cameras, streams, name }) {
@@ -295,7 +297,7 @@ export default function FeederPage() {
     try { await feeder.pauseUntil(until); setVacationOpen(false); } catch { /* stay open */ }
   };
 
-  const allRecent = (history || []).slice().reverse();
+  const allRecent = (history || []).slice();
   const totalRecentPages = Math.max(1, Math.ceil(allRecent.length / RECENT_PAGE_SIZE));
   const safeRecentPage = Math.min(recentPage, totalRecentPages - 1);
   const recent = allRecent.slice(
