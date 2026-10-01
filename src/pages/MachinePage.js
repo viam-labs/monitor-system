@@ -22,7 +22,7 @@ const PAGE_TITLES = {
   '/door': 'Building Door',
   '/waterer': 'Waterer',
   '/inventory': 'Inventory',
-  '/bark': 'Bark detection',
+  '/bark': 'Sounds',
 };
 
 function Paw({ className }) {

@@ -12,7 +12,7 @@ const ITEMS = [
   { key: 'waterer', label: 'Waterer', to: '/waterer', icon: Droplet, gate: (c) => !!c.watererName },
   { key: 'thermostat', label: 'Thermostat', to: '/thermostat', icon: Thermometer, gate: (c) => !!(c.acBotName && c.roomMeterName) },
   { key: 'curtain', label: 'Curtains', to: '/curtain', icon: Blinds, gate: (c) => !!c.curtainName },
-  { key: 'bark', label: 'Barking', to: '/bark', icon: Activity, gate: (c) => !!c.barkName },
+  { key: 'bark', label: 'Sounds', to: '/bark', icon: Activity, gate: (c) => !!c.barkName },
   { key: 'door', label: 'Building door', to: '/door', icon: DoorClosed, gate: (c) => !!c.doorUnlockName },
 ];
 
