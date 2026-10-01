@@ -4,10 +4,16 @@ import {
   pickHumidity,
   pickTemperature,
 } from '../thermostat/helpers';
-import { labelForCups } from '../feeder/helpers';
 
-const WATERER_DOSE_OPTIONS = [50, 100, 150, 200];
-const WATERER_DEFAULT_ML = 100;
+const WATER_DEFAULT_ML = 100;
+const WATER_STEP_ML = 50;
+const WATER_MIN_ML = 50;
+const WATER_MAX_ML = 500;
+
+const FEED_STEP_CUPS = 0.25;
+const FEED_MIN_CUPS = 0.25;
+const FEED_MAX_CUPS = 3;
+const FEED_FALLBACK_CUPS = 1;
 
 function nextScheduled(schedules) {
   if (!schedules || schedules.length === 0) return null;
@@ -55,21 +61,28 @@ function feederRow({ feeder }, navigate, mobile) {
   } else if (feeder?.lastFedAt) {
     subtitle = `fed ${formatRelative(feeder.lastFedAt)}`;
   }
-  const canFeed = !!feeder?.feedNow && feedCups != null;
-  const amountLabel = feedCups != null ? labelForCups(feedCups) : null;
+  const canFeed = !!feeder?.feed;
+  const defaultCups = feedCups ?? FEED_FALLBACK_CUPS;
   return {
     key: 'feeder',
     icon: 'feeder',
     name: 'Feeder',
     subtitle,
     action: canFeed ? {
-      label: amountLabel ? `Feed ${amountLabel}` : 'Feed',
+      label: 'Feed',
       disabled: feeder.feeding || feeder.mutating,
       confirm: {
-        title: 'Feed now?',
-        body: amountLabel ? `Dispenses ${amountLabel} immediately.` : 'Dispenses the next scheduled portion now.',
-        confirmLabel: amountLabel ? `Feed ${amountLabel}` : 'Feed',
-        onConfirm: () => feeder.feedNow(),
+        title: 'Feed Zion',
+        amount: {
+          value: defaultCups,
+          unit: 'cups',
+          step: FEED_STEP_CUPS,
+          min: FEED_MIN_CUPS,
+          max: FEED_MAX_CUPS,
+        },
+        hint: 'Dispensed over about 7 minutes.',
+        confirmLabel: 'Feed',
+        onConfirm: (cups) => feeder.feed(cups),
       },
     } : null,
     onClick: () => navigate('/feeder'),
@@ -95,16 +108,19 @@ function watererRow({ waterer }, navigate, mobile) {
     name: 'Water',
     subtitle,
     action: waterer?.dispenseMl ? {
-      label: `Dispense ${WATERER_DEFAULT_ML} ml`,
+      label: 'Dispense',
       disabled: waterer.busy,
       confirm: {
-        title: 'Dispense water?',
-        picker: {
-          options: WATERER_DOSE_OPTIONS,
-          defaultValue: WATERER_DEFAULT_ML,
+        title: 'Dispense water',
+        amount: {
+          value: WATER_DEFAULT_ML,
           unit: 'ml',
+          step: WATER_STEP_ML,
+          min: WATER_MIN_ML,
+          max: WATER_MAX_ML,
         },
-        confirmLabel: (ml) => `Dispense ${ml} ml`,
+        hint: 'Takes about 6 seconds.',
+        confirmLabel: 'Dispense',
         onConfirm: (ml) => waterer.dispenseMl(ml),
       },
     } : null,
