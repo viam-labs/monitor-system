@@ -135,7 +135,11 @@ export default function SoundsPage() {
   const {
     lastBarkAt = '', history = [], historyLoading = false,
     rangeHours = 24, setRangeHours = () => {}, refreshHistory = () => {},
+    error: barkError = null,
   } = bark || {};
+
+  const RECENT_PAGE_SIZE = 5;
+  const [recentPage, setRecentPage] = useState(0);
 
   const activeRange = RANGES.find((r) => r.hours === rangeHours) || RANGES[1];
 
@@ -218,7 +222,15 @@ export default function SoundsPage() {
     null,
   );
 
-  const recent = history.slice().reverse().slice(0, 25);
+  const allRecent = history.slice().reverse();
+  const totalPages = Math.max(1, Math.ceil(allRecent.length / RECENT_PAGE_SIZE));
+  const safePage = Math.min(recentPage, totalPages - 1);
+  const recent = allRecent.slice(
+    safePage * RECENT_PAGE_SIZE,
+    (safePage + 1) * RECENT_PAGE_SIZE,
+  );
+  const recentStart = allRecent.length === 0 ? 0 : safePage * RECENT_PAGE_SIZE + 1;
+  const recentEnd = Math.min(allRecent.length, (safePage + 1) * RECENT_PAGE_SIZE);
 
   return (
     <div className="sounds">
@@ -343,7 +355,12 @@ export default function SoundsPage() {
 
             <div className="sounds__col">
               <p className="sounds__sect">Recent events</p>
-              {recent.length === 0 ? (
+              {barkError && (
+                <p className="sounds__empty" style={{ color: 'var(--danger)' }}>
+                  {barkError}
+                </p>
+              )}
+              {!barkError && allRecent.length === 0 ? (
                 <p className="sounds__empty">No events yet.</p>
               ) : (
                 recent.map((e, i) => {
@@ -363,6 +380,27 @@ export default function SoundsPage() {
                     </div>
                   );
                 })
+              )}
+              {allRecent.length > RECENT_PAGE_SIZE && (
+                <div className="sounds-pager">
+                  <button
+                    type="button"
+                    onClick={() => setRecentPage((p) => Math.max(0, p - 1))}
+                    disabled={safePage === 0}
+                  >
+                    ← Newer
+                  </button>
+                  <span className="sounds-pager__status">
+                    {recentStart}–{recentEnd} of {allRecent.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setRecentPage((p) => Math.min(totalPages - 1, p + 1))}
+                    disabled={safePage >= totalPages - 1}
+                  >
+                    Older →
+                  </button>
+                </div>
               )}
             </div>
           </div>

@@ -32,6 +32,8 @@ export default function InventoryPage() {
   const [addGroupHint, setAddGroupHint] = useState(DEFAULT_GROUP);
   const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [buttonPage, setButtonPage] = useState(0);
+  const BUTTON_PAGE_SIZE = 5;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -175,10 +177,6 @@ export default function InventoryPage() {
     + (lowCount > 0 ? ` · ${lowCount} low` : '')
     + ' · order sets Stream Deck slots';
 
-  const columnFor = (i) => (mobile || groups.length < 2 ? 0 : i % 2);
-  const left = groups.filter((_, i) => columnFor(i) === 0);
-  const right = groups.filter((_, i) => columnFor(i) === 1);
-
   const renderGroup = (group) => (
     <div key={group.name} className="inv-group">
       <p className="inv-sect">{group.name}</p>
@@ -269,33 +267,58 @@ export default function InventoryPage() {
                 + Add item
               </button>
             </div>
-          ) : mobile || groups.length < 2 ? (
-            <div className="inventory-page__col">
-              {groups.map(renderGroup)}
-            </div>
           ) : (
             <div className="inventory-page__cols">
-              <div className="inventory-page__col">{left.map(renderGroup)}</div>
-              <div className="inventory-page__col">{right.map(renderGroup)}</div>
+              {groups.map(renderGroup)}
             </div>
           )}
 
-          {inv.buttonHistory && inv.buttonHistory.length > 0 && (
-            <div className="inv-activity">
-              <p className="inv-sect">Recent button presses</p>
-              {inv.buttonHistory.slice(0, 20).map((e, i) => (
-                <div key={`${e.at}-${i}`} className="inv-row">
-                  <div className="inv-nm">
-                    {e.source || 'button'}
-                    {e.action && e.action !== 'single' && (
-                      <span className="inv-activity__action"> · {e.action}</span>
-                    )}
+          {inv.buttonHistory && inv.buttonHistory.length > 0 && (() => {
+            const total = inv.buttonHistory.length;
+            const totalPages = Math.max(1, Math.ceil(total / BUTTON_PAGE_SIZE));
+            const safePage = Math.min(buttonPage, totalPages - 1);
+            const start = safePage * BUTTON_PAGE_SIZE;
+            const page = inv.buttonHistory.slice(start, start + BUTTON_PAGE_SIZE);
+            const first = total === 0 ? 0 : start + 1;
+            const last = Math.min(total, start + BUTTON_PAGE_SIZE);
+            return (
+              <div className="inv-activity">
+                <p className="inv-sect">Recent button presses</p>
+                {page.map((e, i) => (
+                  <div key={`${e.at}-${i}`} className="inv-row">
+                    <div className="inv-nm">
+                      {e.source || 'button'}
+                      {e.action && e.action !== 'single' && (
+                        <span className="inv-activity__action"> · {e.action}</span>
+                      )}
+                    </div>
+                    <span className="inv-activity__when">{formatRelative(e.at) || ''}</span>
                   </div>
-                  <span className="inv-activity__when">{formatRelative(e.at) || ''}</span>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+                {total > BUTTON_PAGE_SIZE && (
+                  <div className="inv-pager">
+                    <button
+                      type="button"
+                      onClick={() => setButtonPage((p) => Math.max(0, p - 1))}
+                      disabled={safePage === 0}
+                    >
+                      ← Newer
+                    </button>
+                    <span className="inv-pager__status">
+                      {first}–{last} of {total}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setButtonPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={safePage >= totalPages - 1}
+                    >
+                      Older →
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
       <BottomTabBar />

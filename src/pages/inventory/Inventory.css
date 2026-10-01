@@ -66,12 +66,15 @@
 }
 
 @media (min-width: 1300px) {
-  .inventory-page__cols { gap: 44px; }
+  .inventory-page__cols {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 44px;
+  }
 }
 
 .inventory-page__col { min-width: 0; }
 
-.inv-group { margin-bottom: 26px; }
+.inv-group { margin-bottom: 26px; min-width: 0; }
 
 .inv-sect {
   font-size: 13px;
@@ -320,9 +323,39 @@
 .inv-toast--error { background: rgba(215, 0, 21, 0.08); color: var(--danger); }
 .inv-toast--info { background: rgba(0, 113, 227, 0.08); color: var(--accent); }
 
-.inv-activity { margin-top: 28px; max-width: 520px; }
+.inv-activity { margin-top: 28px; }
 .inv-activity__when { color: var(--muted); font-size: 13px; flex: none; }
 .inv-activity__action { color: var(--muted); font-weight: 400; }
+
+.inv-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 0.5px solid rgba(0,0,0,0.06);
+}
+
+.inv-pager button {
+  font: inherit;
+  font-size: 13px;
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  padding: 6px 2px;
+  cursor: pointer;
+}
+
+.inv-pager button:disabled {
+  color: var(--dim);
+  cursor: not-allowed;
+}
+
+.inv-pager__status {
+  font-size: 12.5px;
+  color: var(--muted);
+}
 
 .inventory-loader {
   display: flex;
