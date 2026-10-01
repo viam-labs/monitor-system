@@ -4,8 +4,10 @@ import {
   pickHumidity,
   pickTemperature,
 } from '../thermostat/helpers';
+import { labelForCups } from '../feeder/helpers';
 
-const WATERER_DEFAULT_ML = 250;
+const WATERER_DOSE_OPTIONS = [50, 100, 150, 200];
+const WATERER_DEFAULT_ML = 100;
 
 function nextScheduled(schedules) {
   if (!schedules || schedules.length === 0) return null;
@@ -39,6 +41,7 @@ function fmtTime(date) {
 
 function feederRow({ feeder }, navigate, mobile) {
   const next = nextScheduled(feeder?.schedules);
+  const feedCups = next?.cups ?? feeder?.status?.target_meal_cups ?? null;
   let subtitle = null;
   if (next) {
     const timeStr = fmtTime(next.fireAt);
@@ -52,15 +55,22 @@ function feederRow({ feeder }, navigate, mobile) {
   } else if (feeder?.lastFedAt) {
     subtitle = `fed ${formatRelative(feeder.lastFedAt)}`;
   }
+  const canFeed = !!feeder?.feedNow && feedCups != null;
+  const amountLabel = feedCups != null ? labelForCups(feedCups) : null;
   return {
     key: 'feeder',
     icon: 'feeder',
     name: 'Feeder',
     subtitle,
-    action: feeder?.feedNow ? {
-      label: 'Feed',
-      onClick: () => feeder.feedNow(),
+    action: canFeed ? {
+      label: amountLabel ? `Feed ${amountLabel}` : 'Feed',
       disabled: feeder.feeding || feeder.mutating,
+      confirm: {
+        title: 'Feed now?',
+        body: amountLabel ? `Dispenses ${amountLabel} immediately.` : 'Dispenses the next scheduled portion now.',
+        confirmLabel: amountLabel ? `Feed ${amountLabel}` : 'Feed',
+        onConfirm: () => feeder.feedNow(),
+      },
     } : null,
     onClick: () => navigate('/feeder'),
   };
@@ -85,9 +95,18 @@ function watererRow({ waterer }, navigate, mobile) {
     name: 'Water',
     subtitle,
     action: waterer?.dispenseMl ? {
-      label: 'Dispense',
-      onClick: () => waterer.dispenseMl(WATERER_DEFAULT_ML),
+      label: `Dispense ${WATERER_DEFAULT_ML} ml`,
       disabled: waterer.busy,
+      confirm: {
+        title: 'Dispense water?',
+        picker: {
+          options: WATERER_DOSE_OPTIONS,
+          defaultValue: WATERER_DEFAULT_ML,
+          unit: 'ml',
+        },
+        confirmLabel: (ml) => `Dispense ${ml} ml`,
+        onConfirm: (ml) => waterer.dispenseMl(ml),
+      },
     } : null,
     onClick: () => navigate('/waterer'),
   };
