@@ -12,6 +12,7 @@ import WatererPage from './pages/waterer/Waterer';
 import InventoryPage from './pages/inventory';
 import BarkPage from './pages/sounds/Sounds';
 import AirPage from './pages/air/Air';
+import MusicPage from './pages/music';
 
 // HashRouter (not BrowserRouter) because Viam Applications' static
 // hosting does not rewrite unknown paths back to index.html — a
@@ -34,6 +35,7 @@ function App() {
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="bark" element={<BarkPage />} />
           <Route path="air" element={<AirPage />} />
+          <Route path="music" element={<MusicPage />} />
         </Route>
       </Routes>
     </Router>

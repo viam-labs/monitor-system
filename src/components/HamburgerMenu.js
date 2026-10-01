@@ -28,6 +28,8 @@ export default function HamburgerMenu({
   barkLoading,
   showAir,
   airLoading,
+  showMusic,
+  musicLoading,
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -59,6 +61,7 @@ export default function HamburgerMenu({
     { to: '/curtain', label: 'Curtain', show: showCurtain, loading: curtainLoading },
     { to: '/feeder', label: 'Feeder', show: showFeeder, loading: feederLoading },
     { to: '/inventory', label: 'Inventory', show: showInventory, loading: inventoryLoading },
+    { to: '/music', label: 'Music', show: showMusic, loading: musicLoading },
     { to: '/thermostat', label: 'Thermostat', show: showThermostat, loading: thermostatLoading },
     { to: '/waterer', label: 'Waterer', show: showWaterer, loading: watererLoading },
   ];

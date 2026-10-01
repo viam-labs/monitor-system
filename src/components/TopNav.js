@@ -9,6 +9,7 @@ const LINKS = [
   { to: '/thermostat', label: 'Thermostat' },
   { to: '/curtain', label: 'Curtains' },
   { to: '/inventory', label: 'Inventory' },
+  { to: '/music', label: 'Music' },
   { to: '/bark', label: 'Sounds' },
   { to: '/air', label: 'Air' },
   { to: '/door', label: 'Door' },

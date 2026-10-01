@@ -53,6 +53,10 @@ function matchGeneric(name, status, into) {
     }
     return;
   }
+  if (status.kind === 'spotify_controller') {
+    into.musicName = name;
+    return;
+  }
   if ('food_state' in status || 'food_low_status' in status) {
     into.feederName = name;
   } else if ('on_temp_c' in status || 'off_temp_c' in status || 'bot_position' in status) {
@@ -111,6 +115,7 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
     roomMeterName: null,
     barkName: null,
     airName: null,
+    musicName: null,
   };
   const pendingRetry = [];
 

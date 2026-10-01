@@ -240,6 +240,38 @@ function airRow({ air }, navigate) {
   };
 }
 
+function musicRow({ music }, navigate, mobile) {
+  const s = music?.status;
+  const track = s?.track;
+  let subtitle;
+  if (s?.is_playing && track?.name) {
+    const artists = (track.artists || []).filter(Boolean).join(', ');
+    subtitle = mobile
+      ? track.name
+      : (artists ? `${track.name} · ${artists}` : track.name);
+  } else if (!s?.device_found) {
+    subtitle = 'speaker off';
+  } else if (s?.is_playing) {
+    subtitle = 'playing';
+  } else {
+    subtitle = 'nothing playing';
+  }
+  const toggleAvailable = !!music?.toggle && s?.device_found;
+  return {
+    key: 'music',
+    icon: 'music',
+    name: 'Music',
+    subtitle,
+    toggle: toggleAvailable ? {
+      on: !!s?.is_playing,
+      onChange: () => music.toggle().catch(() => {}),
+      disabled: music.busy,
+    } : null,
+    hideChevron: mobile && toggleAvailable,
+    onClick: () => navigate('/music'),
+  };
+}
+
 function doorRow({ door }, navigate, mobile) {
   const offline = !!door?.error && !door?.lastOpenedAt;
   const rel = door?.lastOpenedAt ? formatRelative(door.lastOpenedAt) : null;
@@ -268,6 +300,7 @@ export function buildRows(ctx, navigate, mobile = false) {
   if (ctx.inventoryName && ctx.inventoryStateSensorName) {
     rows.push(inventoryRow(ctx, navigate, mobile));
   }
+  if (ctx.musicName) rows.push(musicRow(ctx, navigate, mobile));
   if (ctx.barkName) rows.push(barkRow(ctx, navigate));
   if (ctx.airName) rows.push(airRow(ctx, navigate));
   if (ctx.doorUnlockName) rows.push(doorRow(ctx, navigate, mobile));

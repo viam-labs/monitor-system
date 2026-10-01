@@ -11,6 +11,7 @@ import { useWaterer } from '../hooks/useWaterer';
 import { useInventory } from '../hooks/useInventory';
 import { useBark } from '../hooks/useBark';
 import { useAir } from '../hooks/useAir';
+import { useMusic } from '../hooks/useMusic';
 import { useCameraStreams } from '../hooks/useCameraStreams';
 import { subscribeConnectionHealth } from '../lib/connectionHealth';
 
@@ -25,6 +26,7 @@ const PAGE_TITLES = {
   '/inventory': 'Inventory',
   '/bark': 'Sounds',
   '/air': 'Air',
+  '/music': 'Music',
 };
 
 function Paw({ className }) {
@@ -69,6 +71,7 @@ function MachinePage() {
   );
   const bark = useBark(connection.client, connection.barkName);
   const air = useAir(connection.client, connection.airName);
+  const music = useMusic(connection.client, connection.musicName);
   // Hoisted so all camera streams open once and stay warm across
   // route changes. Previously each page (CameraViewer, WatererPage's
   // WatererCamera) called useCameraStreams itself, which caused
@@ -78,9 +81,9 @@ function MachinePage() {
 
   const outletContext = useMemo(
     () => ({
-      ...connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, streams,
+      ...connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, streams,
     }),
-    [connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, streams],
+    [connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, streams],
   );
 
   useEffect(() => {
@@ -89,7 +92,7 @@ function MachinePage() {
 
   useEffect(() => subscribeConnectionHealth(setConnectionLost), []);
 
-  const chromeless = ['/', '/more', '/cameras', '/feeder', '/waterer', '/thermostat', '/curtain', '/inventory', '/bark', '/air', '/door'].includes(location.pathname);
+  const chromeless = ['/', '/more', '/cameras', '/feeder', '/waterer', '/thermostat', '/curtain', '/inventory', '/bark', '/air', '/door', '/music'].includes(location.pathname);
 
   useEffect(() => {
     const bg = chromeless ? '#f5f5f7' : '#0f0f10';
@@ -126,6 +129,8 @@ function MachinePage() {
             barkLoading={!connection.barkName && connection.pendingProbes.sensor > 0}
             showAir={!!connection.airName}
             airLoading={!connection.airName && connection.pendingProbes.sensor > 0}
+            showMusic={!!connection.musicName}
+            musicLoading={!connection.musicName && connection.pendingProbes.generic > 0}
           />
         </>
       )}
