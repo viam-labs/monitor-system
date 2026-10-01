@@ -66,10 +66,7 @@
 }
 
 @media (min-width: 1300px) {
-  .inventory-page__cols {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 44px;
-  }
+  .inventory-page__cols { gap: 44px; }
 }
 
 .inventory-page__col { min-width: 0; }

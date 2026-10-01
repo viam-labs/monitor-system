@@ -180,6 +180,8 @@ export default function WatererPage() {
   } = w;
   const [addOpen, setAddOpen] = useState(false);
   const [dispenseMl, setDispenseMl] = useState(DEFAULT_DOSE_ML);
+  const [recentPage, setRecentPage] = useState(0);
+  const RECENT_PAGE_SIZE = 5;
 
   const availability = {
     '/feeder': !!ctx.feederName,
@@ -244,7 +246,15 @@ export default function WatererPage() {
     try { await w.dispenseMl(dispenseMl); w.refreshHistory?.(); } catch { /* surfaced */ }
   };
 
-  const recent = (history || []).slice().reverse();
+  const allRecent = (history || []).slice().reverse();
+  const totalRecentPages = Math.max(1, Math.ceil(allRecent.length / RECENT_PAGE_SIZE));
+  const safeRecentPage = Math.min(recentPage, totalRecentPages - 1);
+  const recent = allRecent.slice(
+    safeRecentPage * RECENT_PAGE_SIZE,
+    (safeRecentPage + 1) * RECENT_PAGE_SIZE,
+  );
+  const recentStart = allRecent.length === 0 ? 0 : safeRecentPage * RECENT_PAGE_SIZE + 1;
+  const recentEnd = Math.min(allRecent.length, (safeRecentPage + 1) * RECENT_PAGE_SIZE);
 
   return (
     <div className="waterer">
@@ -335,7 +345,7 @@ export default function WatererPage() {
               <CamPreview cameras={cameras} streams={streams} name={PAGE_CAMERAS.waterer} />
               <div className="waterer__block">
                 <p className="waterer__sect">Recent</p>
-                {recent.length === 0 ? (
+                {allRecent.length === 0 ? (
                   <p className="waterer-empty">No dispenses recorded yet.</p>
                 ) : (
                   recent.map((h, i) => {
@@ -352,6 +362,27 @@ export default function WatererPage() {
                       </div>
                     );
                   })
+                )}
+                {allRecent.length > RECENT_PAGE_SIZE && (
+                  <div className="waterer-pager">
+                    <button
+                      type="button"
+                      onClick={() => setRecentPage((p) => Math.max(0, p - 1))}
+                      disabled={safeRecentPage === 0}
+                    >
+                      ← Newer
+                    </button>
+                    <span className="waterer-pager__status">
+                      {recentStart}–{recentEnd} of {allRecent.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setRecentPage((p) => Math.min(totalRecentPages - 1, p + 1))}
+                      disabled={safeRecentPage >= totalRecentPages - 1}
+                    >
+                      Older →
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

@@ -81,20 +81,6 @@ export default function MicButton({ client, audioName }) {
     setListening(false);
   }, []);
 
-  // Default the mic on: browsers require a user gesture before audio
-  // can play, so we hook the first click / touch anywhere on the page
-  // and use that gesture to unlock the AudioContext.
-  useEffect(() => {
-    if (!client || !audioName) return;
-    const kick = () => start();
-    document.addEventListener('click', kick, { once: true });
-    document.addEventListener('touchstart', kick, { once: true, passive: true });
-    return () => {
-      document.removeEventListener('click', kick);
-      document.removeEventListener('touchstart', kick);
-    };
-  }, [client, audioName, start]);
-
   useEffect(() => {
     return () => {
       abortRef.current?.abort();

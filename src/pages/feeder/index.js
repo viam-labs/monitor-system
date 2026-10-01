@@ -132,6 +132,8 @@ export default function FeederPage() {
   const [moveOpen, setMoveOpen] = useState(false);
   const [delayHours, setDelayHours] = useState(0);
   const [delayMinutes, setDelayMinutes] = useState(30);
+  const [recentPage, setRecentPage] = useState(0);
+  const RECENT_PAGE_SIZE = 5;
 
   const sortedSchedules = useMemo(
     () => (schedules || []).slice().sort((a, b) => (a.time || '').localeCompare(b.time || '')),
@@ -292,7 +294,15 @@ export default function FeederPage() {
     try { await feeder.pauseUntil(until); setVacationOpen(false); } catch { /* stay open */ }
   };
 
-  const recent = (history || []).slice().reverse();
+  const allRecent = (history || []).slice().reverse();
+  const totalRecentPages = Math.max(1, Math.ceil(allRecent.length / RECENT_PAGE_SIZE));
+  const safeRecentPage = Math.min(recentPage, totalRecentPages - 1);
+  const recent = allRecent.slice(
+    safeRecentPage * RECENT_PAGE_SIZE,
+    (safeRecentPage + 1) * RECENT_PAGE_SIZE,
+  );
+  const recentStart = allRecent.length === 0 ? 0 : safeRecentPage * RECENT_PAGE_SIZE + 1;
+  const recentEnd = Math.min(allRecent.length, (safeRecentPage + 1) * RECENT_PAGE_SIZE);
 
   return (
     <div className="feeder">
@@ -522,7 +532,7 @@ export default function FeederPage() {
               />
               <div className="feeder__block">
                 <p className="feeder__sect">Recent</p>
-                {recent.length === 0 ? (
+                {allRecent.length === 0 ? (
                   <p className="feeder-empty">No feedings recorded yet.</p>
                 ) : (
                   recent.map((h, i) => {
@@ -538,6 +548,27 @@ export default function FeederPage() {
                       </div>
                     );
                   })
+                )}
+                {allRecent.length > RECENT_PAGE_SIZE && (
+                  <div className="feeder-pager">
+                    <button
+                      type="button"
+                      onClick={() => setRecentPage((p) => Math.max(0, p - 1))}
+                      disabled={safeRecentPage === 0}
+                    >
+                      ← Newer
+                    </button>
+                    <span className="feeder-pager__status">
+                      {recentStart}–{recentEnd} of {allRecent.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setRecentPage((p) => Math.min(totalRecentPages - 1, p + 1))}
+                      disabled={safeRecentPage >= totalRecentPages - 1}
+                    >
+                      Older →
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

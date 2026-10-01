@@ -177,6 +177,9 @@ export default function InventoryPage() {
     + (lowCount > 0 ? ` · ${lowCount} low` : '')
     + ' · order sets Stream Deck slots';
 
+  const left = groups.length > 0 ? [groups[0]] : [];
+  const right = groups.slice(1);
+
   const renderGroup = (group) => (
     <div key={group.name} className="inv-group">
       <p className="inv-sect">{group.name}</p>
@@ -267,9 +270,14 @@ export default function InventoryPage() {
                 + Add item
               </button>
             </div>
+          ) : mobile || groups.length < 2 ? (
+            <div className="inventory-page__col">
+              {groups.map(renderGroup)}
+            </div>
           ) : (
             <div className="inventory-page__cols">
-              {groups.map(renderGroup)}
+              <div className="inventory-page__col">{left.map(renderGroup)}</div>
+              <div className="inventory-page__col">{right.map(renderGroup)}</div>
             </div>
           )}
 
