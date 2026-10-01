@@ -72,15 +72,19 @@ export function useBark(client, barkName) {
       const vc = await getViamCloudClient();
       const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, BARK_HISTORY_SQL);
       const cutoff = Date.now() - rangeHours * 60 * 60 * 1000;
-      const barks = (rows || [])
-        .map((r) => ({
-          at: new Date(r.at),
-          score: Number(r.score) || 0,
-          topClass: String(r.top_class || ''),
-          classScores: r.class_scores || {},
-        }))
+      const mapped = (rows || []).map((r) => ({
+        at: new Date(r.at),
+        score: Number(r.score) || 0,
+        topClass: String(r.top_class || ''),
+        classScores: r.class_scores || {},
+      }));
+      const barks = mapped
         .filter((e) => !Number.isNaN(e.at.getTime()) && e.at.getTime() >= cutoff)
         .sort((a, b) => a.at - b.at);
+      console.log(
+        `[bark] DataClient returned ${rows?.length ?? 0} rows, ${barks.length} within ${rangeHours}h cutoff`,
+        rows?.[0],
+      );
       setHistory(barks);
     } catch (e) {
       if (!handleRpcError(e)) {
