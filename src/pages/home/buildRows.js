@@ -205,17 +205,16 @@ function inventoryRow({ inventory }, navigate, mobile) {
 
 function barkRow({ bark }, navigate) {
   const history = bark?.history ?? [];
-  const whines = history.filter((e) => e.topClass === 'Whimper (dog)').length;
-  const barks = history.length - whines;
   const lastAt = bark?.lastBarkAt;
   const rel = lastAt ? formatRelative(lastAt) : null;
   let subtitle;
   if (history.length === 0) {
     subtitle = 'quiet';
   } else {
-    const parts = [`${barks} bark${barks === 1 ? '' : 's'}`, `${whines} whine${whines === 1 ? '' : 's'}`];
-    if (rel) parts.push(`last ${rel}`);
-    subtitle = parts.join(' · ');
+    const n = history.length;
+    subtitle = rel
+      ? `${n} sound${n === 1 ? '' : 's'} · last ${rel}`
+      : `${n} sound${n === 1 ? '' : 's'}`;
   }
   return {
     key: 'bark',
