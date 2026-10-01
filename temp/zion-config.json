@@ -1,0 +1,643 @@
+{
+    "components": [
+        {
+            "name": "inventory-state",
+            "namespace": "rdk",
+            "type": "sensor",
+            "model": "viam:event-queue:sensor",
+            "attributes": {
+                "queue_capacity": 1
+            },
+            "ui_folder": {
+                "name": "Inventory"
+            }
+        },
+        {
+            "name": "inventory",
+            "namespace": "rdk",
+            "type": "generic",
+            "model": "joseph:inventory:tracker",
+            "attributes": {
+                "state_sensor": "inventory-state",
+                "events_sensor": "events",
+                "streamdeck": "streamdeck",
+                "waterer": "waterer_pump",
+                "feeder": "feeder",
+                "thermostat_switch": "ac_bot",
+                "manual_water_ml": 50
+            },
+            "depends_on": [
+                "inventory-state",
+                "events"
+            ],
+            "notes": "  \"streamdeck\": \"streamdeck\"",
+            "ui_folder": {
+                "name": "Inventory"
+            }
+        },
+        {
+            "name": "events",
+            "namespace": "rdk",
+            "type": "sensor",
+            "model": "viam:event-queue:sensor",
+            "attributes": {
+                "queue_capacity": 1000
+            },
+            "service_configs": [
+                {
+                    "type": "data_manager",
+                    "attributes": {
+                        "capture_methods": [
+                            {
+                                "method": "Readings",
+                                "capture_frequency_hz": 1,
+                                "disabled": false,
+                                "additional_params": {}
+                            }
+                        ]
+                    }
+                }
+            ],
+            "ui_folder": {
+                "name": "Events"
+            }
+        },
+        {
+            "name": "waterer_plug",
+            "namespace": "rdk",
+            "type": "switch",
+            "model": "erh:viamkasa:kasa-switch",
+            "attributes": {
+                "host": "192.168.1.184"
+            },
+            "ui_folder": {
+                "name": "Water Dispenser"
+            }
+        },
+        {
+            "name": "waterer_pump",
+            "namespace": "rdk",
+            "type": "generic",
+            "model": "viam:waterer:pump",
+            "attributes": {
+                "switch_name": "waterer_plug",
+                "ml_per_second": 16.8,
+                "max_runtime_seconds": 20,
+                "max_daily_ml": 5000,
+                "events_sensor": "events"
+            },
+            "depends_on": [
+                "waterer_plug"
+            ],
+            "ui_folder": {
+                "name": "Water Dispenser"
+            }
+        },
+        {
+            "name": "building_door",
+            "namespace": "rdk",
+            "type": "generic",
+            "model": "viam:switchbot:clicker",
+            "attributes": {
+                "token": "4e0301b076069bf17ee1776378d61c5f500682cf1afa8d9c8e81da1706de0165381418b09acb213defd2281d84eb7d8f",
+                "secret": "35973299afb08c46aa72493c71ed83ca",
+                "device_id": "ED2EC6061418",
+                "hold_ms": 500,
+                "events_sensor": "events",
+                "event_type": "door_opened"
+            },
+            "ui_folder": {
+                "name": "SwitchBots"
+            }
+        },
+        {
+            "name": "thermostat",
+            "namespace": "rdk",
+            "type": "generic",
+            "model": "viam:switchbot:thermostat",
+            "attributes": {
+                "bot_name": "ac_bot",
+                "meter_name": "meter_4c",
+                "on_temp_c": 25,
+                "off_temp_c": 22,
+                "active_start": "07:00",
+                "active_end": "22:00",
+                "events_sensor": "events"
+            },
+            "depends_on": [
+                "ac_bot",
+                "meter_4c"
+            ],
+            "ui_folder": {
+                "name": "SwitchBots"
+            }
+        },
+        {
+            "name": "ac_bot",
+            "namespace": "rdk",
+            "type": "switch",
+            "model": "viam:switchbot:bot",
+            "attributes": {
+                "token": "4e0301b076069bf17ee1776378d61c5f500682cf1afa8d9c8e81da1706de0165381418b09acb213defd2281d84eb7d8f",
+                "secret": "35973299afb08c46aa72493c71ed83ca",
+                "device_id": "EB6B0046361E"
+            },
+            "ui_folder": {
+                "name": "SwitchBots"
+            }
+        },
+        {
+            "name": "meter_4c",
+            "namespace": "rdk",
+            "type": "sensor",
+            "model": "viam:switchbot:meter",
+            "attributes": {
+                "token": "4e0301b076069bf17ee1776378d61c5f500682cf1afa8d9c8e81da1706de0165381418b09acb213defd2281d84eb7d8f",
+                "secret": "35973299afb08c46aa72493c71ed83ca",
+                "device_id": "E85503C6224C"
+            },
+            "service_configs": [
+                {
+                    "type": "data_manager",
+                    "attributes": {
+                        "capture_methods": [
+                            {
+                                "method": "Readings",
+                                "capture_frequency_hz": 0.0011,
+                                "disabled": false,
+                                "additional_params": {}
+                            }
+                        ]
+                    }
+                }
+            ],
+            "ui_folder": {
+                "name": "SwitchBots"
+            }
+        },
+        {
+            "name": "curtain",
+            "namespace": "rdk",
+            "type": "generic",
+            "model": "viam:switchbot:curtain",
+            "attributes": {
+                "token": "4e0301b076069bf17ee1776378d61c5f500682cf1afa8d9c8e81da1706de0165381418b09acb213defd2281d84eb7d8f",
+                "secret": "35973299afb08c46aa72493c71ed83ca",
+                "device_id": "F298074C9A22"
+            },
+            "ui_folder": {
+                "name": "Curtains"
+            }
+        },
+        {
+            "name": "inside-crate",
+            "api": "rdk:component:camera",
+            "model": "rdk:builtin:webcam",
+            "attributes": {
+                "video_path": "/dev/v4l/by-id/usb-EMEET_HD_Webcam_eMeet_C950_A240401000419924-video-index0"
+            },
+            "ui_folder": {
+                "name": "Cameras"
+            }
+        },
+        {
+            "name": "reolink-e1-zoom",
+            "api": "rdk:component:camera",
+            "model": "viam:viamrtsp:rtsp",
+            "attributes": {
+                "discovery_dep": "onvif-discovery",
+                "rtp_passthrough": true,
+                "rtsp_address": "rtsp://admin:mLK4j%234hGbb5mu@ec71db6d6ef7.local:554/Preview_01_main"
+            },
+            "ui_folder": {
+                "name": "Cameras"
+            }
+        },
+        {
+            "name": "feeder",
+            "namespace": "rdk",
+            "type": "generic",
+            "model": "viam:petsafe:smart-feed",
+            "attributes": {
+                "email": "tiamandyos@gmail.com",
+                "tokens": {
+                    "access_token": "eyJraWQiOiJsWEM4aWRZemRoVkQxQ1Bma0V0eUh6OE0wMUdWSFFuQUZrVnhxenkwN1M0PSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjNGY4MzRlOC1kMGYxLTcwZDItOGZlNi1kN2I0MjVlMDFkZDgiLCJldmVudF9pZCI6ImQ3YWYwNGI2LTVmNDQtNDNkOS1hODU0LTNjNmJlMzgzNDc1MyIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE3ODk2NTY0OTQsImlzcyI6Imh0dHBzOi8vY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb20vdXMtZWFzdC0xX3lWQWtDRHlEYyIsImV4cCI6MTc4OTY2MDA5NCwiaWF0IjoxNzg5NjU2NDk0LCJqdGkiOiJhMDFhZjRmOC00NjZjLTRmMjQtYmY4My01ZWY4ODE3MTQ4NGYiLCJjbGllbnRfaWQiOiIxOGhwcDA0cHVxbWdmNW5jNm80NzRsY3AyZyIsInVzZXJuYW1lIjoiYzRmODM0ZTgtZDBmMS03MGQyLThmZTYtZDdiNDI1ZTAxZGQ4In0.DSl69RmEpwEDmsNQJdRSbAYppTqNZzSmb59oi8pFQ-qAcJRdmfF9zcLVRiT2PcKoOIEbNn0F9cur5s8AWqrOS2HnhlgwUDBGlKt29Txez1ORI6ohDo48dgMljw_3aoBstJ9axpGE29KZzl6QtqT6MzJZUBNjD_VlSYklsigheq0KDfEK7yVDfjdrm96pBnLSvA1tNIo9wRRbk4TSWGjkS-165JmWpdYUseQUQPLvhYcFSlUGlYkRcsdzfEvd30p2qs8PYvkVRgmr6I7_RpVOv91E0w2JNoatpWJdiqHln2ItEt2GC8D5KuaVCLWW7FujkhFrBomOJJ8xarJ40spG_Q",
+                    "id_token": "eyJraWQiOiI1M2xwRVZQcDA4eTZHbjdnWEZCR3BOaDdTSXZqbmdreWo3Wk1WUVJYcjFNPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjNGY4MzRlOC1kMGYxLTcwZDItOGZlNi1kN2I0MjVlMDFkZDgiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImFwcENsaWVudE5hbWUiOiJwZXRzYWZlIiwiaXNzIjoiaHR0cHM6Ly9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbS91cy1lYXN0LTFfeVZBa0NEeURjIiwiY29nbml0bzp1c2VybmFtZSI6ImM0ZjgzNGU4LWQwZjEtNzBkMi04ZmU2LWQ3YjQyNWUwMWRkOCIsInVzZXJJZCI6ImM0ZjgzNGU4LWQwZjEtNzBkMi04ZmU2LWQ3YjQyNWUwMWRkOCIsImF1ZCI6IjE4aHBwMDRwdXFtZ2Y1bmM2bzQ3NGxjcDJnIiwiZXZlbnRfaWQiOiJkN2FmMDRiNi01ZjQ0LTQzZDktYTg1NC0zYzZiZTM4MzQ3NTMiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTc4OTY1NjQ5NCwiZXhwIjoxNzg5NjYwMDk0LCJpYXQiOjE3ODk2NTY0OTQsImVtYWlsIjoidGlhbWFuZHlvc0BnbWFpbC5jb20ifQ.hAATHL_Y1zlIUMbg-loZFdFt0pnPANiCeWexWgmWbY_nXOgRdo7-YOahxZhjPB7u2c4LOndemXyYG2o8GL2dYCNvB-RpW9qgP4BU0NH1BQXb-cpEx99k9WKqgClExXNSN7HLuWIPMoqP4Dz8ToBmXjhf10BEm0gJO43oxbgiLyQD1edSIk3T5C4N7-i16EKcRWj1i3FMsBkn2QO26gtIio098SVQsey5UTjO_XUq0LgcEkqwBuD117KLGUuuBJzZwltSAJWrodLsD0n8M-oTMJo6cNd-BmkKUR1ElOq3n3jp3AfrJsQjdpAttLoFAN7G6e9qhsjAdeAaFxagdZkGeg",
+                    "refresh_token": "eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ.Eah-_xt0cpD-V8hoE-q65BB53Wc2l_uTW3d-71_CMjUEPlAOZEbQfL7NVkHVYnq0Tj0UNvjGZuKQHZ1zBb065wg_xDExddGHwpJeIW7ts_zb8P1VfFe9IsvY7hu0dlb-dXszSUik8pIapSJSodr5Re_eCsb5pdt-ethkMbcjC-kF3Nfi3nZ5spA_kJUl8CL7Iln5I0iH4SIteVdiBXg_MYeJGCzezV7DmmCGLfA4XpKzQl8oejjB6HT0B_t77U47Gqtk0J9M2Pj1Fq6rwuq9qX2MrzVZhK7wHEhpeOE9JGfGthA4rZCyPuk4P7lNZi9dLH8PzdPWXNm1E_kCsfh-FA.jfkaZcxviGmOm4w9.Xrd0gxPQcWfe_nckcz6-RRuyNYfBPsGGVRWiGGKO7B0QOIOy2KxD4hf2lB32cy7DZFVzBR80jxIpWxU3Yh60jjFGkThH-b4WlORVC6_RRXiHIVzoMDqr5OBP76lFGqQGmJ9x1_RbIhRubnxRzScAzKHrWlgD1hy-jBGfxvtc0g-gC1vzzPDeiq0aRBaP-ztjo-YkHv1205MsRminbR-BNbdVgS7vIds7nqIM0a2ibqYHSf17cOqQTM7bgh3cPuAKKTohiyDjTKiTZZJBAHSec8dnWd3pn2ElWLRs7t_0YyzTqS0QDZrKuhxLXyik-D1QjvyLdwXFHk0z3eVbaXeLOOOHLhtCXttV_6H8MBdJ2ZTHAHRtzprc7_6qslOld4jCW0StMOclgtOBh7pm66BzlCBPcDH5o_S7dYKZ38rsWtTzX0AFA1pFbNrAHG-tHmkOe9eghwJsLogeOcAfhC5UlHLEE2qQchWI-EYKQE5QWlcQbmJFXjOEInye85OdHCD72cV7_E2b3Oku0-iNPZqVLxB9DpyAml6wdWucsKqMLYauceVernuqqTqVcXaAux9dAZIUtVBJkOrBcPgsp-1067vGMYl245ZFgZN5rtd4-TmtnjbmF6tvecKfCfUN3L6LC13gOvXzC2vY1eDtosHosm7ghPfXcAKKWslhz4bqWVZe4HHCuLsFf0RbiRR1LYfKaJtnYX3-4FgOaMjGnHYW8zY8bzn-XbpkAk9EPttql2mX5iWpRg-DnbaSxpUqCe4yfoZSN1PDe3qgtS-AXyR48VsLtqAoq1CgqpGZPtZ5Ms3Gna4_Xkch4GvcItg8446n-5Pc4_ROWHRbc1KpLYIKUXk_d2BwNhM0peh8gleUZzM8zHll1KWNRlUV2ZdZou6w56UaHwHoAiKo9hxuiJbmqfmBBT8qkpGQlEm8amFjD-8rjQEi4OPOKEu5WpXbQ_NMQu6G4Mon86G315r6tPtucZM6wR1RGUaYIA402mV081Fwras3XZtsKLa0u6Eh2PAumcBW0mqWTHvsCR2nAMwaS_WNOu2XVmqw497IkFIGr9pmhiXeE7EU-n41S_5X_8h-_TFmkslwBtl1lq3lq-bq-o-dir2O5scUFp-NOV3eM9DJgJZJbKqH7yl072cvKD7R0enjWjeIGMQuMux9iZBNO6ZnNrWsD6n5WfDQXg7zPzxaiRsxdFTL4ejl8TkQP7Z1ul0BkGmeJPAiPvXg3j6xvdvbvu-p9qfeX4eQPVxiKAP8EMs98GbrzFZw1Ghfg40TIfEVZjlLE6X6TEv4ipAJ1v4YoKwUsYffqYyhJMB9gOWsPyJ-vqlq.WpRfz_Cy5UPFU383iCZxyQ"
+                },
+                "target_meal_cups": 1.375,
+                "events_sensor": "events"
+            },
+            "service_configs": [
+                {
+                    "type": "data_manager",
+                    "attributes": {
+                        "capture_methods": [
+                            {
+                                "method": "DoCommand",
+                                "capture_frequency_hz": 0.00056,
+                                "disabled": false,
+                                "additional_params": {
+                                    "docommand_input": {
+                                        "command": "status"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "ui_folder": {
+                "name": "Pet feeding"
+            }
+        }
+    ],
+    "services": [
+        {
+            "name": "streamdeck",
+            "api": "rdk:service:generic",
+            "model": "erh:viam-streamdeck:streamdeck-any",
+            "attributes": {
+                "brightness": 100,
+                "assets": {
+                    "images": [
+                        "/root/emoji",
+                        "/root/products72"
+                    ]
+                },
+                "keys": [
+                    {
+                        "key": 0,
+                        "text": " ",
+                        "component": "inventory",
+                        "method": "do_command",
+                        "args": [
+                            {
+                                "command": "status"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "ui_folder": {
+                "name": "Inventory"
+            }
+        },
+        {
+            "name": "onvif-discovery",
+            "api": "rdk:service:discovery",
+            "model": "viam:viamrtsp:onvif",
+            "attributes": {
+                "credentials": [
+                    {
+                        "pass": "mLK4j#4hGbb5mu",
+                        "user": "admin"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "data_manager-1",
+            "api": "rdk:service:data_manager",
+            "model": "rdk:builtin:builtin",
+            "attributes": {
+                "sync_interval_mins": 0.1,
+                "capture_dir": "",
+                "tags": [],
+                "additional_sync_paths": []
+            }
+        }
+    ],
+    "modules": [
+        {
+            "type": "registry",
+            "name": "joseph_inventory",
+            "module_id": "joseph:inventory",
+            "version": "latest"
+        },
+        {
+            "type": "registry",
+            "name": "viam_event_queue",
+            "module_id": "viam:event-queue",
+            "version": "latest"
+        },
+        {
+            "type": "registry",
+            "name": "viam_waterer",
+            "module_id": "viam:waterer",
+            "version": "latest"
+        },
+        {
+            "type": "registry",
+            "name": "viam_viamrtsp",
+            "module_id": "viam:viamrtsp",
+            "version": "latest"
+        },
+        {
+            "type": "registry",
+            "name": "petsafe-smart-feed",
+            "module_id": "viam:petsafe-smart-feed",
+            "version": "latest"
+        },
+        {
+            "type": "registry",
+            "name": "viam_switchbot",
+            "module_id": "viam:switchbot",
+            "version": "latest"
+        },
+        {
+            "type": "registry",
+            "name": "erh_viamkasa",
+            "module_id": "erh:viamkasa",
+            "version": "0.0.6"
+        },
+        {
+            "type": "registry",
+            "name": "erh_viam-streamdeck",
+            "module_id": "erh:viam-streamdeck",
+            "version": "latest-with-prerelease"
+        }
+    ],
+    "remotes": [
+        {
+            "name": "crate-cam",
+            "address": "crate-cam-main.4i90nhwkfq.viam.cloud",
+            "auth": {
+                "type": "api-key",
+                "credentials": {
+                    "type": "api-key",
+                    "payload": "94p0zn2rg5s68u2ap996vn01erfesbgs"
+                },
+                "entity": "675c9010-8487-4679-9115-837ee651092b"
+            },
+            "ui_folder": {
+                "name": "Remotes"
+            }
+        },
+        {
+            "name": "living-room",
+            "address": "living-room.4i90nhwkfq.viam.cloud",
+            "auth": {
+                "type": "api-key",
+                "credentials": {
+                    "type": "api-key",
+                    "payload": "2hr8rq53ts863o3vrffizjzg827rqyjt"
+                },
+                "entity": "a4173eb4-8f33-4726-b301-83f3cf96ddc1"
+            },
+            "ui_folder": {
+                "name": "Remotes"
+            }
+        }
+    ],
+    "triggers": [
+        {
+            "name": "thermostat_off",
+            "event": {
+                "type": "conditional_data_ingested",
+                "conditional": {
+                    "data_capture_method": "sensor:events:Readings",
+                    "condition": {
+                        "evals": [
+                            {
+                                "operator": "eq",
+                                "value": {
+                                    "event_type": "thermostat_off"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "notifications": [
+                {
+                    "type": "email",
+                    "value": "2015277808@vtext.com",
+                    "seconds_between_notifications": 0
+                }
+            ],
+            "ui_folder": {
+                "name": "SwitchBots"
+            }
+        },
+        {
+            "name": "building-door-opened",
+            "event": {
+                "type": "conditional_data_ingested",
+                "conditional": {
+                    "data_capture_method": "sensor:events:Readings",
+                    "condition": {
+                        "evals": [
+                            {
+                                "operator": "eq",
+                                "value": {
+                                    "event_type": "door_opened"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "notifications": [
+                {
+                    "type": "email",
+                    "value": "2015277808@vtext.com",
+                    "seconds_between_notifications": 0
+                }
+            ],
+            "ui_folder": {
+                "name": "Miscellaneous"
+            }
+        },
+        {
+            "name": "thermostat_on",
+            "event": {
+                "type": "conditional_data_ingested",
+                "conditional": {
+                    "data_capture_method": "sensor:events:Readings",
+                    "condition": {
+                        "evals": [
+                            {
+                                "operator": "eq",
+                                "value": {
+                                    "event_type": "thermostat_on"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "notifications": [
+                {
+                    "type": "email",
+                    "value": "2015277808@vtext.com",
+                    "seconds_between_notifications": 0
+                }
+            ],
+            "ui_folder": {
+                "name": "Miscellaneous"
+            }
+        },
+        {
+            "name": "zion-fed",
+            "event": {
+                "type": "conditional_data_ingested",
+                "conditional": {
+                    "data_capture_method": "sensor:events:Readings",
+                    "condition": {
+                        "evals": [
+                            {
+                                "operator": "eq",
+                                "value": {
+                                    "event_type": "feed_dispensed"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "notifications": [
+                {
+                    "type": "email",
+                    "value": "2015277808@vtext.com",
+                    "seconds_between_notifications": 0
+                },
+                {
+                    "type": "email",
+                    "value": "tazabdaftari@gmail.com",
+                    "seconds_between_notifications": 0
+                }
+            ],
+            "ui_folder": {
+                "name": "Miscellaneous"
+            }
+        },
+        {
+            "name": "pi-offline",
+            "event": {
+                "type": "part_offline"
+            },
+            "notifications": [
+                {
+                    "type": "email",
+                    "value": "2015277808@vtext.com"
+                }
+            ],
+            "ui_folder": {
+                "name": "Miscellaneous"
+            }
+        },
+        {
+            "name": "pi-online",
+            "event": {
+                "type": "part_online"
+            },
+            "notifications": [
+                {
+                    "type": "email",
+                    "value": "2015277808@vtext.com"
+                }
+            ],
+            "ui_folder": {
+                "name": "Miscellaneous"
+            }
+        },
+        {
+            "name": "meter-battery-low",
+            "event": {
+                "type": "conditional_data_ingested",
+                "conditional": {
+                    "data_capture_method": "sensor:meter_4c:Readings",
+                    "condition": {
+                        "evals": [
+                            {
+                                "operator": "lte",
+                                "value": {
+                                    "battery_pct": 20
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "notifications": [
+                {
+                    "type": "email",
+                    "value": "2015277808@vtext.com",
+                    "seconds_between_notifications": 21600
+                }
+            ],
+            "ui_folder": {
+                "name": "Miscellaneous"
+            }
+        },
+        {
+            "name": "feeder-food-low",
+            "event": {
+                "type": "conditional_data_ingested",
+                "conditional": {
+                    "data_capture_method": "rdk:component:generic/feeder/DoCommand",
+                    "condition": {
+                        "evals": [
+                            {
+                                "operator": "gte",
+                                "value": {
+                                    "food_low_status": 1
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "notifications": [
+                {
+                    "type": "email",
+                    "value": "2015277808@vtext.com",
+                    "seconds_between_notifications": 43200
+                }
+            ],
+            "ui_folder": {
+                "name": "Miscellaneous"
+            }
+        },
+        {
+            "name": "zion-drank",
+            "event": {
+                "type": "conditional_data_ingested",
+                "conditional": {
+                    "data_capture_method": "sensor:events:Readings",
+                    "condition": {
+                        "evals": [
+                            {
+                                "operator": "eq",
+                                "value": {
+                                    "event_type": "water_dispensed"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "notifications": [
+                {
+                    "type": "email",
+                    "value": "2015277808@vtext.com",
+                    "seconds_between_notifications": 0
+                },
+                {
+                    "type": "email",
+                    "value": "tazabdaftari@gmail.com",
+                    "seconds_between_notifications": 0
+                }
+            ],
+            "ui_folder": {
+                "name": "Miscellaneous"
+            }
+        }
+    ],
+    "fragments": [
+        {
+            "id": "b511adfa-80ab-4a70-9bd5-fbb14696b17e"
+        }
+    ]
+}
