@@ -16,10 +16,24 @@ const RANGES = [
   { label: '7d', hours: 24 * 7, bucketMinutes: 60 * 24 },
 ];
 
-const WHINE_CLASSES = new Set(['Whimper (dog)']);
+// All seven YAMNet dog-vocalization classes. Order controls:
+// - stack order in the chart (bottom → top in this order)
+// - legend render order
+// - which short label the UI uses
+const SOUND_CLASSES = [
+  { key: 'Bark',          label: 'barks',    singular: 'bark',    noun: 'Barking',  color: '#0071e3' },
+  { key: 'Yip',           label: 'yips',     singular: 'yip',     noun: 'Yipping',  color: '#30d158' },
+  { key: 'Bow-wow',       label: 'bow-wows', singular: 'bow-wow', noun: 'Bow-wow',  color: '#af52de' },
+  { key: 'Howl',          label: 'howls',    singular: 'howl',    noun: 'Howling',  color: '#ff2d55' },
+  { key: 'Growling',      label: 'growls',   singular: 'growl',   noun: 'Growling', color: '#8e8e93' },
+  { key: 'Whimper (dog)', label: 'whines',   singular: 'whine',   noun: 'Whining',  color: '#ff9f0a' },
+  { key: 'Dog',           label: 'dog',      singular: 'dog',     noun: 'Dog',      color: '#aeaeb2' },
+];
 
-function categorize(topClass) {
-  return WHINE_CLASSES.has(topClass) ? 'whine' : 'bark';
+const CLASS_BY_KEY = Object.fromEntries(SOUND_CLASSES.map((c) => [c.key, c]));
+
+function classOf(topClass) {
+  return CLASS_BY_KEY[topClass] || CLASS_BY_KEY.Dog;
 }
 
 function bucketSounds(events, hours, bucketMinutes) {
@@ -29,21 +43,19 @@ function bucketSounds(events, hours, bucketMinutes) {
   const nBuckets = Math.ceil((hours * 60) / bucketMinutes);
   const buckets = new Array(nBuckets).fill(0).map((_, i) => ({
     ts: start + i * size,
-    barks: 0,
-    whines: 0,
+    ...Object.fromEntries(SOUND_CLASSES.map((c) => [c.key, 0])),
   }));
   for (const e of events) {
     const t = e.at.getTime();
     if (t < start || t > now) continue;
     const idx = Math.min(buckets.length - 1, Math.floor((t - start) / size));
-    if (categorize(e.topClass) === 'whine') buckets[idx].whines += 1;
-    else buckets[idx].barks += 1;
+    const cls = classOf(e.topClass).key;
+    buckets[idx][cls] += 1;
   }
-  return buckets.map((b) => ({
-    label: labelForBucket(new Date(b.ts), hours),
-    barks: b.barks,
-    whines: b.whines,
-  }));
+  return buckets.map((b) => {
+    const { ts, ...counts } = b;
+    return { label: labelForBucket(new Date(ts), hours), ...counts };
+  });
 }
 
 function labelForBucket(d, hours) {
@@ -60,18 +72,18 @@ function InfoSheet({ onClose }) {
     return () => cancelAnimationFrame(id);
   }, []);
 
+  const close = React.useCallback(() => {
+    setOpen(false);
+    setTimeout(onClose, 180);
+  }, [onClose]);
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') close();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
-
-  const close = () => {
-    setOpen(false);
-    setTimeout(onClose, 180);
-  };
+  }, [close]);
 
   return (
     <>
@@ -85,11 +97,18 @@ function InfoSheet({ onClose }) {
         </p>
         <p>
           Any clip that scores above <b>0.5 confidence</b> on a dog-vocalization
-          class is logged. The top-scoring class per clip decides the bucket:
+          class is logged. The top-scoring class per clip decides the bucket.
+          YAMNet distinguishes seven dog classes:
         </p>
         <p>
-          <b>Whines</b> — Whimper (dog).<br />
-          <b>Barks</b> — Bark, Yip, Bow-wow, Howl, Growling, or generic Dog.
+          <b>Bark</b> — sharp woof.<br />
+          <b>Yip</b> — small-dog high-pitched bark.<br />
+          <b>Bow-wow</b> — classic repeating bark.<br />
+          <b>Howl</b> — prolonged howl.<br />
+          <b>Growling</b> — growl.<br />
+          <b>Whimper (dog)</b> — whine.<br />
+          <b>Dog</b> — generic catch-all for dog-ish sounds that don't fit
+          the above (noisier, more false positives).
         </p>
         <p>
           A 2-second debounce prevents one long bark from logging multiple times.
@@ -133,8 +152,11 @@ export default function SoundsPage() {
     ];
   }, [chartData]);
 
-  const barkCount = history.filter((e) => categorize(e.topClass) === 'bark').length;
-  const whineCount = history.length - barkCount;
+  const counts = useMemo(() => {
+    const out = Object.fromEntries(SOUND_CLASSES.map((c) => [c.key, 0]));
+    for (const e of history) out[classOf(e.topClass).key] += 1;
+    return out;
+  }, [history]);
 
   const availability = {
     '/feeder': !!ctx.feederName,
@@ -174,18 +196,20 @@ export default function SoundsPage() {
   }
 
   const rel = formatRelative(lastBarkAt);
+  const nonZero = SOUND_CLASSES.filter((c) => counts[c.key] > 0);
   const ledeParts = [];
-  if (barkCount > 0 || whineCount > 0) {
-    ledeParts.push(`${barkCount} bark${barkCount === 1 ? '' : 's'}`);
-    ledeParts.push(`${whineCount} whine${whineCount === 1 ? '' : 's'}`);
-    ledeParts.push(`in ${activeRange.label}`);
-  } else {
+  if (nonZero.length === 0) {
     ledeParts.push(`quiet in ${activeRange.label}`);
+  } else {
+    for (const c of nonZero) {
+      const n = counts[c.key];
+      ledeParts.push(`${n} ${n === 1 ? c.singular : c.label}`);
+    }
+    ledeParts.push(`in ${activeRange.label}`);
   }
   if (rel) ledeParts.push(`last ${rel}`);
   const lede = ledeParts.join(' · ');
 
-  // Today: first/loudest/last within the current range.
   const sorted = history.slice().sort((a, b) => a.at - b.at);
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
@@ -232,12 +256,16 @@ export default function SoundsPage() {
           <div className="sounds__cols">
             <div className="sounds__col">
               <div className="sounds__legend">
-                <button type="button" onClick={() => setInfoOpen(true)}>
-                  <i className="k1" />Barks
-                </button>
-                <button type="button" onClick={() => setInfoOpen(true)}>
-                  <i className="k2" />Whines
-                </button>
+                {SOUND_CLASSES.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setInfoOpen(true)}
+                    title="How sounds are detected"
+                  >
+                    <i style={{ background: c.color }} />{c.label}
+                  </button>
+                ))}
                 <button
                   type="button"
                   className="sounds__info"
@@ -265,8 +293,15 @@ export default function SoundsPage() {
                           fontSize: 12,
                         }}
                       />
-                      <Bar dataKey="barks" stackId="s" fill="#0071e3" radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="whines" stackId="s" fill="#ff9f0a" radius={[3, 3, 0, 0]} />
+                      {SOUND_CLASSES.map((c, i) => (
+                        <Bar
+                          key={c.key}
+                          dataKey={c.key}
+                          stackId="s"
+                          fill={c.color}
+                          radius={i === SOUND_CLASSES.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                        />
+                      ))}
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -278,7 +313,7 @@ export default function SoundsPage() {
                     <div className="sounds-row__nm">First sound</div>
                     <div className="sounds-row__sb">{formatTime(first.at.getTime())}</div>
                   </div>
-                  <span className="sounds-row__amt">{categorize(first.topClass)}</span>
+                  <span className="sounds-row__amt">{classOf(first.topClass).singular}</span>
                 </div>
               ) : null}
               {loudest ? (
@@ -289,7 +324,7 @@ export default function SoundsPage() {
                       {formatTime(loudest.at.getTime())} · score {loudest.score.toFixed(2)}
                     </div>
                   </div>
-                  <span className="sounds-row__amt">{categorize(loudest.topClass)}</span>
+                  <span className="sounds-row__amt">{classOf(loudest.topClass).singular}</span>
                 </div>
               ) : null}
               {last ? (
@@ -301,7 +336,7 @@ export default function SoundsPage() {
                       {rel ? ` · quiet for ${rel.replace(' ago', '')}` : ''}
                     </div>
                   </div>
-                  <span className="sounds-row__amt">{categorize(last.topClass)}</span>
+                  <span className="sounds-row__amt">{classOf(last.topClass).singular}</span>
                 </div>
               ) : null}
             </div>
@@ -312,14 +347,15 @@ export default function SoundsPage() {
                 <p className="sounds__empty">No events yet.</p>
               ) : (
                 recent.map((e, i) => {
-                  const kind = categorize(e.topClass);
+                  const cls = classOf(e.topClass);
                   return (
                     <div key={`${e.at.getTime()}-${i}`} className="sounds-row">
-                      <span className={`sounds-row__dot sounds-row__dot--${kind}`} />
+                      <span
+                        className="sounds-row__dot"
+                        style={{ background: cls.color }}
+                      />
                       <div className="sounds-row__tx">
-                        <div className="sounds-row__nm">
-                          {kind === 'whine' ? 'Whining' : 'Barking'}
-                        </div>
+                        <div className="sounds-row__nm">{cls.noun}</div>
                         <div className="sounds-row__sb">
                           {formatTime(e.at.getTime())} · {e.topClass} ({e.score.toFixed(2)})
                         </div>
