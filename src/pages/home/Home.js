@@ -142,8 +142,8 @@ export default function Home() {
       {pending && (
         <ConfirmModal
           title={pending.title}
-          body={pending.body}
-          picker={pending.picker}
+          hint={pending.hint}
+          amount={pending.amount}
           confirmLabel={pending.confirmLabel}
           destructive={pending.destructive}
           busy={busy}
