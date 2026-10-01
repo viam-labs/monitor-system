@@ -208,6 +208,7 @@ export function useMachineConnection() {
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [barkName, setBarkName] = useState(null);
   const [airName, setAirName] = useState(null);
+  const [musicName, setMusicName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detectingFeatures, setDetectingFeatures] = useState(true);
   const [pendingProbes, setPendingProbes] = useState({ generic: 0, sensor: 0 });
@@ -229,6 +230,7 @@ export function useMachineConnection() {
       if (d.roomMeterName) setRoomMeterName(d.roomMeterName);
       if (d.barkName) setBarkName(d.barkName);
       if (d.airName) setAirName(d.airName);
+      if (d.musicName) setMusicName(d.musicName);
     };
 
     async function init() {
@@ -302,6 +304,7 @@ export function useMachineConnection() {
     roomMeterName,
     barkName,
     airName,
+    musicName,
     loading,
     detectingFeatures,
     pendingProbes,
