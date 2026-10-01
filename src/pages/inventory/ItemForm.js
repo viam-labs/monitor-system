@@ -1,165 +1,160 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-export default function ItemForm({ initial, busy, submitLabel, onSubmit, onCancel }) {
-  const initialHasSupply = initial.package_qty != null;
-  const initialHasRoutine = !!initial.routine;
+export default function NewItemSheet({
+  open, initialGroup, existingGroups, busy, onSubmit, onCancel,
+}) {
+  const [showing, setShowing] = useState(false);
+  const [name, setName] = useState('');
+  const [group, setGroup] = useState(initialGroup || 'kitchen');
+  const [customGroup, setCustomGroup] = useState('');
+  const [startingCount, setStartingCount] = useState('1');
+  const [lowAt, setLowAt] = useState('1');
 
-  const [name, setName] = useState(initial.name || '');
-  const [supplyOn, setSupplyOn] = useState(initialHasSupply || !initialHasRoutine);
-  const [routineOn, setRoutineOn] = useState(initialHasRoutine);
-  const [packageQty, setPackageQty] = useState(
-    initial.package_qty != null ? String(initial.package_qty) : '1',
-  );
-  const [intervalDays, setIntervalDays] = useState(
-    initial.routine?.interval_days != null ? String(initial.routine.interval_days) : '1',
-  );
-  const [deckSlot, setDeckSlot] = useState(
-    initial.button?.slot != null ? String(initial.button.slot) : '',
-  );
-  const [barcode, setBarcode] = useState(initial.barcode || '');
-
-  const submit = (e) => {
-    e.preventDefault();
-    const trimmedName = name.trim();
-    if (!trimmedName) return;
-    if (!supplyOn && !routineOn) return;
-    const payload = {
-      name: trimmedName,
-      barcode: barcode.trim() || null,
+  useEffect(() => {
+    if (!open) return undefined;
+    setName('');
+    setGroup(initialGroup || existingGroups[0] || 'kitchen');
+    setCustomGroup('');
+    setStartingCount('1');
+    setLowAt('1');
+    const id = requestAnimationFrame(() => setShowing(true));
+    return () => {
+      cancelAnimationFrame(id);
+      setShowing(false);
     };
-    if (supplyOn) {
-      const pkg = Number(packageQty);
-      if (!Number.isInteger(pkg) || pkg <= 0) return;
-      payload.package_qty = pkg;
-    } else {
-      payload.package_qty = null;
-    }
-    if (routineOn) {
-      const days = Number(intervalDays);
-      if (!Number.isInteger(days) || days <= 0) return;
-      payload.routine = {
-        interval_days: days,
-        last_done_at: initial.routine?.last_done_at ?? null,
-      };
-    } else {
-      payload.routine = null;
-    }
-    if (deckSlot !== '') {
-      const s = Number(deckSlot);
-      if (!Number.isInteger(s) || s < 0) return;
-      payload.button = { device: 'kitchen', slot: s };
-    } else {
-      payload.button = null;
-    }
-    if (initial.id) payload.id = initial.id;
-    onSubmit(payload);
+  }, [open, initialGroup, existingGroups]);
+
+  const close = () => {
+    if (busy) return;
+    setShowing(false);
+    setTimeout(onCancel, 180);
   };
 
+  const submit = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const qty = Number(startingCount);
+    const low = lowAt === '' ? null : Number(lowAt);
+    if (!Number.isInteger(qty) || qty < 0) return;
+    if (low !== null && (!Number.isInteger(low) || low < 0)) return;
+    const finalGroup = group === '__new__'
+      ? customGroup.trim() || 'other'
+      : group;
+    onSubmit({
+      name: trimmed,
+      package_qty: 1,
+      quantity: qty,
+      threshold: low,
+      button: { device: finalGroup, slot: null },
+    });
+  };
+
+  if (!open) return null;
+
   return (
-    <form className="automation-card__form" onSubmit={submit}>
-      <label className="automation-form__field">
-        <span className="automation-form__label">Name</span>
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          disabled={busy}
-          maxLength={60}
-          required
-        />
-      </label>
+    <>
+      <div className={'inv-scrim' + (showing ? ' on' : '')} onClick={close} />
+      <form
+        className={'inv-sheet' + (showing ? ' on' : '')}
+        role="dialog"
+        aria-modal="true"
+        onSubmit={submit}
+      >
+        <div className="inv-sheet__grab" aria-hidden="true" />
+        <h2 className="inv-sheet__title">New item</h2>
 
-      <label className="item-form__capability">
-        <input
-          type="checkbox"
-          checked={supplyOn}
-          onChange={e => setSupplyOn(e.target.checked)}
-          disabled={busy}
-        />
-        <span>Track supply (count)</span>
-      </label>
-      {supplyOn && (
-        <label className="automation-form__field">
-          <span className="automation-form__label">Add per scan</span>
+        <div className="inv-field">
+          <label htmlFor="ni-name">Name</label>
           <input
-            type="number"
-            min="1"
-            step="1"
-            value={packageQty}
-            onChange={e => setPackageQty(e.target.value)}
+            id="ni-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Paper towels"
             disabled={busy}
+            autoFocus
+            maxLength={60}
           />
-        </label>
-      )}
+        </div>
 
-      <label className="item-form__capability">
-        <input
-          type="checkbox"
-          checked={routineOn}
-          onChange={e => setRoutineOn(e.target.checked)}
-          disabled={busy}
-        />
-        <span>Track routine (schedule)</span>
-      </label>
-      {routineOn && (
-        <label className="automation-form__field">
-          <span className="automation-form__label">Every N days</span>
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={intervalDays}
-            onChange={e => setIntervalDays(e.target.value)}
+        <div className="inv-field">
+          <label htmlFor="ni-group">Group</label>
+          <select
+            id="ni-group"
+            value={group}
+            onChange={(e) => setGroup(e.target.value)}
             disabled={busy}
-          />
-        </label>
-      )}
+          >
+            {existingGroups.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+            <option value="__new__">New group…</option>
+          </select>
+        </div>
 
-      <label className="automation-form__field">
-        <span className="automation-form__label">Deck slot</span>
-        <input
-          type="number"
-          min="0"
-          step="1"
-          value={deckSlot}
-          onChange={e => setDeckSlot(e.target.value)}
-          disabled={busy}
-          placeholder="—"
-        />
-      </label>
+        {group === '__new__' && (
+          <div className="inv-field">
+            <label htmlFor="ni-custom">New group name</label>
+            <input
+              id="ni-custom"
+              type="text"
+              value={customGroup}
+              onChange={(e) => setCustomGroup(e.target.value)}
+              placeholder="Household"
+              disabled={busy}
+              maxLength={30}
+            />
+          </div>
+        )}
 
-      <label className="automation-form__field">
-        <span className="automation-form__label">Barcode</span>
-        <input
-          type="text"
-          value={barcode}
-          onChange={e => setBarcode(e.target.value)}
-          disabled={busy}
-          maxLength={32}
-          placeholder="—"
-        />
-      </label>
+        <div className="inv-frow">
+          <div className="inv-field">
+            <label htmlFor="ni-qty">Starting count</label>
+            <input
+              id="ni-qty"
+              type="number"
+              min="0"
+              value={startingCount}
+              onChange={(e) => setStartingCount(e.target.value)}
+              disabled={busy}
+            />
+          </div>
+          <div className="inv-field">
+            <label htmlFor="ni-low">Low at</label>
+            <input
+              id="ni-low"
+              type="number"
+              min="0"
+              value={lowAt}
+              onChange={(e) => setLowAt(e.target.value)}
+              disabled={busy}
+            />
+          </div>
+        </div>
 
-      <div className="automation-card__actions">
-        {onCancel && (
+        <p className="inv-sheet__hint">
+          Added to the end. Drag to set its Stream Deck slot.
+        </p>
+
+        <div className="inv-sheet__actions">
           <button
             type="button"
-            className="feeder-secondary-button"
-            onClick={onCancel}
+            className="inv-sheet__cancel"
+            onClick={close}
             disabled={busy}
           >
             Cancel
           </button>
-        )}
-        <span className="automation-card__spacer" />
-        <button
-          type="submit"
-          className="feeder-primary-button feeder-primary-button--sm"
-          disabled={busy || (!supplyOn && !routineOn)}
-        >
-          {busy ? 'Saving…' : submitLabel}
-        </button>
-      </div>
-    </form>
+          <button
+            type="submit"
+            className="inv-sheet__confirm"
+            disabled={busy || !name.trim()}
+          >
+            {busy ? 'Adding…' : 'Add item'}
+          </button>
+        </div>
+      </form>
+    </>
   );
 }

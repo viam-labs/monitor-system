@@ -1,26 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import {
-  DndContext,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
+  DndContext, PointerSensor, closestCenter, useSensor, useSensors,
 } from '@dnd-kit/core';
 import {
-  SortableContext,
-  arrayMove,
-  verticalListSortingStrategy,
+  SortableContext, arrayMove, verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import BarcodeScanner from '../../components/BarcodeScanner';
 import TopNav from '../../components/TopNav';
 import BottomTabBar from '../../components/BottomTabBar';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
-import ItemForm from './ItemForm';
 import ItemRow from './ItemRow';
 import SortableItemRow from './SortableItemRow';
+import NewItemSheet from './ItemForm';
 import './Inventory.css';
+
+const DEFAULT_GROUP = 'kitchen';
 
 export default function InventoryPage() {
   const ctx = useOutletContext();
@@ -32,10 +27,9 @@ export default function InventoryPage() {
     inventory: inv,
   } = ctx;
   const stillProbing = !inventoryName && pendingProbes && pendingProbes.generic > 0;
-  const { items, loading, error, busy } = inv;
+  const { items, busy, error } = inv;
+  const [addGroupHint, setAddGroupHint] = useState(DEFAULT_GROUP);
   const [addOpen, setAddOpen] = useState(false);
-  const [addInitial, setAddInitial] = useState({});
-  const [scanOpen, setScanOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -57,6 +51,35 @@ export default function InventoryPage() {
     '/door': !!ctx.doorUnlockName,
   };
 
+  const { groups, outCount, lowCount } = useMemo(() => {
+    const byGroup = new Map();
+    const unassigned = [];
+    let out = 0;
+    let low = 0;
+    for (const it of items) {
+      if (it.quantity === 0) out += 1;
+      else if (it.threshold != null && it.quantity <= it.threshold) low += 1;
+      const g = it.button?.device;
+      if (!g) unassigned.push(it);
+      else {
+        if (!byGroup.has(g)) byGroup.set(g, []);
+        byGroup.get(g).push(it);
+      }
+    }
+    for (const list of byGroup.values()) {
+      list.sort((a, b) => (a.button?.slot ?? 0) - (b.button?.slot ?? 0));
+    }
+    unassigned.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const result = [...byGroup.entries()].map(([name, list]) => ({ name, list }));
+    if (unassigned.length) result.push({ name: 'unassigned', list: unassigned });
+    return { groups: result, outCount: out, lowCount: low };
+  }, [items]);
+
+  const existingGroups = useMemo(
+    () => groups.map((g) => g.name).filter((n) => n !== 'unassigned'),
+    [groups],
+  );
+
   if (connectionLoading || detectingFeatures || stillProbing) {
     return (
       <div className="inventory-page">
@@ -76,11 +99,7 @@ export default function InventoryPage() {
         <div className="inventory-page__body">
           <div className="inventory-stub">
             <h1 className="inventory-page__title">Inventory</h1>
-            <p>
-              No inventory tracker configured on this machine. Add a{' '}
-              <code>joseph:inventory:tracker</code> generic component paired with a{' '}
-              <code>viam:event-queue:sensor</code>.
-            </p>
+            <p>No inventory tracker configured on this machine.</p>
           </div>
         </div>
         <BottomTabBar />
@@ -89,76 +108,109 @@ export default function InventoryPage() {
   }
 
   const handleAdd = async (payload) => {
-    try { await inv.addItem(payload); setAddOpen(false); setAddInitial({}); } catch { /* stay open */ }
-  };
-
-  const handleScan = async (barcode) => {
-    setScanOpen(false);
     try {
-      const resp = await inv.scanBarcode(barcode);
-      if (resp?.matched) {
-        setToast({ kind: 'success', text: `Added ${resp.added} to ${resp.item?.name} · now ${resp.item?.quantity}` });
-      } else {
-        const prefill = resp?.prefill || {};
-        setAddInitial({ name: prefill.name || '', barcode: resp?.barcode || barcode });
-        setAddOpen(true);
-        setToast({ kind: 'info', text: 'New barcode — fill in the details' });
-      }
-    } catch (e) {
-      setToast({ kind: 'error', text: e?.message || 'Scan failed' });
+      await inv.addItem(payload);
+      setAddOpen(false);
+      setToast({ kind: 'success', text: `Added ${payload.name}` });
+    } catch {
+      // stay open — error is surfaced via inv.error
     }
   };
 
-  const handleSave = async (payload) => {
-    try { await inv.editItem(payload); } catch { /* surfaced */ }
+  const openAdd = (groupHint) => {
+    setAddGroupHint(groupHint || DEFAULT_GROUP);
+    setAddOpen(true);
   };
+
   const handleSetThreshold = async (id, value) => {
     try { await inv.editItem({ id, threshold: value }); } catch { /* surfaced */ }
   };
+
+  const handleSetSlot = async (id, slot) => {
+    const item = items.find((i) => i.id === id);
+    const device = item?.button?.device ?? DEFAULT_GROUP;
+    try {
+      await inv.editItem({ id, button: slot === null ? null : { device, slot } });
+    } catch { /* surfaced */ }
+  };
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete ${name}?`)) return;
     try { await inv.deleteItem(id); } catch { /* surfaced */ }
   };
 
-  const groupsByDevice = new Map();
-  const unassigned = [];
-  for (const it of items) {
-    const dev = it.button?.device;
-    if (!dev) unassigned.push(it);
-    else {
-      if (!groupsByDevice.has(dev)) groupsByDevice.set(dev, []);
-      groupsByDevice.get(dev).push(it);
-    }
-  }
-  for (const list of groupsByDevice.values()) {
-    list.sort((a, b) => (a.button?.slot ?? 0) - (b.button?.slot ?? 0));
-  }
-  unassigned.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-  const handleDragEnd = (device) => async (event) => {
+  const handleDragEnd = (group) => async (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const list = groupsByDevice.get(device) || [];
-    const oldIndex = list.findIndex((i) => i.id === active.id);
-    const newIndex = list.findIndex((i) => i.id === over.id);
+    const g = groups.find((x) => x.name === group);
+    if (!g) return;
+    const oldIndex = g.list.findIndex((i) => i.id === active.id);
+    const newIndex = g.list.findIndex((i) => i.id === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
-    const nextOrder = arrayMove(list, oldIndex, newIndex).map((i) => i.id);
-    try { await inv.reorderDeck(nextOrder, device); } catch { /* surfaced */ }
+    const nextOrder = arrayMove(g.list, oldIndex, newIndex).map((i) => i.id);
+    try { await inv.reorderDeck(nextOrder, group); } catch { /* surfaced */ }
   };
 
-  const handleMarkDone = async (id) => {
-    try { await inv.markRoutineDone(id); } catch { /* surfaced */ }
-  };
+  const lede = `${items.length} item${items.length === 1 ? '' : 's'}`
+    + (outCount > 0 ? ` · ${outCount} out` : '')
+    + (lowCount > 0 ? ` · ${lowCount} low` : '')
+    + ' · order sets Stream Deck slots';
 
-  const total = items.length;
-  const outCount = items.filter((i) => i.quantity === 0).length;
-  const lowCount = items.filter(
-    (i) => i.quantity > 0 && i.threshold != null && i.quantity <= i.threshold,
-  ).length;
-  const ledeParts = [`${total} item${total === 1 ? '' : 's'}`];
-  if (outCount > 0) ledeParts.push(`${outCount} out`);
-  if (lowCount > 0) ledeParts.push(`${lowCount} low`);
-  const lede = ledeParts.join(' · ');
+  const columnFor = (i) => (mobile || groups.length < 2 ? 0 : i % 2);
+  const left = groups.filter((_, i) => columnFor(i) === 0);
+  const right = groups.filter((_, i) => columnFor(i) === 1);
+
+  const renderGroup = (group) => (
+    <div key={group.name} className="inv-group">
+      <p className="inv-sect">{group.name}</p>
+      {group.name === 'unassigned' ? (
+        group.list.map((item) => (
+          <ItemRow
+            key={item.id}
+            item={item}
+            busy={busy}
+            onIncrement={inv.increment}
+            onDecrement={inv.decrement}
+            onSetThreshold={handleSetThreshold}
+            onSetSlot={handleSetSlot}
+            onDelete={handleDelete}
+          />
+        ))
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd(group.name)}
+        >
+          <SortableContext
+            items={group.list.map((i) => i.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {group.list.map((item) => (
+              <SortableItemRow
+                key={item.id}
+                item={item}
+                busy={busy}
+                onIncrement={inv.increment}
+                onDecrement={inv.decrement}
+                onSetThreshold={handleSetThreshold}
+                onSetSlot={handleSetSlot}
+                onDelete={handleDelete}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
+      <button
+        type="button"
+        className="inv-add"
+        onClick={() => openAdd(group.name === 'unassigned' ? DEFAULT_GROUP : group.name)}
+        disabled={busy}
+      >
+        + Add item
+      </button>
+    </div>
+  );
 
   return (
     <div className="inventory-page">
@@ -179,134 +231,42 @@ export default function InventoryPage() {
           <h1 className="inventory-page__title">Inventory</h1>
           <p className="inventory-page__lede">{lede}</p>
 
-          <div className="inventory-page__actions">
-            <button
-              type="button"
-              className="feeder-secondary-button feeder-secondary-button--sm"
-              onClick={() => setScanOpen(true)}
-              disabled={busy}
-            >
-              Scan barcode
-            </button>
-            <button
-              type="button"
-              className="feeder-icon-button"
-              onClick={inv.refresh}
-              disabled={loading || busy}
-              aria-label="Refresh"
-              title="Refresh"
-            >
-              ↻
-            </button>
-          </div>
+          {error && <div className="inv-toast inv-toast--error">{error}</div>}
+          {toast && <div className={`inv-toast inv-toast--${toast.kind}`}>{toast.text}</div>}
 
-          {error && <p className="feeder-error feeder-error--banner">{error}</p>}
-          {toast && (
-            <p className={'feeder-error feeder-error--banner feeder-toast--' + toast.kind}>
-              {toast.text}
-            </p>
-          )}
-
-          <BarcodeScanner
-            open={scanOpen}
-            onScan={handleScan}
-            onClose={() => setScanOpen(false)}
-          />
-
-          <section className="feeder-card">
-            {items.length === 0 && !addOpen && (
-              <p className="feeder-meta">No items yet.</p>
-            )}
-
-            {[...groupsByDevice.entries()].map(([device, list]) => (
-              <div key={device}>
-                <h3 className="inventory-section__title">{device}</h3>
-                <div className="inventory-grid inventory-grid--with-drag">
-                  <span className="inventory-grid__head" aria-hidden="true" />
-                  <span className="inventory-grid__head">Item</span>
-                  <span className="inventory-grid__head">Count</span>
-                  <span className="inventory-grid__head">Threshold / Due</span>
-                  <div className="inventory-grid__hr" />
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd(device)}
-                  >
-                    <SortableContext
-                      items={list.map((i) => i.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {list.map((item) => (
-                        <SortableItemRow
-                          key={item.id}
-                          item={item}
-                          busy={busy}
-                          onIncrement={inv.increment}
-                          onDecrement={inv.decrement}
-                          onSetQuantity={inv.setQuantity}
-                          onSetThreshold={handleSetThreshold}
-                          onSave={handleSave}
-                          onDelete={handleDelete}
-                          onMarkRoutineDone={handleMarkDone}
-                        />
-                      ))}
-                    </SortableContext>
-                  </DndContext>
-                </div>
-              </div>
-            ))}
-
-            {unassigned.length > 0 && (
-              <div>
-                <h3 className="inventory-section__title">Unassigned</h3>
-                <div className="inventory-grid">
-                  <span className="inventory-grid__head">Item</span>
-                  <span className="inventory-grid__head">Count</span>
-                  <span className="inventory-grid__head">Threshold / Due</span>
-                  <div className="inventory-grid__hr" />
-                  {unassigned.map((item) => (
-                    <ItemRow
-                      key={item.id}
-                      item={item}
-                      busy={busy}
-                      onIncrement={inv.increment}
-                      onDecrement={inv.decrement}
-                      onSetQuantity={inv.setQuantity}
-                      onSetThreshold={handleSetThreshold}
-                      onSave={handleSave}
-                      onDelete={handleDelete}
-                      onMarkRoutineDone={handleMarkDone}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {addOpen ? (
-              <div className="automation-card automation-card--add">
-                <ItemForm
-                  initial={addInitial}
-                  busy={busy}
-                  submitLabel="Add"
-                  onSubmit={handleAdd}
-                  onCancel={() => { setAddOpen(false); setAddInitial({}); }}
-                />
-              </div>
-            ) : (
+          {groups.length === 0 ? (
+            <div>
+              <p className="inv-empty">No items yet.</p>
               <button
                 type="button"
-                className="feeder-secondary-button feeder-secondary-button--full"
-                onClick={() => { setAddInitial({}); setAddOpen(true); }}
+                className="inv-add"
+                onClick={() => openAdd(DEFAULT_GROUP)}
                 disabled={busy}
-                style={{ marginTop: 12 }}
               >
                 + Add item
               </button>
-            )}
-          </section>
+            </div>
+          ) : mobile || groups.length < 2 ? (
+            <div className="inventory-page__col">
+              {groups.map(renderGroup)}
+            </div>
+          ) : (
+            <div className="inventory-page__cols">
+              <div className="inventory-page__col">{left.map(renderGroup)}</div>
+              <div className="inventory-page__col">{right.map(renderGroup)}</div>
+            </div>
+          )}
         </div>
       </div>
       <BottomTabBar />
+      <NewItemSheet
+        open={addOpen}
+        initialGroup={addGroupHint}
+        existingGroups={existingGroups}
+        busy={busy}
+        onSubmit={handleAdd}
+        onCancel={() => setAddOpen(false)}
+      />
     </div>
   );
 }
