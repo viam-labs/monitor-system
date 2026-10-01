@@ -135,7 +135,7 @@ export default function SoundsPage() {
   const {
     lastBarkAt = '', history = [], historyLoading = false,
     rangeHours = 24, setRangeHours = () => {}, refreshHistory = () => {},
-    error: barkError = null,
+    historyError = null,
   } = bark || {};
 
   const RECENT_PAGE_SIZE = 5;
@@ -288,7 +288,11 @@ export default function SoundsPage() {
                   ⓘ
                 </button>
               </div>
-              {history.length === 0 ? (
+              {historyError ? (
+                <p className="sounds__empty" style={{ color: 'var(--danger, #d70015)' }}>
+                  Cloud history unavailable: {historyError}
+                </p>
+              ) : history.length === 0 ? (
                 <p className="sounds__empty">Quiet.</p>
               ) : (
                 <div className="sounds__chart">
@@ -355,12 +359,12 @@ export default function SoundsPage() {
 
             <div className="sounds__col">
               <p className="sounds__sect">Recent events</p>
-              {barkError && (
+              {historyError && (
                 <p className="sounds__empty" style={{ color: 'var(--danger)' }}>
-                  {barkError}
+                  {historyError}
                 </p>
               )}
-              {!barkError && allRecent.length === 0 ? (
+              {!historyError && allRecent.length === 0 ? (
                 <p className="sounds__empty">No events yet.</p>
               ) : (
                 recent.map((e, i) => {

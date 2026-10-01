@@ -32,6 +32,7 @@ export function useBark(client, barkName) {
 
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
   const [rangeHours, setRangeHours] = useState(24);
 
   const refreshLive = useCallback(async () => {
@@ -66,6 +67,7 @@ export function useBark(client, barkName) {
   const refreshHistory = useCallback(async () => {
     if (!bark) return;
     setHistoryLoading(true);
+    setHistoryError(null);
     try {
       const vc = await getViamCloudClient();
       const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, BARK_HISTORY_SQL);
@@ -81,7 +83,10 @@ export function useBark(client, barkName) {
         .sort((a, b) => a.at - b.at);
       setHistory(barks);
     } catch (e) {
-      if (!handleRpcError(e)) setError(e.message || String(e));
+      if (!handleRpcError(e)) {
+        setHistoryError(e.message || String(e));
+        console.error('bark history fetch failed:', e);
+      }
     } finally {
       setHistoryLoading(false);
     }
@@ -92,7 +97,7 @@ export function useBark(client, barkName) {
   return {
     lastBarkAt, lastDogScore, sessionCount, classScores, threshold,
     loading, error, refreshLive,
-    history, historyLoading, refreshHistory,
+    history, historyLoading, historyError, refreshHistory,
     rangeHours, setRangeHours,
   };
 }
