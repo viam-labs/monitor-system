@@ -1,63 +1,107 @@
 import React, { useEffect, useState } from 'react';
 
+function round(v) {
+  return Math.round(v * 100) / 100;
+}
+
+function fmt(v) {
+  const r = round(v);
+  return Number.isInteger(r) ? String(r) : String(r);
+}
+
 export default function ConfirmModal({
   title,
-  body,
-  picker,
+  hint,
+  amount,
   confirmLabel,
   destructive,
   busy,
   onConfirm,
   onClose,
 }) {
-  const [value, setValue] = useState(picker?.defaultValue);
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(amount?.value ?? null);
+
+  const close = React.useCallback(() => {
+    if (busy) return;
+    setOpen(false);
+    setTimeout(onClose, 180);
+  }, [busy, onClose]);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setOpen(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') close();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [close]);
 
   const handleBackdrop = (e) => {
-    if (e.target === e.currentTarget) onClose();
+    if (e.target === e.currentTarget) close();
   };
 
-  const label = typeof confirmLabel === 'function' ? confirmLabel(value) : confirmLabel;
+  const step = (dir) => {
+    if (!amount) return;
+    const next = round(value + dir * amount.step);
+    const clamped = Math.max(amount.min, Math.min(amount.max, next));
+    setValue(clamped);
+  };
 
   const handleConfirm = async () => {
     try {
-      await onConfirm(value);
+      await onConfirm(amount ? value : undefined);
     } finally {
-      onClose();
+      setOpen(false);
+      setTimeout(onClose, 180);
     }
   };
 
+  const canDec = amount ? round(value - amount.step) >= amount.min : false;
+  const canInc = amount ? round(value + amount.step) <= amount.max : false;
+
   return (
-    <div className="cm-backdrop" onClick={handleBackdrop} role="dialog" aria-modal="true">
-      <div className="cm-card">
-        <h2 className="cm-title">{title}</h2>
-        {body && <p className="cm-body">{body}</p>}
-        {picker && (
-          <select
-            className="cm-picker"
-            value={value ?? ''}
-            onChange={(e) => setValue(Number(e.target.value))}
-            disabled={busy}
-          >
-            {picker.options.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}{picker.unit ? ` ${picker.unit}` : ''}
-              </option>
-            ))}
-          </select>
+    <>
+      <div className={'cm-scrim' + (open ? ' on' : '')} onClick={handleBackdrop} />
+      <div className={'cm-sheet' + (open ? ' on' : '')} role="dialog" aria-modal="true">
+        <div className="cm-grab" aria-hidden="true" />
+        <div className="cm-title">{title}</div>
+        {amount && (
+          <div className="cm-amt">
+            <button
+              type="button"
+              className="cm-step"
+              onClick={() => step(-1)}
+              disabled={busy || !canDec}
+              aria-label="Decrease"
+            >
+              −
+            </button>
+            <div className="cm-amt__value">
+              <b>{fmt(value)}</b>
+              <span>{amount.unit}</span>
+            </div>
+            <button
+              type="button"
+              className="cm-step"
+              onClick={() => step(1)}
+              disabled={busy || !canInc}
+              aria-label="Increase"
+            >
+              +
+            </button>
+          </div>
         )}
+        {hint && <p className="cm-hint">{hint}</p>}
         <div className="cm-actions">
           <button
             type="button"
             className="cm-btn cm-btn--cancel"
-            onClick={onClose}
+            onClick={close}
             disabled={busy}
           >
             Cancel
@@ -68,10 +112,10 @@ export default function ConfirmModal({
             onClick={handleConfirm}
             disabled={busy}
           >
-            {busy ? 'Working…' : label}
+            {busy ? 'Working…' : confirmLabel}
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
