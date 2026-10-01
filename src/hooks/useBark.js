@@ -3,6 +3,18 @@ import { SensorClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
+import { getViamCloudClient, ORG_ID } from '../lib/viamCloud';
+
+const BARK_HISTORY_SQL = `SELECT
+  data.readings.at AS at,
+  data.readings.score AS score,
+  data.readings.top_class AS top_class,
+  data.readings.class_scores AS class_scores
+FROM readings
+WHERE data.readings.event_type = 'bark_detected'
+  AND data.readings.source = 'bark'
+ORDER BY time_received DESC
+LIMIT 1000`;
 
 export function useBark(client, barkName) {
   const bark = useMemo(
@@ -55,14 +67,15 @@ export function useBark(client, barkName) {
     if (!bark) return;
     setHistoryLoading(true);
     try {
-      const resp = await callWithRetry(() => bark.doCommand({ command: 'get_history' }));
-      const entries = Array.isArray(resp?.history) ? resp.history : [];
+      const vc = await getViamCloudClient();
+      const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, BARK_HISTORY_SQL);
       const cutoff = Date.now() - rangeHours * 60 * 60 * 1000;
-      const barks = entries
-        .map((e) => ({
-          at: new Date(e.at),
-          score: Number(e.score) || 0,
-          topClass: String(e.top_class || ''),
+      const barks = (rows || [])
+        .map((r) => ({
+          at: new Date(r.at),
+          score: Number(r.score) || 0,
+          topClass: String(r.top_class || ''),
+          classScores: r.class_scores || {},
         }))
         .filter((e) => !Number.isNaN(e.at.getTime()) && e.at.getTime() >= cutoff)
         .sort((a, b) => a.at - b.at);
