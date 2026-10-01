@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import {
   Utensils, Droplet, DoorClosed, Thermometer, Blinds, Package, Activity, ChevronRight,
@@ -6,6 +6,7 @@ import {
 import CameraHero from '../../components/CameraHero';
 import TopNav from '../../components/TopNav';
 import BottomTabBar from '../../components/BottomTabBar';
+import ConfirmModal from '../../components/ConfirmModal';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { buildRows } from './buildRows';
 import './Home.css';
@@ -46,7 +47,7 @@ function ActionLink({ label, onClick, disabled }) {
   );
 }
 
-function HomeRow({ row }) {
+function HomeRow({ row, onAction }) {
   const Icon = ICONS[row.icon];
   const clickable = !!row.onClick;
   const cls = 'home-row' + (row.dead ? ' home-row--dead' : '');
@@ -67,7 +68,13 @@ function HomeRow({ row }) {
         <div className="home-row__nm">{row.name}</div>
         {row.subtitle && <div className="home-row__sb">{row.subtitle}</div>}
       </div>
-      {row.action && <ActionLink {...row.action} />}
+      {row.action && (
+        <ActionLink
+          label={row.action.label}
+          disabled={row.action.disabled}
+          onClick={() => onAction(row.action)}
+        />
+      )}
       {row.toggle && <IosToggle {...row.toggle} />}
       {clickable && !row.hideChevron && (
         <ChevronRight className="home-row__chev" size={15} strokeWidth={2} />
@@ -81,6 +88,8 @@ export default function Home() {
   const navigate = useNavigate();
   const mobile = useMediaQuery('(max-width: 700px)');
   const rows = buildRows(ctx, navigate, mobile);
+  const [pending, setPending] = useState(null);
+  const [busy, setBusy] = useState(false);
 
   const availability = {
     '/feeder': !!ctx.feederName,
@@ -90,6 +99,24 @@ export default function Home() {
     '/inventory': !!(ctx.inventoryName && ctx.inventoryStateSensorName),
     '/bark': !!ctx.barkName,
     '/door': !!ctx.doorUnlockName,
+  };
+
+  const handleAction = (action) => {
+    if (action?.confirm) {
+      setPending(action.confirm);
+    } else if (action?.onClick) {
+      action.onClick();
+    }
+  };
+
+  const handleConfirm = async (value) => {
+    if (!pending?.onConfirm) return;
+    setBusy(true);
+    try {
+      await pending.onConfirm(value);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -105,11 +132,25 @@ export default function Home() {
             />
           </section>
           <section className="home__rows">
-            {rows.map((r) => <HomeRow key={r.key} row={r} />)}
+            {rows.map((r) => (
+              <HomeRow key={r.key} row={r} onAction={handleAction} />
+            ))}
           </section>
         </div>
       </div>
       <BottomTabBar />
+      {pending && (
+        <ConfirmModal
+          title={pending.title}
+          body={pending.body}
+          picker={pending.picker}
+          confirmLabel={pending.confirmLabel}
+          destructive={pending.destructive}
+          busy={busy}
+          onConfirm={handleConfirm}
+          onClose={() => { if (!busy) setPending(null); }}
+        />
+      )}
     </div>
   );
 }
