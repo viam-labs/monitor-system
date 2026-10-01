@@ -41,6 +41,20 @@ export default function InventoryPage() {
     return () => clearTimeout(id);
   }, [toast]);
 
+  // Fast refresh while this page is open — picks up out-of-band changes
+  // (zigbee button presses, streamdeck taps, me editing from a script)
+  // quickly instead of waiting for the hook's 60s baseline. Pauses when
+  // the tab goes to the background. Tears down on unmount, so navigating
+  // to another page drops back to 60s automatically.
+  useEffect(() => {
+    if (!inv?.refresh) return undefined;
+    const tick = () => {
+      if (document.visibilityState === 'visible') inv.refresh();
+    };
+    const id = setInterval(tick, 5000);
+    return () => clearInterval(id);
+  }, [inv]);
+
   const availability = {
     '/feeder': !!ctx.feederName,
     '/waterer': !!ctx.watererName,
