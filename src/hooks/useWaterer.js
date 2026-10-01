@@ -3,7 +3,7 @@ import { GenericComponentClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryTabular } from '../lib/viamCloud';
 
 function buildWaterPipeline() {
   return [
@@ -80,7 +80,7 @@ export function useWaterer(client, watererName) {
   const refreshHistory = useCallback(async () => {
     if (!waterer) return;
     try {
-      const rows = await queryHotTabular(buildWaterPipeline());
+      const rows = await queryTabular(buildWaterPipeline());
       const entries = (rows || []).map((r) => ({
         at: String(r.at || ''),
         ml: typeof r.ml === 'number' ? r.ml : Number(r.ml) || 0,

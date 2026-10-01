@@ -3,7 +3,7 @@ import { SensorClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryTabular } from '../lib/viamCloud';
 
 function buildBarkPipeline() {
   return [
@@ -79,7 +79,7 @@ export function useBark(client, barkName) {
     setHistoryLoading(true);
     setHistoryError(null);
     try {
-      const rows = await queryHotTabular(buildBarkPipeline());
+      const rows = await queryTabular(buildBarkPipeline());
       const cutoff = Date.now() - rangeHours * 60 * 60 * 1000;
       const mapped = (rows || []).map((r) => ({
         at: new Date(r.at),

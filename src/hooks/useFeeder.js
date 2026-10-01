@@ -3,7 +3,7 @@ import { GenericComponentClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryTabular } from '../lib/viamCloud';
 
 function buildFeedPipeline() {
   return [
@@ -81,7 +81,7 @@ export function useFeeder(client, feederName) {
   const refreshHistory = useCallback(async () => {
     if (!feederClient) return;
     try {
-      const rows = await queryHotTabular(buildFeedPipeline());
+      const rows = await queryTabular(buildFeedPipeline());
       const entries = (rows || []).map((r) => ({
         at: String(r.at || ''),
         cups: typeof r.cups === 'number' ? r.cups : Number(r.cups) || 0,

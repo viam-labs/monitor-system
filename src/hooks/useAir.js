@@ -3,7 +3,7 @@ import { SensorClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryTabular } from '../lib/viamCloud';
 
 function buildAirPipeline() {
   return [
@@ -74,7 +74,7 @@ export function useAir(client, airName) {
     setHistoryLoading(true);
     setHistoryError(null);
     try {
-      const rows = await queryHotTabular(buildAirPipeline());
+      const rows = await queryTabular(buildAirPipeline());
       const cutoff = Date.now() - rangeHours * 60 * 60 * 1000;
       const parsed = (rows || [])
         .map((r) => {

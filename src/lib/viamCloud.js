@@ -34,11 +34,18 @@ export function getViamCloudClient() {
   return clientPromise;
 }
 
-// MQL via the hot data store. Pipeline is a list of pipeline stages,
-// e.g. [{ $match: {...} }, { $sort: {...} }, { $limit: N }, { $project: {...} }].
-// Callers should include organization_id + location_id in their $match
-// for performance (both are indexed path components).
 export async function queryHotTabular(pipeline) {
   const vc = await getViamCloudClient();
   return vc.dataClient.tabularDataByMQL(ORG_ID, pipeline, true);
+}
+
+export async function queryColdTabular(pipeline) {
+  const vc = await getViamCloudClient();
+  return vc.dataClient.tabularDataByMQL(ORG_ID, pipeline, false);
+}
+
+export async function queryTabular(pipeline) {
+  const hot = await queryHotTabular(pipeline);
+  if (hot && hot.length > 0) return hot;
+  return queryColdTabular(pipeline);
 }

@@ -3,7 +3,7 @@ import { GenericComponentClient, SensorClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryTabular } from '../lib/viamCloud';
 
 function buildButtonPipeline() {
   return [
@@ -77,7 +77,7 @@ export function useInventory(client, trackerName, stateSensorName) {
 
   const refreshButtonHistory = useCallback(async () => {
     try {
-      const rows = await queryHotTabular(buildButtonPipeline());
+      const rows = await queryTabular(buildButtonPipeline());
       const entries = (rows || []).map((r) => ({
         at: String(r.at || ''),
         source: String(r.source || ''),
