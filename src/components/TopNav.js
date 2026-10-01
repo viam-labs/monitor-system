@@ -10,6 +10,7 @@ const LINKS = [
   { to: '/curtain', label: 'Curtains' },
   { to: '/inventory', label: 'Inventory' },
   { to: '/bark', label: 'Sounds' },
+  { to: '/air', label: 'Air' },
   { to: '/door', label: 'Door' },
 ];
 

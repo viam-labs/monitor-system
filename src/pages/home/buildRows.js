@@ -225,6 +225,21 @@ function barkRow({ bark }, navigate) {
   };
 }
 
+function airRow({ air }, navigate) {
+  const ppm = air?.co2Ppm;
+  const rh = air?.relativeHumidity;
+  const parts = [];
+  if (typeof ppm === 'number') parts.push(`${Math.round(ppm)} ppm`);
+  if (typeof rh === 'number') parts.push(`${Math.round(rh)}% humidity`);
+  return {
+    key: 'air',
+    icon: 'air',
+    name: 'Air',
+    subtitle: parts.length ? parts.join(' · ') : null,
+    onClick: () => navigate('/air'),
+  };
+}
+
 function doorRow({ door }, navigate, mobile) {
   const offline = !!door?.error && !door?.lastOpenedAt;
   const rel = door?.lastOpenedAt ? formatRelative(door.lastOpenedAt) : null;
@@ -254,6 +269,7 @@ export function buildRows(ctx, navigate, mobile = false) {
     rows.push(inventoryRow(ctx, navigate, mobile));
   }
   if (ctx.barkName) rows.push(barkRow(ctx, navigate));
+  if (ctx.airName) rows.push(airRow(ctx, navigate));
   if (ctx.doorUnlockName) rows.push(doorRow(ctx, navigate, mobile));
   return rows;
 }

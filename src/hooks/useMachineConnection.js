@@ -70,7 +70,9 @@ function matchGeneric(name, status, into) {
 
 function matchSensor(name, readings, into) {
   if (!readings || typeof readings !== 'object') return;
-  if ('temperature_c' in readings) {
+  if ('co2_ppm' in readings) {
+    into.airName = name;
+  } else if ('temperature_c' in readings) {
     into.roomMeterName = name;
   } else if (readings.kind === 'bark_detector') {
     into.barkName = name;
@@ -108,6 +110,7 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
     acBotName: null,
     roomMeterName: null,
     barkName: null,
+    airName: null,
   };
   const pendingRetry = [];
 
@@ -199,6 +202,7 @@ export function useMachineConnection() {
   const [acBotName, setAcBotName] = useState(null);
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [barkName, setBarkName] = useState(null);
+  const [airName, setAirName] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detectingFeatures, setDetectingFeatures] = useState(true);
   const [pendingProbes, setPendingProbes] = useState({ generic: 0, sensor: 0 });
@@ -219,6 +223,7 @@ export function useMachineConnection() {
       if (d.acBotName) setAcBotName(d.acBotName);
       if (d.roomMeterName) setRoomMeterName(d.roomMeterName);
       if (d.barkName) setBarkName(d.barkName);
+      if (d.airName) setAirName(d.airName);
     };
 
     async function init() {
@@ -291,6 +296,7 @@ export function useMachineConnection() {
     acBotName,
     roomMeterName,
     barkName,
+    airName,
     loading,
     detectingFeatures,
     pendingProbes,

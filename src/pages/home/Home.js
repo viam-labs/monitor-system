@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import {
-  Utensils, Droplet, DoorClosed, Thermometer, Blinds, Package, Activity, ChevronRight,
+  Utensils, Droplet, DoorClosed, Thermometer, Blinds, Package, Activity, Wind, ChevronRight,
 } from 'lucide-react';
 import CameraHero from '../../components/CameraHero';
 import TopNav from '../../components/TopNav';
@@ -18,6 +18,7 @@ const ICONS = {
   curtain: Blinds,
   inventory: Package,
   bark: Activity,
+  air: Wind,
   door: DoorClosed,
 };
 
@@ -98,6 +99,7 @@ export default function Home() {
     '/curtain': !!ctx.curtainName,
     '/inventory': !!(ctx.inventoryName && ctx.inventoryStateSensorName),
     '/bark': !!ctx.barkName,
+    '/air': !!ctx.airName,
     '/door': !!ctx.doorUnlockName,
   };
 

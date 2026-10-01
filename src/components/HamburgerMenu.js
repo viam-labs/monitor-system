@@ -26,6 +26,8 @@ export default function HamburgerMenu({
   inventoryLoading,
   showBark,
   barkLoading,
+  showAir,
+  airLoading,
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -52,6 +54,7 @@ export default function HamburgerMenu({
     { to: '/', label: 'Home', alwaysShow: true, end: true },
     { to: '/cameras', label: 'Cameras', alwaysShow: true },
     { to: '/bark', label: 'Sounds', show: showBark, loading: barkLoading },
+    { to: '/air', label: 'Air', show: showAir, loading: airLoading },
     { to: '/door', label: 'Building Door', show: showDoor, loading: doorLoading },
     { to: '/curtain', label: 'Curtain', show: showCurtain, loading: curtainLoading },
     { to: '/feeder', label: 'Feeder', show: showFeeder, loading: feederLoading },

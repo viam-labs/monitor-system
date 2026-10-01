@@ -190,6 +190,7 @@ export default function WatererPage() {
     '/curtain': !!ctx.curtainName,
     '/inventory': !!(ctx.inventoryName && ctx.inventoryStateSensorName),
     '/bark': !!ctx.barkName,
+    '/air': !!ctx.airName,
     '/door': !!ctx.doorUnlockName,
   };
 
