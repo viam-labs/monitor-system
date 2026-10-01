@@ -3,18 +3,27 @@ import { SensorClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { getViamCloudClient, ORG_ID } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
 
-const HISTORY_SQL = `SELECT
-  data.readings.co2_ppm AS co2_ppm,
-  data.readings.temperature_c AS temperature_c,
-  data.readings.relative_humidity AS relative_humidity,
-  time_received AS at
-FROM readings
-WHERE component_name = 'co2'
-  AND method_name = 'Readings'
-ORDER BY time_received DESC
-LIMIT 2000`;
+function buildAirPipeline() {
+  return [
+    { $match: {
+      organization_id: ORG_ID,
+      location_id: getLocationId(),
+      component_name: 'co2',
+      method_name: 'Readings',
+    } },
+    { $sort: { time_received: -1 } },
+    { $limit: 2000 },
+    { $project: {
+      _id: 0,
+      at: '$time_received',
+      co2_ppm: '$data.readings.co2_ppm',
+      temperature_c: '$data.readings.temperature_c',
+      relative_humidity: '$data.readings.relative_humidity',
+    } },
+  ];
+}
 
 export function useAir(client, airName) {
   const sensor = useMemo(
@@ -65,8 +74,7 @@ export function useAir(client, airName) {
     setHistoryLoading(true);
     setHistoryError(null);
     try {
-      const vc = await getViamCloudClient();
-      const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, HISTORY_SQL);
+      const rows = await queryHotTabular(buildAirPipeline());
       const cutoff = Date.now() - rangeHours * 60 * 60 * 1000;
       const parsed = (rows || [])
         .map((r) => {
@@ -74,6 +82,8 @@ export function useAir(client, airName) {
           let atMs;
           if (atRaw && typeof atRaw === 'object' && atRaw.$date) {
             atMs = Date.parse(atRaw.$date);
+          } else if (atRaw instanceof Date) {
+            atMs = atRaw.getTime();
           } else {
             atMs = Date.parse(String(atRaw));
           }
@@ -86,6 +96,7 @@ export function useAir(client, airName) {
         })
         .filter((e) => !Number.isNaN(e.at.getTime()) && e.at.getTime() >= cutoff)
         .sort((a, b) => a.at - b.at);
+      console.log(`[air] HDS returned ${rows?.length ?? 0} rows, ${parsed.length} within ${rangeHours}h cutoff`, rows?.[0]);
       setHistory(parsed);
     } catch (e) {
       if (!handleRpcError(e)) {

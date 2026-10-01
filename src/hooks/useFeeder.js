@@ -3,17 +3,27 @@ import { GenericComponentClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { getViamCloudClient, ORG_ID } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
 
-const FEED_HISTORY_SQL = `SELECT
-  data.readings.at AS at,
-  data.readings.cups AS cups,
-  data.readings.cause AS cause
-FROM readings
-WHERE data.readings.event_type = 'feed_dispensed'
-  AND data.readings.source = 'feeder'
-ORDER BY time_received DESC
-LIMIT 500`;
+function buildFeedPipeline() {
+  return [
+    { $match: {
+      organization_id: ORG_ID,
+      location_id: getLocationId(),
+      component_name: 'events',
+      'data.readings.event_type': 'feed_dispensed',
+      'data.readings.source': 'feeder',
+    } },
+    { $sort: { time_received: -1 } },
+    { $limit: 500 },
+    { $project: {
+      _id: 0,
+      at: '$data.readings.at',
+      cups: '$data.readings.cups',
+      cause: '$data.readings.cause',
+    } },
+  ];
+}
 
 // Module caches PetSafe reads server-side for 5 min; rapid refresh
 // calls return {cached: true} instead of hitting PetSafe.
@@ -71,8 +81,7 @@ export function useFeeder(client, feederName) {
   const refreshHistory = useCallback(async () => {
     if (!feederClient) return;
     try {
-      const vc = await getViamCloudClient();
-      const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, FEED_HISTORY_SQL);
+      const rows = await queryHotTabular(buildFeedPipeline());
       const entries = (rows || []).map((r) => ({
         at: String(r.at || ''),
         cups: typeof r.cups === 'number' ? r.cups : Number(r.cups) || 0,

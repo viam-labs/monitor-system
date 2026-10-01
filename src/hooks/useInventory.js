@@ -3,16 +3,26 @@ import { GenericComponentClient, SensorClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { getViamCloudClient, ORG_ID } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
 
-const BUTTON_HISTORY_SQL = `SELECT
-  data.readings.at AS at,
-  data.readings.source AS source,
-  data.readings.action AS action
-FROM readings
-WHERE data.readings.event_type = 'button_pressed'
-ORDER BY time_received DESC
-LIMIT 100`;
+function buildButtonPipeline() {
+  return [
+    { $match: {
+      organization_id: ORG_ID,
+      location_id: getLocationId(),
+      component_name: 'events',
+      'data.readings.event_type': 'button_pressed',
+    } },
+    { $sort: { time_received: -1 } },
+    { $limit: 100 },
+    { $project: {
+      _id: 0,
+      at: '$data.readings.at',
+      source: '$data.readings.source',
+      action: '$data.readings.action',
+    } },
+  ];
+}
 
 // Reads go through the state sensor (queue_capacity:1 holds the newest
 // snapshot non-destructively). Mutations go through the tracker directly.
@@ -67,8 +77,7 @@ export function useInventory(client, trackerName, stateSensorName) {
 
   const refreshButtonHistory = useCallback(async () => {
     try {
-      const vc = await getViamCloudClient();
-      const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, BUTTON_HISTORY_SQL);
+      const rows = await queryHotTabular(buildButtonPipeline());
       const entries = (rows || []).map((r) => ({
         at: String(r.at || ''),
         source: String(r.source || ''),

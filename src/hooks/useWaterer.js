@@ -3,18 +3,28 @@ import { GenericComponentClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { getViamCloudClient, ORG_ID } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
 
-const WATER_HISTORY_SQL = `SELECT
-  data.readings.at AS at,
-  data.readings.ml AS ml,
-  data.readings.seconds AS seconds,
-  data.readings.cause AS cause
-FROM readings
-WHERE data.readings.event_type = 'water_dispensed'
-  AND data.readings.source = 'waterer_pump'
-ORDER BY time_received DESC
-LIMIT 500`;
+function buildWaterPipeline() {
+  return [
+    { $match: {
+      organization_id: ORG_ID,
+      location_id: getLocationId(),
+      component_name: 'events',
+      'data.readings.event_type': 'water_dispensed',
+      'data.readings.source': 'waterer_pump',
+    } },
+    { $sort: { time_received: -1 } },
+    { $limit: 500 },
+    { $project: {
+      _id: 0,
+      at: '$data.readings.at',
+      ml: '$data.readings.ml',
+      seconds: '$data.readings.seconds',
+      cause: '$data.readings.cause',
+    } },
+  ];
+}
 
 export function useWaterer(client, watererName) {
   const waterer = useMemo(
@@ -70,8 +80,7 @@ export function useWaterer(client, watererName) {
   const refreshHistory = useCallback(async () => {
     if (!waterer) return;
     try {
-      const vc = await getViamCloudClient();
-      const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, WATER_HISTORY_SQL);
+      const rows = await queryHotTabular(buildWaterPipeline());
       const entries = (rows || []).map((r) => ({
         at: String(r.at || ''),
         ml: typeof r.ml === 'number' ? r.ml : Number(r.ml) || 0,

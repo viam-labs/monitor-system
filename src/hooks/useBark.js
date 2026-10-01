@@ -3,18 +3,28 @@ import { SensorClient } from '@viamrobotics/sdk';
 import { callWithRetry } from './callWithRetry';
 import { usePolling } from './usePolling';
 import { handleRpcError } from '../lib/connectionHealth';
-import { getViamCloudClient, ORG_ID } from '../lib/viamCloud';
+import { ORG_ID, getLocationId, queryHotTabular } from '../lib/viamCloud';
 
-const BARK_HISTORY_SQL = `SELECT
-  data.readings.at AS at,
-  data.readings.score AS score,
-  data.readings.top_class AS top_class,
-  data.readings.class_scores AS class_scores
-FROM readings
-WHERE data.readings.event_type = 'bark_detected'
-  AND data.readings.source = 'bark'
-ORDER BY time_received DESC
-LIMIT 1000`;
+function buildBarkPipeline() {
+  return [
+    { $match: {
+      organization_id: ORG_ID,
+      location_id: getLocationId(),
+      component_name: 'events',
+      'data.readings.event_type': 'bark_detected',
+      'data.readings.source': 'bark',
+    } },
+    { $sort: { time_received: -1 } },
+    { $limit: 1000 },
+    { $project: {
+      _id: 0,
+      at: '$data.readings.at',
+      score: '$data.readings.score',
+      top_class: '$data.readings.top_class',
+      class_scores: '$data.readings.class_scores',
+    } },
+  ];
+}
 
 export function useBark(client, barkName) {
   const bark = useMemo(
@@ -69,8 +79,7 @@ export function useBark(client, barkName) {
     setHistoryLoading(true);
     setHistoryError(null);
     try {
-      const vc = await getViamCloudClient();
-      const rows = await vc.dataClient.tabularDataBySQL(ORG_ID, BARK_HISTORY_SQL);
+      const rows = await queryHotTabular(buildBarkPipeline());
       const cutoff = Date.now() - rangeHours * 60 * 60 * 1000;
       const mapped = (rows || []).map((r) => ({
         at: new Date(r.at),
@@ -82,7 +91,7 @@ export function useBark(client, barkName) {
         .filter((e) => !Number.isNaN(e.at.getTime()) && e.at.getTime() >= cutoff)
         .sort((a, b) => a.at - b.at);
       console.log(
-        `[bark] DataClient returned ${rows?.length ?? 0} rows, ${barks.length} within ${rangeHours}h cutoff`,
+        `[bark] HDS returned ${rows?.length ?? 0} rows, ${barks.length} within ${rangeHours}h cutoff`,
         rows?.[0],
       );
       setHistory(barks);
