@@ -13,16 +13,15 @@ export default function SortableItemRow({ item, ...rowProps }) {
     opacity: isDragging ? 0.5 : 1,
   };
   const dragHandle = (
-    <button
-      type="button"
-      className="inventory-grid__drag"
+    <span
+      className="inv-grip"
       aria-label={`Reorder ${item.name}`}
       title="Drag to reorder"
       {...attributes}
       {...listeners}
     >
-      ⋮⋮
-    </button>
+      ⠿
+    </span>
   );
   return (
     <ItemRow

@@ -1,125 +1,111 @@
 import React, { useState } from 'react';
-import CountEditor from './CountEditor';
-import ThresholdEditor from './ThresholdEditor';
-import ItemForm from './ItemForm';
-import { formatRelative } from '../../lib/format';
-
-function routineStatus(routine) {
-  if (!routine) return null;
-  const last = routine.last_done_at;
-  if (!last) return { actionable: true, label: 'never done' };
-  const ms = Date.parse(last);
-  if (Number.isNaN(ms)) return { actionable: true, label: 'never done' };
-  const dueAt = ms + routine.interval_days * 24 * 60 * 60 * 1000;
-  return { actionable: Date.now() >= dueAt, label: formatRelative(last) };
-}
+import { ChevronRight } from 'lucide-react';
 
 export default function ItemRow({
   item, busy, dragHandle, wrapperRef, wrapperStyle,
-  onIncrement, onDecrement, onSetQuantity, onSetThreshold, onSave, onDelete, onMarkRoutineDone,
+  onIncrement, onDecrement, onSetThreshold, onSetSlot, onDelete,
 }) {
   const [expanded, setExpanded] = useState(false);
-  const hasDrag = dragHandle !== undefined;
-  const hasSupply = item.package_qty != null;
-  const routine = routineStatus(item.routine);
+  const [threshold, setThreshold] = useState(
+    item.threshold != null ? String(item.threshold) : '',
+  );
+  const [slot, setSlot] = useState(
+    item.button?.slot != null ? String(item.button.slot) : '',
+  );
+
+  const out = item.quantity === 0;
+  const low = !out && item.threshold != null && item.quantity <= item.threshold;
+
+  const commitThreshold = () => {
+    const next = threshold === '' ? null : Number(threshold);
+    if (next === item.threshold) return;
+    if (next !== null && (!Number.isFinite(next) || next < 0)) return;
+    onSetThreshold(item.id, next);
+  };
+
+  const commitSlot = () => {
+    const next = slot === '' ? null : Number(slot);
+    if (next === (item.button?.slot ?? null)) return;
+    if (next !== null && (!Number.isInteger(next) || next < 0)) return;
+    onSetSlot(item.id, next);
+  };
 
   return (
     <div
       ref={wrapperRef}
       style={wrapperStyle}
-      className={'inventory-grid__card' + (hasDrag ? ' inventory-grid__card--with-drag' : '')}
+      className={'inv-ivw' + (expanded ? ' inv-ivw--open' : '')}
     >
-      {hasDrag && (
-        <div className="inventory-grid__cell inventory-grid__cell--drag">{dragHandle}</div>
-      )}
-      <button
-        type="button"
-        className="inventory-grid__cell inventory-grid__cell--name inventory-grid__disclose"
-        onClick={() => setExpanded(v => !v)}
-        aria-expanded={expanded}
-      >
-        <span className={'automation-card__chevron' + (expanded ? ' automation-card__chevron--open' : '')}>›</span>
-        <span className="inventory-grid__name-text">{item.name}</span>
-      </button>
-      <div className="inventory-grid__cell inventory-grid__cell--qty">
-        {hasSupply ? (
-          <>
+      <div className="inv-row">
+        {dragHandle || <span className="inv-grip" aria-hidden="true">⠿</span>}
+        <span className="inv-nm">{item.name}</span>
+        {out && <span className="inv-pill inv-pill--out">Out</span>}
+        {low && <span className="inv-pill inv-pill--low">Low</span>}
+        {item.package_qty != null && (
+          <div className="inv-qty">
             <button
               type="button"
-              className="feeder-icon-button"
+              className="inv-step"
               onClick={() => onDecrement(item.id)}
               disabled={busy || item.quantity === 0}
               aria-label={`Decrement ${item.name}`}
-              title="−1"
             >
               −
             </button>
-            <CountEditor
-              quantity={item.quantity}
-              busy={busy}
-              onCommit={(q) => onSetQuantity(item.id, q)}
-              name={item.name}
-            />
+            <b>{item.quantity}</b>
             <button
               type="button"
-              className="feeder-icon-button"
+              className="inv-step"
               onClick={() => onIncrement(item.id)}
               disabled={busy}
               aria-label={`Increment ${item.name}`}
-              title="+1"
             >
               +
             </button>
-          </>
-        ) : (
-          <span className="inventory-row__count inventory-row__count--placeholder">—</span>
+          </div>
         )}
+        <button
+          type="button"
+          className="inv-chev"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Collapse' : 'Expand'}
+        >
+          <ChevronRight size={15} strokeWidth={2} />
+        </button>
       </div>
-      <div className="inventory-grid__cell inventory-grid__cell--threshold">
-        {routine ? (
+      {expanded && (
+        <div className="inv-xp">
+          <label>
+            Low at
+            <input
+              type="number"
+              min="0"
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
+              onBlur={commitThreshold}
+              disabled={busy}
+            />
+          </label>
+          <label>
+            Deck slot
+            <input
+              type="number"
+              min="0"
+              value={slot}
+              onChange={(e) => setSlot(e.target.value)}
+              onBlur={commitSlot}
+              disabled={busy}
+            />
+          </label>
           <button
             type="button"
-            className={
-              'inventory-row__routine'
-              + (routine.actionable ? ' inventory-row__routine--due' : ' inventory-row__routine--done')
-            }
-            onClick={() => onMarkRoutineDone(item.id)}
+            className="inv-del"
+            onClick={() => onDelete(item.id, item.name)}
             disabled={busy}
-            title={routine.actionable ? 'Mark done' : `Last done ${routine.label}`}
           >
-            {routine.actionable ? 'Mark done' : routine.label}
+            Delete
           </button>
-        ) : hasSupply ? (
-          <ThresholdEditor
-            threshold={item.threshold ?? null}
-            busy={busy}
-            onCommit={(v) => onSetThreshold(item.id, v)}
-            name={item.name}
-          />
-        ) : null}
-      </div>
-
-      {expanded && (
-        <div className="inventory-grid__expanded">
-          <ItemForm
-            initial={item}
-            busy={busy}
-            submitLabel="Save"
-            onSubmit={onSave}
-          />
-          <div className="automation-card__actions">
-            <span className="automation-card__spacer" />
-            <button
-              type="button"
-              className="feeder-icon-button feeder-icon-button--danger"
-              onClick={() => onDelete(item.id, item.name)}
-              disabled={busy}
-              aria-label={`Delete ${item.name}`}
-              title="Delete"
-            >
-              ✕
-            </button>
-          </div>
         </div>
       )}
     </div>

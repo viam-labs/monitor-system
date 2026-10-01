@@ -97,10 +97,6 @@ export function useInventory(client, trackerName, stateSensorName) {
     (id, quantity) => runCommand({ command: 'set_quantity', id, quantity }),
     [runCommand],
   );
-  const scanBarcode = useCallback(
-    (barcode) => runCommand({ command: 'scan_barcode', barcode }),
-    [runCommand],
-  );
   const reorderDeck = useCallback(
     (order, device = 'kitchen') => runCommand({ command: 'reorder_deck', device, order }),
     [runCommand],
@@ -131,7 +127,6 @@ export function useInventory(client, trackerName, stateSensorName) {
     increment,
     decrement,
     setQuantity,
-    scanBarcode,
     reorderDeck,
     setRoutine,
     clearRoutine,
