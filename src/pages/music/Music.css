@@ -23,11 +23,7 @@
 }
 
 .music__body { padding: 26px 30px 60px; }
-.music__wide { max-width: 1240px; margin: 0 auto; }
-
-@media (min-width: 1300px) {
-  .music__wide { max-width: 1400px; }
-}
+.music__narrow { max-width: 620px; margin: 0 auto; }
 
 .music__back {
   display: none;
@@ -68,120 +64,147 @@
   font-size: 13.5px;
 }
 
-.music__cols {
-  display: grid;
-  gap: 32px;
-  align-items: start;
-}
-
-@media (min-width: 900px) {
-  .music__cols { grid-template-columns: minmax(0, 1fr) 320px; }
-}
-
-@media (min-width: 1300px) {
-  .music__cols { gap: 44px; }
-}
-
-.music__col { min-width: 0; }
-
-.music__block { margin-bottom: 26px; }
-
 .music__sect {
   font-size: 13px;
   color: var(--muted);
-  margin: 0 0 10px;
+  margin: 20px 0 8px;
+}
+
+.music__dim {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 4px 2px 10px;
 }
 
 .music__nowplaying {
-  padding: 18px 20px;
-  background: var(--panel);
-  border-radius: var(--r);
-  border: 1px solid var(--line);
-}
-
-.music__track {
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.music__track--empty {
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.music__artists {
-  font-size: 14px;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-.music__controls {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 18px;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  margin-bottom: 10px;
 }
 
-.music__ctrl {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--panel);
+.music__nowplaying-tx { flex: 1; min-width: 0; }
+
+.music__track {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music__track--empty { color: var(--muted); font-weight: 500; }
+
+.music__artists {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music__inline-toggle {
+  background: transparent;
   color: var(--text);
   border: 1px solid var(--line);
   border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: transform 0.08s ease, background 0.15s ease;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
 }
-
-.music__ctrl:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.music__ctrl:not(:disabled):hover { background: var(--raise); }
-.music__ctrl:not(:disabled):active { transform: scale(0.97); }
-
-.music__ctrl--sm { width: 48px; height: 48px; }
-
-.music__ctrl--big {
-  width: 72px;
-  height: 72px;
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: transparent;
-}
-
-.music__ctrl--big:not(:disabled):hover { background: #0062c4; }
-
-.music__ctrl--playing {
-  background: var(--danger);
-}
-
-.music__ctrl--playing:not(:disabled):hover { background: #b50012; }
+.music__inline-toggle:not(:disabled):hover { background: var(--raise); }
+.music__inline-toggle:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .music__volume {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 12px 16px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--r);
+  margin-bottom: 10px;
 }
 
-.music__volume input[type="range"] {
-  flex: 1;
-  accent-color: var(--accent);
-}
+.music__volume-label { flex: 1; color: var(--muted); font-size: 14px; }
 
 .music__volume-val {
-  min-width: 2.5em;
-  text-align: right;
-  color: var(--muted);
+  min-width: 2.6em;
+  text-align: center;
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
+
+.music__volstep {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--raise);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.music__volstep:not(:disabled):hover { background: #e5e5e8; }
+.music__volstep:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.music-pl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  margin-bottom: 6px;
+}
+
+.music-pl__tx { flex: 1; min-width: 0; }
+
+.music-pl__nm {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-pl__sb {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.music-pl__play {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.music-pl__play:not(:disabled):hover { background: #0062c4; }
+.music-pl__play:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .music-row {
   display: flex;
@@ -203,52 +226,6 @@
   margin: 10px 2px 0;
   line-height: 1.5;
 }
-
-.music__dim {
-  font-size: 13.5px;
-  color: var(--muted);
-  margin: 4px 2px;
-}
-
-.music-pl {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  margin-bottom: 6px;
-}
-
-.music-pl__tx { flex: 1; min-width: 0; }
-.music-pl__nm {
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.music-pl__sb {
-  font-size: 12.5px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-.music-pl__play {
-  background: var(--accent);
-  color: var(--on-accent);
-  border: none;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font: inherit;
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.music-pl__play:not(:disabled):hover { background: #0062c4; }
-.music-pl__play:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .music-stub, .music-loader {
   padding: 40px 0;
