@@ -14,6 +14,8 @@ export function useMusic(client, musicName) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [playlists, setPlaylists] = useState(null);
+  const [playlistsLoading, setPlaylistsLoading] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!controller) return;
@@ -38,6 +40,24 @@ export function useMusic(client, musicName) {
   }, [controller, refresh]);
 
   usePolling(refresh, { enabled: !!controller });
+
+  const refreshPlaylists = useCallback(async () => {
+    if (!controller) return;
+    setPlaylistsLoading(true);
+    try {
+      const r = await controller.doCommand({ command: 'playlists' });
+      if (r && Array.isArray(r.items)) setPlaylists(r.items);
+    } catch (e) {
+      if (!handleRpcError(e)) setError(e.message || String(e));
+    } finally {
+      setPlaylistsLoading(false);
+    }
+  }, [controller]);
+
+  useEffect(() => {
+    if (!controller) return;
+    refreshPlaylists();
+  }, [controller, refreshPlaylists]);
 
   const runMutation = useCallback(
     async (command, optimisticPatch) => {
@@ -98,6 +118,16 @@ export function useMusic(client, musicName) {
     [runMutation]
   );
 
+  const volumeUp = useCallback(
+    () => runMutation({ command: 'volume_up' }),
+    [runMutation]
+  );
+
+  const volumeDown = useCallback(
+    () => runMutation({ command: 'volume_down' }),
+    [runMutation]
+  );
+
   return {
     status,
     loading,
@@ -110,5 +140,10 @@ export function useMusic(client, musicName) {
     next,
     previous,
     setVolume,
+    volumeUp,
+    volumeDown,
+    playlists,
+    playlistsLoading,
+    refreshPlaylists,
   };
 }

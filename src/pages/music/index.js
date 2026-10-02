@@ -195,6 +195,34 @@ export default function MusicPage() {
 
             <div className="music__col">
               <div className="music__block">
+                <p className="music__sect">Playlists</p>
+                {m.playlistsLoading && !m.playlists && (
+                  <p className="music__dim">Loading playlists…</p>
+                )}
+                {m.playlists && m.playlists.length === 0 && (
+                  <p className="music__dim">No playlists found on your Spotify account.</p>
+                )}
+                {m.playlists && m.playlists.map((p) => (
+                  <div key={p.uri} className="music-pl">
+                    <div className="music-pl__tx">
+                      <div className="music-pl__nm">{p.name}</div>
+                      {typeof p.track_count === 'number' && (
+                        <div className="music-pl__sb">{p.track_count} tracks</div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="music-pl__play"
+                      disabled={m.busy || !deviceFound}
+                      onClick={() => m.start(p.uri).catch(() => {})}
+                    >
+                      Play
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="music__block">
                 <p className="music__sect">Speaker</p>
                 <div className="music-row">
                   <div className="music-row__tx">
