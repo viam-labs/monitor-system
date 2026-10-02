@@ -63,6 +63,35 @@
   font-size: 13.5px;
 }
 
+.music__accounts {
+  display: inline-flex;
+  background: var(--raise);
+  border-radius: 9px;
+  padding: 2px;
+  margin: 0 0 14px;
+}
+
+.music__account {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 13px;
+  border-radius: 7px;
+  cursor: pointer;
+  min-width: 64px;
+}
+
+.music__account:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.music__account--active {
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
 /* now playing */
 .music__np {
   display: flex;

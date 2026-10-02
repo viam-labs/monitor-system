@@ -100,6 +100,27 @@ export default function MusicPage() {
           <h1 className="music__title">Music</h1>
           <p className="music__lede">{deviceName} · Spotify</p>
 
+          {m.accounts && m.accounts.length > 1 && (
+            <div className="music__accounts" role="tablist" aria-label="Spotify account">
+              {m.accounts.map((a) => {
+                const active = a.name === m.activeAccount;
+                return (
+                  <button
+                    key={a.name}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    className={'music__account' + (active ? ' music__account--active' : '')}
+                    disabled={m.busy}
+                    onClick={() => m.setAccount(a.name).catch(() => {})}
+                  >
+                    {a.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {m.error && <div className="music__banner">{m.error}</div>}
 
           <div className="music__np">

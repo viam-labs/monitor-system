@@ -128,6 +128,14 @@ export function useMusic(client, musicName) {
     [runMutation]
   );
 
+  const setAccount = useCallback(
+    (name) => runMutation(
+      { command: 'set_account', name },
+      () => ({ active_account: name }),
+    ).then(() => refreshPlaylists()),
+    [runMutation, refreshPlaylists]
+  );
+
   return {
     status,
     loading,
@@ -145,5 +153,8 @@ export function useMusic(client, musicName) {
     playlists,
     playlistsLoading,
     refreshPlaylists,
+    accounts: status?.accounts || [],
+    activeAccount: status?.active_account || null,
+    setAccount,
   };
 }
