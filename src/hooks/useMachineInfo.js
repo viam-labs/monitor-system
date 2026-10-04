@@ -11,6 +11,17 @@ function partStatus(lastAccessMs) {
   return { status: 'online', offlineForMs: null };
 }
 
+function componentNames(robotConfig) {
+  if (!robotConfig) return [];
+  const struct = robotConfig.toJson ? robotConfig.toJson() : robotConfig;
+  const comps = Array.isArray(struct?.components) ? struct.components : [];
+  const svcs = Array.isArray(struct?.services) ? struct.services : [];
+  const names = [...comps, ...svcs]
+    .map((e) => (typeof e?.name === 'string' ? e.name : ''))
+    .filter(Boolean);
+  return names;
+}
+
 export function useMachineInfo() {
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +52,7 @@ export function useMachineInfo() {
           lastAccessAt: lastAccessMs ? new Date(lastAccessMs).toISOString() : null,
           status: s.status,
           offlineForMs: s.offlineForMs,
+          components: componentNames(p.robotConfig),
           nowMs: now,
         };
       });

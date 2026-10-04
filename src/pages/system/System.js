@@ -22,11 +22,22 @@ function fmtDuration(ms) {
   return rHr ? `${d} d ${rHr} hr` : `${d} d`;
 }
 
+function statusLine(part) {
+  if (part.status === 'offline') {
+    return `offline for ${fmtDuration(part.offlineForMs)}`;
+  }
+  if (part.status === 'awaiting_setup') {
+    return 'awaiting setup';
+  }
+  const rel = formatRelative(part.lastAccessAt);
+  return rel ? `last reported ${rel}` : 'online';
+}
+
 export default function SystemPage() {
   const ctx = useOutletContext();
   const navigate = useNavigate();
   const mobile = useMediaQuery('(max-width: 700px)');
-  const { parts, offlineCount, loading, error, refresh } = useMachineInfo();
+  const { parts, offlineCount } = useMachineInfo();
 
   const availability = {
     '/feeder': !!ctx.feederName,
@@ -41,13 +52,15 @@ export default function SystemPage() {
   };
 
   const totalParts = parts.length;
+  const totalComponents = parts.reduce((n, p) => n + (p.components?.length || 0), 0);
+  const partsFragment = totalParts === 1 ? '1 part' : `${totalParts} parts`;
+  const offlineFragment = offlineCount > 0 ? ` · ${offlineCount} offline` : '';
+  const componentsFragment = !mobile && totalComponents > 0
+    ? ` · ${totalComponents} components`
+    : '';
   const lede = totalParts
-    ? `${totalParts} part${totalParts === 1 ? '' : 's'}`
-      + (offlineCount > 0 ? ` · ${offlineCount} offline` : ' · all online')
+    ? `${partsFragment}${offlineFragment}${componentsFragment}`
     : 'loading…';
-
-  const firstOffline = parts.find((p) => p.status === 'offline');
-  const mainOffline = parts.find((p) => p.mainPart && p.status === 'offline');
 
   return (
     <div className="system">
@@ -68,67 +81,19 @@ export default function SystemPage() {
           <h1 className="system__title">System</h1>
           <p className="system__lede">{lede}</p>
 
-          {error && (
-            <div className="system__err">Couldn't reach Viam cloud: {error}</div>
-          )}
-
-          {firstOffline && (
-            <div className="system__alert">
-              <div className="system__alert__nm">{firstOffline.name} offline</div>
-              <div className="system__alert__sb">
-                last seen {formatRelative(firstOffline.lastAccessAt) || 'never'}
-                {firstOffline.offlineForMs
-                  ? ` · ${fmtDuration(firstOffline.offlineForMs)}`
-                  : ''}
-              </div>
-              {mainOffline && (
-                <p className="system__alert__body">
-                  The main part isn't reporting. The webapp can't reach anything
-                  on this part until it comes back — pages that depend on it
-                  will show stale or empty data.
-                </p>
+          <p className="system__sect">Parts</p>
+          {parts.map((p) => (
+            <div
+              key={p.id}
+              className={'system-part system-part--' + p.status}
+            >
+              <div className="system-part__nm">{p.name}</div>
+              <div className="system-part__sb">{statusLine(p)}</div>
+              {!mobile && p.components?.length > 0 && (
+                <div className="system-part__cmp">{p.components.join(' · ')}</div>
               )}
             </div>
-          )}
-
-          <p className="system__sect">Parts</p>
-          {loading && parts.length === 0 ? (
-            <p className="system__empty">loading…</p>
-          ) : (
-            parts.map((p) => (
-              <div key={p.id} className="system-row">
-                <div className="system-row__tx">
-                  <div className="system-row__nm">
-                    {p.name}
-                    {p.mainPart && <span className="system-row__badge">main</span>}
-                  </div>
-                  <div className="system-row__sb">
-                    {p.status === 'online' && (
-                      <>online · last check-in {formatRelative(p.lastAccessAt) || '—'}</>
-                    )}
-                    {p.status === 'offline' && (
-                      <>offline for {fmtDuration(p.offlineForMs)} · last {formatRelative(p.lastAccessAt) || '—'}</>
-                    )}
-                    {p.status === 'awaiting_setup' && (
-                      <>awaiting setup · never connected</>
-                    )}
-                  </div>
-                </div>
-                <span className={`system-row__amt system-row__amt--${p.status}`}>
-                  {p.status === 'online' ? 'ok' : p.status === 'offline' ? 'offline' : 'setup'}
-                </span>
-              </div>
-            ))
-          )}
-
-          <button
-            type="button"
-            className="system__refresh"
-            onClick={refresh}
-            disabled={loading}
-          >
-            ↻ refresh
-          </button>
+          ))}
         </div>
       </div>
       <BottomTabBar />
