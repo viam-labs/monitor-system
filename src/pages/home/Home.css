@@ -303,6 +303,21 @@
   color: #1d1d1f;
 }
 
+.top-nav__link--alert {
+  position: relative;
+  padding-right: 10px;
+}
+.top-nav__link--alert::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff3b30;
+}
+
 .tab-bar {
   display: none;
 }
@@ -595,6 +610,18 @@
 
   .tab-bar__tab--on {
     color: var(--accent);
+  }
+
+  .tab-bar__tab--alert { position: relative; }
+  .tab-bar__tab--alert::after {
+    content: "";
+    position: absolute;
+    top: 6px;
+    right: calc(50% - 16px);
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ff3b30;
   }
 
   .tab-bar__label {

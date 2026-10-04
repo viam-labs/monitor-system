@@ -30,6 +30,7 @@ export default function HamburgerMenu({
   airLoading,
   showMusic,
   musicLoading,
+  systemAlert,
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -97,6 +98,7 @@ export default function HamburgerMenu({
                   'nav-menu__link'
                   + (isActive ? ' nav-menu__link--active' : '')
                   + (showLoading ? ' nav-menu__link--loading' : '')
+                  + (systemAlert && l.to === '/system' ? ' nav-menu__link--alert' : '')
                 }
               >
                 <span>{l.label}</span>

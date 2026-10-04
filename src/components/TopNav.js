@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useOutletContext } from 'react-router-dom';
 
 const LINKS = [
   { to: '/', label: 'Home', end: true },
@@ -17,6 +17,8 @@ const LINKS = [
 ];
 
 export default function TopNav({ availability = {} }) {
+  const ctx = useOutletContext() || {};
+  const systemAlert = (ctx.machineInfo?.offlineCount || 0) > 0;
   const links = LINKS.filter((l) => availability[l.to] !== false);
   return (
     <nav className="top-nav" aria-label="Primary">
@@ -25,7 +27,11 @@ export default function TopNav({ availability = {} }) {
           key={l.to}
           to={l.to}
           end={l.end}
-          className={({ isActive }) => 'top-nav__link' + (isActive ? ' top-nav__link--on' : '')}
+          className={({ isActive }) =>
+            'top-nav__link'
+            + (isActive ? ' top-nav__link--on' : '')
+            + (systemAlert && l.to === '/system' ? ' top-nav__link--alert' : '')
+          }
         >
           {l.label}
         </NavLink>

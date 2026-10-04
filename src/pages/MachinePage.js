@@ -12,6 +12,7 @@ import { useInventory } from '../hooks/useInventory';
 import { useBark } from '../hooks/useBark';
 import { useAir } from '../hooks/useAir';
 import { useMusic } from '../hooks/useMusic';
+import { useMachineInfo } from '../hooks/useMachineInfo';
 import { useCameraStreams } from '../hooks/useCameraStreams';
 import { subscribeConnectionHealth } from '../lib/connectionHealth';
 
@@ -74,6 +75,7 @@ function MachinePage() {
   const bark = useBark(connection.client, connection.barkName);
   const air = useAir(connection.client, connection.airName);
   const music = useMusic(connection.client, connection.musicName);
+  const machineInfo = useMachineInfo();
   // Hoisted so all camera streams open once and stay warm across
   // route changes. Previously each page (CameraViewer, WatererPage's
   // WatererCamera) called useCameraStreams itself, which caused
@@ -83,9 +85,9 @@ function MachinePage() {
 
   const outletContext = useMemo(
     () => ({
-      ...connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, streams,
+      ...connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, machineInfo, streams,
     }),
-    [connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, streams],
+    [connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, machineInfo, streams],
   );
 
   useEffect(() => {
@@ -133,6 +135,7 @@ function MachinePage() {
             airLoading={!connection.airName && connection.pendingProbes.sensor > 0}
             showMusic={!!connection.musicName}
             musicLoading={!connection.musicName && connection.pendingProbes.generic > 0}
+            systemAlert={machineInfo.offlineCount > 0}
           />
         </>
       )}

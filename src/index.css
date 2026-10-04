@@ -482,6 +482,22 @@ code {
   color: var(--text-muted);
 }
 
+.nav-menu__link--alert {
+  position: relative;
+  padding-right: 24px;
+}
+.nav-menu__link--alert::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff3b30;
+}
+
 .mini-paws {
   display: inline-flex;
   gap: 2px;
