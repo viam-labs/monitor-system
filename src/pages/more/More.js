@@ -1,7 +1,7 @@
 import React from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import {
-  Utensils, Droplet, DoorClosed, Thermometer, Blinds, Activity, Wind, ChevronRight,
+  Utensils, Droplet, DoorClosed, Thermometer, Blinds, Activity, Wind, Server, ChevronRight,
 } from 'lucide-react';
 import TopNav from '../../components/TopNav';
 import BottomTabBar from '../../components/BottomTabBar';
@@ -15,6 +15,7 @@ const ITEMS = [
   { key: 'bark', label: 'Sounds', to: '/bark', icon: Activity, gate: (c) => !!c.barkName },
   { key: 'air', label: 'Air', to: '/air', icon: Wind, gate: (c) => !!c.airName },
   { key: 'door', label: 'Building door', to: '/door', icon: DoorClosed, gate: (c) => !!c.doorUnlockName },
+  { key: 'system', label: 'System', to: '/system', icon: Server, gate: () => true },
 ];
 
 export default function More() {
@@ -31,6 +32,7 @@ export default function More() {
     '/bark': !!ctx.barkName,
     '/air': !!ctx.airName,
     '/door': !!ctx.doorUnlockName,
+    '/system': true,
   };
 
   return (

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { useMachineConnection } from '../hooks/useMachineConnection';
 import { useFeeder } from '../hooks/useFeeder';
@@ -27,6 +27,7 @@ const PAGE_TITLES = {
   '/bark': 'Sounds',
   '/air': 'Air',
   '/music': 'Music',
+  '/system': 'System',
 };
 
 function Paw({ className }) {
@@ -50,6 +51,7 @@ function Paw({ className }) {
 function MachinePage() {
   const connection = useMachineConnection();
   const location = useLocation();
+  const navigate = useNavigate();
   const [connectionLost, setConnectionLost] = useState(false);
 
   // Hoisted so state (schedules, readings, last-fed, etc.) survives
@@ -92,7 +94,7 @@ function MachinePage() {
 
   useEffect(() => subscribeConnectionHealth(setConnectionLost), []);
 
-  const chromeless = ['/', '/more', '/cameras', '/feeder', '/waterer', '/thermostat', '/curtain', '/inventory', '/bark', '/air', '/door', '/music'].includes(location.pathname);
+  const chromeless = ['/', '/more', '/cameras', '/feeder', '/waterer', '/thermostat', '/curtain', '/inventory', '/bark', '/air', '/door', '/music', '/system'].includes(location.pathname);
 
   useEffect(() => {
     const bg = chromeless ? '#f5f5f7' : '#0f0f10';
@@ -139,6 +141,13 @@ function MachinePage() {
           <span className="connection-banner__text">
             Disconnected from your Viam machine.
           </span>
+          <button
+            type="button"
+            className="connection-banner__reconnect"
+            onClick={() => navigate('/system')}
+          >
+            See System
+          </button>
           <button
             type="button"
             className="connection-banner__reconnect"

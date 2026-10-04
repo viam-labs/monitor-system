@@ -64,6 +64,7 @@ export default function HamburgerMenu({
     { to: '/music', label: 'Music', show: showMusic, loading: musicLoading },
     { to: '/thermostat', label: 'Thermostat', show: showThermostat, loading: thermostatLoading },
     { to: '/waterer', label: 'Waterer', show: showWaterer, loading: watererLoading },
+    { to: '/system', label: 'System', alwaysShow: true },
   ];
   const visible = links
     .filter((l) => l.alwaysShow || l.show || l.loading)

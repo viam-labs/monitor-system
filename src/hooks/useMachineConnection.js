@@ -5,6 +5,7 @@ import {
   SensorClient,
 } from '@viamrobotics/sdk';
 import Cookies from 'js-cookie';
+import { reportRpcError } from '../lib/connectionHealth';
 
 async function createClient() {
   const cookieKey = window.location.pathname.split('/')[2];
@@ -278,6 +279,7 @@ export function useMachineConnection() {
         if (cancelled) return;
         setError(e.message);
         setLoading(false);
+        reportRpcError({ message: 'not connected: ' + (e.message || '') });
       }
     }
 

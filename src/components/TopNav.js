@@ -13,6 +13,7 @@ const LINKS = [
   { to: '/bark', label: 'Sounds' },
   { to: '/air', label: 'Air' },
   { to: '/door', label: 'Door' },
+  { to: '/system', label: 'System' },
 ];
 
 export default function TopNav({ availability = {} }) {

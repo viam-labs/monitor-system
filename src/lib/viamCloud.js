@@ -25,6 +25,14 @@ export function getLocationId() {
   return cachedLocationId;
 }
 
+export function getMachineId() {
+  try {
+    return readCookiePayload().machineId || null;
+  } catch {
+    return null;
+  }
+}
+
 export function getViamCloudClient() {
   if (clientPromise) return clientPromise;
   const { apiKey: { id, key } } = readCookiePayload();
