@@ -154,8 +154,23 @@ export default function InventoryPage() {
     const device = payload.button?.device;
     const trackerName = deviceToTracker.get(device) ?? trackerNames[0];
     if (!trackerName) return;
+    // The JS SDK's protobuf Struct encoding coerces `slot: null` to 0,
+    // which collides with reserved slots. Pick the first free, non-reserved
+    // slot instead of letting the backend reject.
+    const reserved = deviceReservedSlots?.get?.(device) || {};
+    const occupied = new Set(
+      items.filter((i) => i.button?.device === device && typeof i.button?.slot === 'number')
+        .map((i) => i.button.slot),
+    );
+    const dev = declaredDevices.find((d) => d.name === device);
+    const keyCount = dev?.key_count ?? null;
+    let slot = 0;
+    while (reserved[slot] || occupied.has(slot)) slot += 1;
+    const outPayload = (keyCount != null && slot >= keyCount)
+      ? { ...payload, button: null }
+      : { ...payload, button: { device, slot } };
     try {
-      await inv.addItem(trackerName, payload);
+      await inv.addItem(trackerName, outPayload);
       setAddOpen(false);
       setToast({ kind: 'success', text: `Added ${payload.name}` });
     } catch {
