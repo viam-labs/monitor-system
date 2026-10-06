@@ -152,17 +152,15 @@
 
 .inv-markdone {
   font: inherit;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #ffffff;
-  background: #137a35;
+  font-size: 13px;
+  color: var(--accent);
+  background: transparent;
   border: none;
-  border-radius: 7px;
-  padding: 5px 10px;
+  padding: 2px 2px;
   cursor: pointer;
   flex: none;
 }
-.inv-markdone:disabled { opacity: 0.5; cursor: not-allowed; }
+.inv-markdone:disabled { color: var(--dim); cursor: not-allowed; }
 
 .inv-seg {
   display: inline-flex;
