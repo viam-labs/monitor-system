@@ -339,6 +339,13 @@
   width: 56px;
 }
 
+.inv-xp__hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-left: 6px;
+  font-style: italic;
+}
+
 .inv-del {
   background: transparent;
   border: none;
