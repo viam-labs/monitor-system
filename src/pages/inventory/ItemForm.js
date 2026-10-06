@@ -26,7 +26,9 @@ export default function NewItemSheet({
       cancelAnimationFrame(id);
       setShowing(false);
     };
-  }, [open, initialGroup, existingGroups]);
+    // Reset only on open-transition; parent re-renders would wipe the user's picks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const close = () => {
     if (busy) return;
