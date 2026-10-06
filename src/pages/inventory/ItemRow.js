@@ -133,7 +133,7 @@ function describeRoutine(routine, now = new Date()) {
 }
 
 export default function ItemRow({
-  item, busy, dragHandle, wrapperRef, wrapperStyle,
+  item, busy, dragHandle, wrapperRef, wrapperStyle, reservedSlots,
   onIncrement, onDecrement, onSetQuantity, onSetName, onSetThreshold, onSetSlot,
   onSetRoutine, onClearRoutine, onMarkRoutineDone, onDelete,
 }) {
@@ -291,6 +291,13 @@ export default function ItemRow({
               onBlur={commitSlot}
               disabled={busy}
             />
+            {reservedSlots && Object.keys(reservedSlots).length > 0 && (
+              <span className="inv-xp__hint">
+                reserved: {Object.entries(reservedSlots)
+                  .map(([s, kind]) => `${s} (${kind})`)
+                  .join(', ')}
+              </span>
+            )}
           </label>
           <button
             type="button"

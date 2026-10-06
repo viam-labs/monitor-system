@@ -31,6 +31,7 @@ export default function InventoryPage() {
   const {
     items, busy, error, trackerNames = [],
     deviceToTracker: declaredDeviceToTracker, declaredDevices = [],
+    deviceReservedSlots,
   } = inv;
 
   const deviceToTracker = useMemo(() => {
@@ -221,7 +222,9 @@ export default function InventoryPage() {
   const left = groups.length > 0 ? [groups[0]] : [];
   const right = groups.slice(1);
 
-  const renderGroup = (group) => (
+  const renderGroup = (group) => {
+    const reservedSlots = deviceReservedSlots?.get?.(group.name) || null;
+    return (
     <div key={group.name} className="inv-group">
       <p className="inv-sect">{group.name}</p>
       {group.name === 'unassigned' ? (
@@ -230,6 +233,7 @@ export default function InventoryPage() {
             key={item.id}
             item={item}
             busy={busy}
+            reservedSlots={reservedSlots}
             onIncrement={inv.increment}
             onDecrement={inv.decrement}
             onSetQuantity={inv.setQuantity}
@@ -257,6 +261,7 @@ export default function InventoryPage() {
                 key={item.id}
                 item={item}
                 busy={busy}
+                reservedSlots={reservedSlots}
                 onIncrement={inv.increment}
                 onDecrement={inv.decrement}
                 onSetQuantity={inv.setQuantity}
@@ -282,6 +287,7 @@ export default function InventoryPage() {
       </button>
     </div>
   );
+  };
 
   return (
     <div className="inventory-page">

@@ -147,6 +147,22 @@ export function useAllInventories(client, trackerSpecs) {
     return map;
   }, [trackerDevices]);
 
+  const deviceReservedSlots = useMemo(() => {
+    const map = new Map();
+    for (const devices of trackerDevices.values()) {
+      for (const d of devices) {
+        if (!d?.name || !d.reserved_slots) continue;
+        const parsed = {};
+        for (const [k, v] of Object.entries(d.reserved_slots)) {
+          const n = Number(k);
+          if (Number.isInteger(n) && n >= 0) parsed[n] = String(v);
+        }
+        map.set(d.name, parsed);
+      }
+    }
+    return map;
+  }, [trackerDevices]);
+
   const declaredDevices = useMemo(() => {
     const out = [];
     for (const [trackerName, devices] of trackerDevices) {
@@ -260,6 +276,7 @@ export function useAllInventories(client, trackerSpecs) {
     trackerNames,
     trackerDevices,
     deviceToTracker,
+    deviceReservedSlots,
     declaredDevices,
     byTracker: state,
     loading,
