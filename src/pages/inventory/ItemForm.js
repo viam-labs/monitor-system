@@ -57,9 +57,9 @@ export default function NewItemSheet({
       payload.package_qty = 1;
       payload.quantity = qty;
       payload.threshold = low;
-    } else {
-      payload.package_qty = null;
     }
+    // Schedule-only: omit `package_qty` entirely. JS SDK's protobuf Struct
+    // coerces `null` to 0, which the backend's positive-integer check rejects.
 
     if (kind === 'schedule' || kind === 'both') {
       const days = Number(intervalDays);
