@@ -28,15 +28,20 @@ export default function InventoryPage() {
     inventory: inv,
   } = ctx;
   const stillProbing = !inventoryName && pendingProbes && pendingProbes.generic > 0;
-  const { items, busy, error, trackerNames = [] } = inv;
+  const {
+    items, busy, error, trackerNames = [],
+    deviceToTracker: declaredDeviceToTracker, declaredDevices = [],
+  } = inv;
 
   const deviceToTracker = useMemo(() => {
-    const m = new Map();
+    const m = new Map(declaredDeviceToTracker || []);
     for (const it of items) {
-      if (it.button?.device && it._tracker) m.set(it.button.device, it._tracker);
+      if (it.button?.device && it._tracker && !m.has(it.button.device)) {
+        m.set(it.button.device, it._tracker);
+      }
     }
     return m;
-  }, [items]);
+  }, [declaredDeviceToTracker, items]);
   const [addGroupHint, setAddGroupHint] = useState(DEFAULT_GROUP);
   const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -83,6 +88,9 @@ export default function InventoryPage() {
     let low = 0;
     let due = 0;
     const now = Date.now();
+    for (const d of declaredDevices) {
+      if (d?.name && !byGroup.has(d.name)) byGroup.set(d.name, []);
+    }
     for (const it of items) {
       const hasQty = it.package_qty != null;
       if (hasQty && it.threshold != null && it.quantity > 0 && it.quantity <= it.threshold) {
@@ -107,7 +115,7 @@ export default function InventoryPage() {
     const result = [...byGroup.entries()].map(([name, list]) => ({ name, list }));
     if (unassigned.length) result.push({ name: 'unassigned', list: unassigned });
     return { groups: result, lowCount: low, dueCount: due };
-  }, [items]);
+  }, [items, declaredDevices]);
 
   const existingGroups = useMemo(
     () => groups.map((g) => g.name).filter((n) => n !== 'unassigned'),
