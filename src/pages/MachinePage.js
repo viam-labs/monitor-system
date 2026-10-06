@@ -8,7 +8,7 @@ import { useThermostatController } from '../hooks/useThermostatController';
 import { useCurtain } from '../hooks/useCurtain';
 import { useDoorUnlock } from '../hooks/useDoorUnlock';
 import { useWaterer } from '../hooks/useWaterer';
-import { useInventory } from '../hooks/useInventory';
+import { useAllInventories } from '../hooks/useAllInventories';
 import { useBark } from '../hooks/useBark';
 import { useAir } from '../hooks/useAir';
 import { useMusic } from '../hooks/useMusic';
@@ -69,8 +69,8 @@ function MachinePage() {
   const curtain = useCurtain(connection.client, connection.curtainName);
   const door = useDoorUnlock(connection.client, connection.doorUnlockName);
   const waterer = useWaterer(connection.client, connection.watererName);
-  const inventory = useInventory(
-    connection.client, connection.inventoryName, connection.inventoryStateSensorName,
+  const inventory = useAllInventories(
+    connection.client, connection.inventoryTrackers,
   );
   const bark = useBark(connection.client, connection.barkName);
   const air = useAir(connection.client, connection.airName);
