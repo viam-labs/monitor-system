@@ -69,18 +69,16 @@ export default function InventoryPage() {
     '/door': !!ctx.doorUnlockName,
   };
 
-  const { groups, outCount, lowCount, dueCount } = useMemo(() => {
+  const { groups, lowCount, dueCount } = useMemo(() => {
     const byGroup = new Map();
     const unassigned = [];
-    let out = 0;
     let low = 0;
     let due = 0;
     const now = Date.now();
     for (const it of items) {
       const hasQty = it.package_qty != null;
-      if (hasQty) {
-        if (it.quantity === 0) out += 1;
-        else if (it.threshold != null && it.quantity <= it.threshold) low += 1;
+      if (hasQty && it.threshold != null && it.quantity > 0 && it.quantity <= it.threshold) {
+        low += 1;
       }
       if (it.routine) {
         const intervalDays = Number(it.routine.interval_days) || 1;
@@ -100,7 +98,7 @@ export default function InventoryPage() {
     unassigned.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     const result = [...byGroup.entries()].map(([name, list]) => ({ name, list }));
     if (unassigned.length) result.push({ name: 'unassigned', list: unassigned });
-    return { groups: result, outCount: out, lowCount: low, dueCount: due };
+    return { groups: result, lowCount: low, dueCount: due };
   }, [items]);
 
   const existingGroups = useMemo(
@@ -196,7 +194,6 @@ export default function InventoryPage() {
   };
 
   const lede = `${items.length} item${items.length === 1 ? '' : 's'}`
-    + (outCount > 0 ? ` · ${outCount} out` : '')
     + (lowCount > 0 ? ` · ${lowCount} low` : '')
     + (dueCount > 0 ? ` · ${dueCount} due today` : '');
 
