@@ -51,8 +51,11 @@ function matchGeneric(name, status, into) {
     const stateSensorName = typeof status.state_sensor === 'string' && status.state_sensor
       ? status.state_sensor
       : null;
+    const devices = Array.isArray(status.devices)
+      ? status.devices.filter((d) => d && typeof d.name === 'string')
+      : [];
     if (!into.inventoryTrackers) into.inventoryTrackers = [];
-    into.inventoryTrackers.push({ name, stateSensorName });
+    into.inventoryTrackers.push({ name, stateSensorName, devices });
     if (!into.inventoryName) {
       into.inventoryName = name;
       if (stateSensorName) into.inventoryStateSensorName = stateSensorName;

@@ -127,6 +127,36 @@ export function useAllInventories(client, trackerSpecs) {
 
   const trackerNames = useMemo(() => Array.from(clients.keys()), [clients]);
 
+  const trackerDevices = useMemo(() => {
+    const map = new Map();
+    for (const spec of trackerSpecs) {
+      if (!spec?.name) continue;
+      map.set(spec.name, Array.isArray(spec.devices) ? spec.devices : []);
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [specsKey]);
+
+  const deviceToTracker = useMemo(() => {
+    const map = new Map();
+    for (const [trackerName, devices] of trackerDevices) {
+      for (const d of devices) {
+        if (d?.name && !map.has(d.name)) map.set(d.name, trackerName);
+      }
+    }
+    return map;
+  }, [trackerDevices]);
+
+  const declaredDevices = useMemo(() => {
+    const out = [];
+    for (const [trackerName, devices] of trackerDevices) {
+      for (const d of devices) {
+        if (d?.name) out.push({ ...d, _tracker: trackerName });
+      }
+    }
+    return out;
+  }, [trackerDevices]);
+
   const runCommand = useCallback(async (name, command) => {
     const c = clients.get(name);
     if (!c) return undefined;
@@ -228,6 +258,9 @@ export function useAllInventories(client, trackerSpecs) {
   return {
     items,
     trackerNames,
+    trackerDevices,
+    deviceToTracker,
+    declaredDevices,
     byTracker: state,
     loading,
     busy,
