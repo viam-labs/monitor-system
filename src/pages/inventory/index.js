@@ -89,7 +89,12 @@ export default function InventoryPage() {
     let low = 0;
     let due = 0;
     const now = Date.now();
-    for (const d of declaredDevices) {
+    const orderedDevices = [...declaredDevices].sort((a, b) => {
+      if (a?.name === 'kitchen') return -1;
+      if (b?.name === 'kitchen') return 1;
+      return (a?.name || '').localeCompare(b?.name || '');
+    });
+    for (const d of orderedDevices) {
       if (d?.name && !byGroup.has(d.name)) byGroup.set(d.name, []);
     }
     for (const it of items) {
