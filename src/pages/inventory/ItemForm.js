@@ -64,7 +64,7 @@ export default function NewItemSheet({
     if (kind === 'schedule' || kind === 'both') {
       const days = Number(intervalDays);
       if (!Number.isInteger(days) || days < 1) return;
-      payload.routine = { interval_days: days, last_done_at: null };
+      payload.routine = { interval_days: days };
     }
 
     onSubmit(payload);
