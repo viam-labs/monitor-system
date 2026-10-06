@@ -69,14 +69,24 @@ export default function InventoryPage() {
     '/door': !!ctx.doorUnlockName,
   };
 
-  const { groups, outCount, lowCount } = useMemo(() => {
+  const { groups, outCount, lowCount, dueCount } = useMemo(() => {
     const byGroup = new Map();
     const unassigned = [];
     let out = 0;
     let low = 0;
+    let due = 0;
+    const now = Date.now();
     for (const it of items) {
-      if (it.quantity === 0) out += 1;
-      else if (it.threshold != null && it.quantity <= it.threshold) low += 1;
+      const hasQty = it.package_qty != null;
+      if (hasQty) {
+        if (it.quantity === 0) out += 1;
+        else if (it.threshold != null && it.quantity <= it.threshold) low += 1;
+      }
+      if (it.routine) {
+        const intervalDays = Number(it.routine.interval_days) || 1;
+        const lastMs = it.routine.last_done_at ? Date.parse(it.routine.last_done_at) : NaN;
+        if (Number.isNaN(lastMs) || now - lastMs >= intervalDays * 86400000) due += 1;
+      }
       const g = it.button?.device;
       if (!g) unassigned.push(it);
       else {
@@ -90,7 +100,7 @@ export default function InventoryPage() {
     unassigned.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     const result = [...byGroup.entries()].map(([name, list]) => ({ name, list }));
     if (unassigned.length) result.push({ name: 'unassigned', list: unassigned });
-    return { groups: result, outCount: out, lowCount: low };
+    return { groups: result, outCount: out, lowCount: low, dueCount: due };
   }, [items]);
 
   const existingGroups = useMemo(
@@ -156,6 +166,18 @@ export default function InventoryPage() {
     } catch { /* surfaced */ }
   };
 
+  const handleSetRoutine = async (id, routine) => {
+    try { await inv.setRoutine(id, routine); } catch { /* surfaced */ }
+  };
+
+  const handleClearRoutine = async (id) => {
+    try { await inv.clearRoutine(id); } catch { /* surfaced */ }
+  };
+
+  const handleMarkRoutineDone = async (id) => {
+    try { await inv.markRoutineDone(id); } catch { /* surfaced */ }
+  };
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete ${name}?`)) return;
     try { await inv.deleteItem(id); } catch { /* surfaced */ }
@@ -176,7 +198,7 @@ export default function InventoryPage() {
   const lede = `${items.length} item${items.length === 1 ? '' : 's'}`
     + (outCount > 0 ? ` · ${outCount} out` : '')
     + (lowCount > 0 ? ` · ${lowCount} low` : '')
-    + ' · order sets Stream Deck slots';
+    + (dueCount > 0 ? ` · ${dueCount} due today` : '');
 
   const left = groups.length > 0 ? [groups[0]] : [];
   const right = groups.slice(1);
@@ -196,6 +218,9 @@ export default function InventoryPage() {
             onSetName={handleSetName}
             onSetThreshold={handleSetThreshold}
             onSetSlot={handleSetSlot}
+            onSetRoutine={handleSetRoutine}
+            onClearRoutine={handleClearRoutine}
+            onMarkRoutineDone={handleMarkRoutineDone}
             onDelete={handleDelete}
           />
         ))
@@ -220,6 +245,9 @@ export default function InventoryPage() {
                 onSetName={handleSetName}
                 onSetThreshold={handleSetThreshold}
                 onSetSlot={handleSetSlot}
+                onSetRoutine={handleSetRoutine}
+                onClearRoutine={handleClearRoutine}
+                onMarkRoutineDone={handleMarkRoutineDone}
                 onDelete={handleDelete}
               />
             ))}

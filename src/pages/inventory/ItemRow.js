@@ -102,9 +102,40 @@ function InlineQty({ value, onCommit, disabled }) {
   );
 }
 
+function intervalLabel(days) {
+  if (days === 1) return 'daily';
+  if (days === 7) return 'weekly';
+  return `every ${days} days`;
+}
+
+function describeRoutine(routine, now = new Date()) {
+  if (!routine) return null;
+  const intervalDays = Number(routine.interval_days) || 1;
+  const lastIso = routine.last_done_at;
+  const lastMs = lastIso ? Date.parse(lastIso) : NaN;
+  const label = intervalLabel(intervalDays);
+  if (!lastIso || Number.isNaN(lastMs)) {
+    return { actionable: true, badge: 'Due', text: label };
+  }
+  const last = new Date(lastMs);
+  const ageDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+  if (ageDays < intervalDays) {
+    const lastWord = ageDays === 0 ? last.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : ageDays === 1 ? 'yesterday'
+      : last.toLocaleDateString([], { weekday: 'short' });
+    return { actionable: false, badge: '✓', text: `${label} · ${lastWord}` };
+  }
+  if (ageDays >= intervalDays * 2) {
+    const lastWord = last.toLocaleDateString([], { weekday: 'short' });
+    return { actionable: true, badge: 'Overdue', text: `${label} · last ${lastWord}` };
+  }
+  return { actionable: true, badge: 'Due', text: label };
+}
+
 export default function ItemRow({
   item, busy, dragHandle, wrapperRef, wrapperStyle,
-  onIncrement, onDecrement, onSetQuantity, onSetName, onSetThreshold, onSetSlot, onDelete,
+  onIncrement, onDecrement, onSetQuantity, onSetName, onSetThreshold, onSetSlot,
+  onSetRoutine, onClearRoutine, onMarkRoutineDone, onDelete,
 }) {
   const [expanded, setExpanded] = useState(false);
   const [threshold, setThreshold] = useState(
@@ -113,9 +144,15 @@ export default function ItemRow({
   const [slot, setSlot] = useState(
     item.button?.slot != null ? String(item.button.slot) : '',
   );
+  const [intervalDays, setIntervalDays] = useState(
+    item.routine?.interval_days != null ? String(item.routine.interval_days) : '',
+  );
 
-  const out = item.quantity === 0;
-  const low = !out && item.threshold != null && item.quantity <= item.threshold;
+  const hasQty = item.package_qty != null;
+  const hasRoutine = item.routine != null;
+  const out = hasQty && item.quantity === 0;
+  const low = !out && hasQty && item.threshold != null && item.quantity <= item.threshold;
+  const routineInfo = describeRoutine(item.routine);
 
   const commitThreshold = () => {
     const next = threshold === '' ? null : Number(threshold);
@@ -129,6 +166,17 @@ export default function ItemRow({
     if (next === (item.button?.slot ?? null)) return;
     if (next !== null && (!Number.isInteger(next) || next < 0)) return;
     onSetSlot(item.id, next);
+  };
+
+  const commitInterval = () => {
+    if (intervalDays === '') {
+      if (hasRoutine && onClearRoutine) onClearRoutine(item.id);
+      return;
+    }
+    const next = Number(intervalDays);
+    if (!Number.isInteger(next) || next < 1) return;
+    if (hasRoutine && next === item.routine.interval_days) return;
+    if (onSetRoutine) onSetRoutine(item.id, { interval_days: next });
   };
 
   return (
@@ -148,7 +196,18 @@ export default function ItemRow({
         />
         {out && <span className="inv-pill inv-pill--out">Out</span>}
         {low && <span className="inv-pill inv-pill--low">Low</span>}
-        {item.package_qty != null && (
+        {routineInfo && (
+          <span
+            className={
+              'inv-sched'
+              + (routineInfo.actionable ? ' inv-sched--due' : ' inv-sched--done')
+            }
+          >
+            <span className="inv-sched__b">{routineInfo.badge}</span>
+            <span className="inv-sched__t">{routineInfo.text}</span>
+          </span>
+        )}
+        {hasQty && (
           <div className="inv-qty">
             <button
               type="button"
@@ -175,6 +234,16 @@ export default function ItemRow({
             </button>
           </div>
         )}
+        {hasRoutine && routineInfo?.actionable && onMarkRoutineDone && (
+          <button
+            type="button"
+            className="inv-markdone"
+            onClick={() => onMarkRoutineDone(item.id)}
+            disabled={busy}
+          >
+            Mark done
+          </button>
+        )}
         <button
           type="button"
           className="inv-chev"
@@ -187,15 +256,29 @@ export default function ItemRow({
       </div>
       {expanded && (
         <div className="inv-xp">
+          {hasQty && (
+            <label>
+              Low at
+              <input
+                type="number"
+                min="0"
+                value={threshold}
+                onChange={(e) => setThreshold(e.target.value)}
+                onBlur={commitThreshold}
+                disabled={busy}
+              />
+            </label>
+          )}
           <label>
-            Low at
+            Every (days)
             <input
               type="number"
-              min="0"
-              value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
-              onBlur={commitThreshold}
+              min="1"
+              value={intervalDays}
+              onChange={(e) => setIntervalDays(e.target.value)}
+              onBlur={commitInterval}
               disabled={busy}
+              placeholder={hasRoutine ? '' : 'blank = none'}
             />
           </label>
           <label>
