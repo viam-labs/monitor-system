@@ -48,9 +48,14 @@ function matchGeneric(name, status, into) {
     return;
   }
   if (status.kind === 'inventory_tracker') {
-    into.inventoryName = name;
-    if (typeof status.state_sensor === 'string' && status.state_sensor) {
-      into.inventoryStateSensorName = status.state_sensor;
+    const stateSensorName = typeof status.state_sensor === 'string' && status.state_sensor
+      ? status.state_sensor
+      : null;
+    if (!into.inventoryTrackers) into.inventoryTrackers = [];
+    into.inventoryTrackers.push({ name, stateSensorName });
+    if (!into.inventoryName) {
+      into.inventoryName = name;
+      if (stateSensorName) into.inventoryStateSensorName = stateSensorName;
     }
     return;
   }
@@ -110,6 +115,7 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
     curtainName: null,
     doorUnlockName: null,
     watererName: null,
+    inventoryTrackers: [],
     inventoryName: null,
     inventoryStateSensorName: null,
     acBotName: null,
@@ -205,6 +211,7 @@ export function useMachineConnection() {
   const [watererName, setWatererName] = useState(null);
   const [inventoryName, setInventoryName] = useState(null);
   const [inventoryStateSensorName, setInventoryStateSensorName] = useState(null);
+  const [inventoryTrackers, setInventoryTrackers] = useState([]);
   const [acBotName, setAcBotName] = useState(null);
   const [roomMeterName, setRoomMeterName] = useState(null);
   const [barkName, setBarkName] = useState(null);
@@ -227,6 +234,19 @@ export function useMachineConnection() {
       if (d.watererName) setWatererName(d.watererName);
       if (d.inventoryName) setInventoryName(d.inventoryName);
       if (d.inventoryStateSensorName) setInventoryStateSensorName(d.inventoryStateSensorName);
+      if (Array.isArray(d.inventoryTrackers) && d.inventoryTrackers.length > 0) {
+        setInventoryTrackers((prev) => {
+          const seen = new Set(prev.map((t) => t.name));
+          const merged = [...prev];
+          for (const t of d.inventoryTrackers) {
+            if (t?.name && !seen.has(t.name)) {
+              merged.push(t);
+              seen.add(t.name);
+            }
+          }
+          return merged;
+        });
+      }
       if (d.acBotName) setAcBotName(d.acBotName);
       if (d.roomMeterName) setRoomMeterName(d.roomMeterName);
       if (d.barkName) setBarkName(d.barkName);
@@ -302,6 +322,7 @@ export function useMachineConnection() {
     watererName,
     inventoryName,
     inventoryStateSensorName,
+    inventoryTrackers,
     acBotName,
     roomMeterName,
     barkName,

@@ -28,7 +28,15 @@ export default function InventoryPage() {
     inventory: inv,
   } = ctx;
   const stillProbing = !inventoryName && pendingProbes && pendingProbes.generic > 0;
-  const { items, busy, error } = inv;
+  const { items, busy, error, trackerNames = [] } = inv;
+
+  const deviceToTracker = useMemo(() => {
+    const m = new Map();
+    for (const it of items) {
+      if (it.button?.device && it._tracker) m.set(it.button.device, it._tracker);
+    }
+    return m;
+  }, [items]);
   const [addGroupHint, setAddGroupHint] = useState(DEFAULT_GROUP);
   const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -134,8 +142,11 @@ export default function InventoryPage() {
   }
 
   const handleAdd = async (payload) => {
+    const device = payload.button?.device;
+    const trackerName = deviceToTracker.get(device) ?? trackerNames[0];
+    if (!trackerName) return;
     try {
-      await inv.addItem(payload);
+      await inv.addItem(trackerName, payload);
       setAddOpen(false);
       setToast({ kind: 'success', text: `Added ${payload.name}` });
     } catch {
@@ -190,7 +201,9 @@ export default function InventoryPage() {
     const newIndex = g.list.findIndex((i) => i.id === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
     const nextOrder = arrayMove(g.list, oldIndex, newIndex).map((i) => i.id);
-    try { await inv.reorderDeck(nextOrder, group); } catch { /* surfaced */ }
+    const trackerName = deviceToTracker.get(group) ?? trackerNames[0];
+    if (!trackerName) return;
+    try { await inv.reorderDeck(trackerName, nextOrder, group); } catch { /* surfaced */ }
   };
 
   const lede = `${items.length} item${items.length === 1 ? '' : 's'}`
