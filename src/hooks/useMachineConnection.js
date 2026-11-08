@@ -66,6 +66,11 @@ function matchGeneric(name, status, into) {
     into.musicName = name;
     return;
   }
+  if (status.kind === 'light') {
+    if (!into.lightNames) into.lightNames = [];
+    into.lightNames.push(name);
+    return;
+  }
   if ('food_state' in status || 'food_low_status' in status) {
     into.feederName = name;
   } else if ('on_temp_c' in status || 'off_temp_c' in status || 'bot_position' in status) {
@@ -126,6 +131,7 @@ async function detectFeaturePages(c, resources, timeoutMs = PROBE_TIMEOUT_MS) {
     barkName: null,
     airName: null,
     musicName: null,
+    lightNames: [],
   };
   const pendingRetry = [];
 
@@ -220,6 +226,7 @@ export function useMachineConnection() {
   const [barkName, setBarkName] = useState(null);
   const [airName, setAirName] = useState(null);
   const [musicName, setMusicName] = useState(null);
+  const [lightNames, setLightNames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detectingFeatures, setDetectingFeatures] = useState(true);
   const [pendingProbes, setPendingProbes] = useState({ generic: 0, sensor: 0 });
@@ -255,6 +262,19 @@ export function useMachineConnection() {
       if (d.barkName) setBarkName(d.barkName);
       if (d.airName) setAirName(d.airName);
       if (d.musicName) setMusicName(d.musicName);
+      if (Array.isArray(d.lightNames) && d.lightNames.length > 0) {
+        setLightNames((prev) => {
+          const seen = new Set(prev);
+          const merged = [...prev];
+          for (const n of d.lightNames) {
+            if (n && !seen.has(n)) {
+              merged.push(n);
+              seen.add(n);
+            }
+          }
+          return merged;
+        });
+      }
     };
 
     async function init() {
@@ -331,6 +351,7 @@ export function useMachineConnection() {
     barkName,
     airName,
     musicName,
+    lightNames,
     loading,
     detectingFeatures,
     pendingProbes,
