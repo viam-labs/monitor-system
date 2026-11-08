@@ -12,6 +12,7 @@ import { useAllInventories } from '../hooks/useAllInventories';
 import { useBark } from '../hooks/useBark';
 import { useAir } from '../hooks/useAir';
 import { useMusic } from '../hooks/useMusic';
+import { useLights } from '../hooks/useLights';
 import { useMachineInfo } from '../hooks/useMachineInfo';
 import { useCameraStreams } from '../hooks/useCameraStreams';
 import { subscribeConnectionHealth } from '../lib/connectionHealth';
@@ -28,6 +29,7 @@ const PAGE_TITLES = {
   '/bark': 'Sounds',
   '/air': 'Air',
   '/music': 'Music',
+  '/lights': 'Lights',
   '/system': 'System',
 };
 
@@ -75,6 +77,7 @@ function MachinePage() {
   const bark = useBark(connection.client, connection.barkName);
   const air = useAir(connection.client, connection.airName);
   const music = useMusic(connection.client, connection.musicName);
+  const lights = useLights(connection.client, connection.lightNames);
   const machineInfo = useMachineInfo();
   // Hoisted so all camera streams open once and stay warm across
   // route changes. Previously each page (CameraViewer, WatererPage's
@@ -85,9 +88,9 @@ function MachinePage() {
 
   const outletContext = useMemo(
     () => ({
-      ...connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, machineInfo, streams,
+      ...connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, lights, machineInfo, streams,
     }),
-    [connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, machineInfo, streams],
+    [connection, feeder, thermostat, thermostatController, curtain, door, waterer, inventory, bark, air, music, lights, machineInfo, streams],
   );
 
   useEffect(() => {
@@ -96,7 +99,7 @@ function MachinePage() {
 
   useEffect(() => subscribeConnectionHealth(setConnectionLost), []);
 
-  const chromeless = ['/', '/more', '/cameras', '/feeder', '/waterer', '/thermostat', '/curtain', '/inventory', '/bark', '/air', '/door', '/music', '/system'].includes(location.pathname);
+  const chromeless = ['/', '/more', '/cameras', '/feeder', '/waterer', '/thermostat', '/curtain', '/inventory', '/bark', '/air', '/door', '/music', '/lights', '/system'].includes(location.pathname);
 
   useEffect(() => {
     const bg = chromeless ? '#f5f5f7' : '#0f0f10';
@@ -135,6 +138,8 @@ function MachinePage() {
             airLoading={!connection.airName && connection.pendingProbes.sensor > 0}
             showMusic={!!connection.musicName}
             musicLoading={!connection.musicName && connection.pendingProbes.generic > 0}
+            showLights={connection.lightNames.length > 0}
+            lightsLoading={connection.lightNames.length === 0 && connection.pendingProbes.generic > 0}
             systemAlert={machineInfo.offlineCount > 0}
           />
         </>

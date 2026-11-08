@@ -30,6 +30,8 @@ export default function HamburgerMenu({
   airLoading,
   showMusic,
   musicLoading,
+  showLights,
+  lightsLoading,
   systemAlert,
 }) {
   const [open, setOpen] = useState(false);
@@ -62,6 +64,7 @@ export default function HamburgerMenu({
     { to: '/curtain', label: 'Curtain', show: showCurtain, loading: curtainLoading },
     { to: '/feeder', label: 'Feeder', show: showFeeder, loading: feederLoading },
     { to: '/inventory', label: 'Inventory', show: showInventory, loading: inventoryLoading },
+    { to: '/lights', label: 'Lights', show: showLights, loading: lightsLoading },
     { to: '/music', label: 'Music', show: showMusic, loading: musicLoading },
     { to: '/thermostat', label: 'Thermostat', show: showThermostat, loading: thermostatLoading },
     { to: '/waterer', label: 'Waterer', show: showWaterer, loading: watererLoading },

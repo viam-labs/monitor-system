@@ -240,6 +240,49 @@ function airRow({ air }, navigate) {
   };
 }
 
+function lightsRow({ lights }, navigate, mobile) {
+  const names = lights?.names || [];
+  if (names.length === 0) return null;
+  const primary = lights.bulbs[names[0]];
+  const health = primary?.health;
+  const onLamp = primary?.readings?.state === 'ON';
+  const pct = primary?.readings?.brightness_pct;
+  const k = primary?.readings?.color_temp_k;
+  const others = names.length - 1;
+
+  let subtitle;
+  if (health && health !== 'ok') {
+    subtitle = primary?.message || health;
+  } else if (!primary) {
+    subtitle = 'loading…';
+  } else if (onLamp) {
+    const parts = [names[0]];
+    if (typeof pct === 'number') parts.push(`${Math.round(pct)}%`);
+    if (!mobile && typeof k === 'number') parts.push(`${Math.round(k)} K`);
+    if (!mobile && others > 0) parts.push(`${others} other${others === 1 ? '' : 's'} off`);
+    subtitle = parts.join(' · ');
+  } else {
+    subtitle = mobile ? 'off' : (others > 0 ? `off · ${others + 1} total` : 'off');
+  }
+
+  const dead = health && health !== 'ok' && health !== 'mqtt_down';
+
+  return {
+    key: 'lights',
+    icon: 'lights',
+    name: 'Lights',
+    subtitle,
+    dead,
+    toggle: primary ? {
+      on: onLamp,
+      disabled: !!lights.busy?.[names[0]] || !!dead,
+      onChange: (v) => lights.setBulb(names[0], { on: v }),
+    } : null,
+    hideChevron: mobile,
+    onClick: () => navigate('/lights'),
+  };
+}
+
 function musicRow({ music }, navigate, mobile) {
   const s = music?.status;
   const track = s?.track;
@@ -297,6 +340,8 @@ export function buildRows(ctx, navigate, mobile = false) {
   if (ctx.watererName) rows.push(watererRow(ctx, navigate, mobile));
   if (ctx.acBotName && ctx.roomMeterName) rows.push(thermostatRow(ctx, navigate, mobile));
   if (ctx.curtainName) rows.push(curtainRow(ctx, navigate, mobile));
+  const lightsR = lightsRow(ctx, navigate, mobile);
+  if (lightsR) rows.push(lightsR);
   if (ctx.inventoryName && ctx.inventoryStateSensorName) {
     rows.push(inventoryRow(ctx, navigate, mobile));
   }

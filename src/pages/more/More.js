@@ -1,7 +1,7 @@
 import React from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import {
-  Utensils, Droplet, DoorClosed, Thermometer, Blinds, Activity, Wind, Server, ChevronRight,
+  Utensils, Droplet, DoorClosed, Thermometer, Blinds, Lightbulb, Activity, Wind, Server, ChevronRight,
 } from 'lucide-react';
 import TopNav from '../../components/TopNav';
 import BottomTabBar from '../../components/BottomTabBar';
@@ -12,6 +12,7 @@ const ITEMS = [
   { key: 'waterer', label: 'Waterer', to: '/waterer', icon: Droplet, gate: (c) => !!c.watererName },
   { key: 'thermostat', label: 'Thermostat', to: '/thermostat', icon: Thermometer, gate: (c) => !!(c.acBotName && c.roomMeterName) },
   { key: 'curtain', label: 'Curtains', to: '/curtain', icon: Blinds, gate: (c) => !!c.curtainName },
+  { key: 'lights', label: 'Lights', to: '/lights', icon: Lightbulb, gate: (c) => (c.lightNames || []).length > 0 },
   { key: 'bark', label: 'Sounds', to: '/bark', icon: Activity, gate: (c) => !!c.barkName },
   { key: 'air', label: 'Air', to: '/air', icon: Wind, gate: (c) => !!c.airName },
   { key: 'door', label: 'Building door', to: '/door', icon: DoorClosed, gate: (c) => !!c.doorUnlockName },
@@ -28,6 +29,7 @@ export default function More() {
     '/waterer': !!ctx.watererName,
     '/thermostat': !!(ctx.acBotName && ctx.roomMeterName),
     '/curtain': !!ctx.curtainName,
+    '/lights': (ctx.lightNames || []).length > 0,
     '/inventory': !!(ctx.inventoryName && ctx.inventoryStateSensorName),
     '/bark': !!ctx.barkName,
     '/air': !!ctx.airName,
